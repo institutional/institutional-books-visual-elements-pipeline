@@ -1,0 +1,8 @@
+.DS_Store
+.env
+*.pyc
+data/
+test.py
+TODO.md
+logs/
+tmp/
