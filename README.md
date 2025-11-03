@@ -360,6 +360,18 @@ uv run pipeline.py steps step01-detect --id-pipeline-batch=1
 
 > Work in progress
 
+<details>
+<summary><h3>export peek 🚧</h3></summary>
+</details>
+
+<details>
+<summary><h3>export as-jsonl 🚧</h3></summary>
+</details>
+
+<details>
+<summary><h3>export to-hf 🚧</h3></summary>
+</details>
+
 [👆 Back to the summary](#summary)
 
 ---

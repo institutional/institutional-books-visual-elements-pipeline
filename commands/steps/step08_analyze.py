@@ -8,6 +8,7 @@
 # - Dimensions
 # - Detection, classification and deduplication confidence scores
 # - Duplication rate
+# - Captions length, token count, etc
 # - etc
 #
 # For these metrics we likely want to look into:
