@@ -96,7 +96,7 @@ def execute(
             )
             continue
 
-        # Check whether batch is not locked
+        # Check whether batch is locked
         if not ignore_locks and not check_pipeline_batch_availability(pipeline_batch):
             logger.warning(
                 f"RUN #{id_pipeline_run} BATCH#{id_pipeline_batch} is locked or complete. Skipping."
