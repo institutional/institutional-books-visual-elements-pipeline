@@ -159,6 +159,9 @@ uv run pipeline.py orchestration execute --id-pipeline-run=1 --batch-processing-
 
 ### 4. Export
 
+"Peek" at samples to confirm the pipeline is working as expected:
+> TODO
+
 Intermediary data for analysis:
 > TODO
 
