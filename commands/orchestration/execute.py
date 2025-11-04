@@ -92,7 +92,7 @@ def execute(
         # Check if batch has not been excluded
         if force_id_pipeline_batch and id_pipeline_batch != force_id_pipeline_batch:
             logger.warning(
-                f"RUN #{id_pipeline_run} BATCH#{id_pipeline_batch} was excluded via (`--force-id-pipeline-batch`)"
+                f"RUN #{id_pipeline_run} BATCH#{id_pipeline_batch} was excluded (--force-id-pipeline-batch)"
             )
             continue
 

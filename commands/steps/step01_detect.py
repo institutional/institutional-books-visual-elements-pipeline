@@ -352,7 +352,7 @@ def run_detection_on_images_batch(
 ) -> list[Detection]:
     """
     Performs inference on a batch of images using the detection model.
-    Model must have been pre-loaded and is passed as via reference.
+    Model must have been pre-loaded and is passed as reference.
     """
     detections: list[Detection] = []
 
