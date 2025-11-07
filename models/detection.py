@@ -30,3 +30,18 @@ class Detection(peewee.Model):
     bbox_xywh = ArrayField(field_class=FloatField, dimensions=4, null=True)
 
     bbox_conf = FloatField(null=True)
+
+    def crop(self, scan_image):
+        """
+        Returns the crop defined by bbox_xyxy from the given scan image (an np.ndarray).
+        """
+        if self.bbox_xyxy is None:
+            raise ValueError("bbox_xyxy is None for this detection.")
+        x1, y1, x2, y2 = [int(round(v)) for v in self.bbox_xyxy]
+        # Be defensive: clamp to image shape
+        h, w = scan_image.shape[:2]
+        x1 = max(0, min(w, x1))
+        x2 = max(0, min(w, x2))
+        y1 = max(0, min(h, y1))
+        y2 = max(0, min(h, y2))
+        return scan_image[y1:y2, x1:x2, :]
