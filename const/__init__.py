@@ -104,7 +104,9 @@ NODE_NAME = os.getenv("NODE_NAME")
 CPUS_LIMIT = int(os.getenv("CPUS_LIMIT", multiprocessing.cpu_count()))
 """ Determines how many CPU cores should be used. Loose limit. """
 
-CUDA_GPUS = [device for device in get_torch_devices() if device.startswith("cuda:")]
+CUDA_GPUS = [device for device in get_torch_devices() if device.startswith("cuda:")][
+    :4
+]  # change later
 """ List of currently available CUDA-capable GPUs. """
 
 MAX_S3_CONCURRENCY = int(os.getenv("MAX_S3_CONCURRENCY"))
