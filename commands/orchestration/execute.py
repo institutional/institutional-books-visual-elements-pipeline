@@ -16,6 +16,7 @@ from const import (
     NODE_NAME,
     PIPELINE_BATCH_TIMEOUT_SECONDS,
 )
+import time
 
 
 @click.command("execute")
@@ -139,10 +140,16 @@ def execute(
                     pipeline_run=pipeline_run,
                     pipeline_batch=pipeline_batch,
                 )
-
+            start = time.perf_counter()
             # Step 2: Classification
             if not has_crashed:
-                pass
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step02_classify,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
 
             # Etc ...
 
