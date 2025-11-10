@@ -95,6 +95,14 @@ CLASSIFICATION_MODEL_IMGSZ = 640
 CLASSIFICATION_MODEL_CONF = 0.25
 """ `conf` value to pass to YOLO during inference. """
 
+CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY = float(
+    os.getenv("DETECTION_MODEL_PROCESSES_FORK_DELAY", 0.5)
+)
+""" 
+Sets a delay before creating GPU processes. 
+Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
+"""
+
 #
 # Misc
 #
