@@ -15,7 +15,7 @@ from models import (
     PipelineBatchItem,
     IBVolume,
     Detection,
-    Classification,  # Classification model must exist
+    Classification,
 )
 
 from const import (
@@ -23,6 +23,7 @@ from const import (
     CLASSIFICATION_MODEL_FILEPATH,
     CLASSIFICATION_MODEL_IMGSZ,
     CLASSIFICATION_MODEL_CONF,
+    CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY,
     CUDA_GPUS,
     CPUS_LIMIT,
 )
@@ -57,14 +58,14 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
     model_filepath: Path | None = None
 
     cuda_gpus_total = len(cuda_gpus)
-    # Feel free to set/adjust processes-per-gpu for classification; for now, 1.
+    # TODO: change processes per gpu? - add to .env as variable
     processes_total = cuda_gpus_total
 
     # 1 batch of items per GPU process
     item_id_batches: list[list[int]] = [[] for i in range(0, processes_total)]
     per_task_cpus_limit = int(round(cpus_limit / cuda_gpus_total))
 
-    # Download model from HF (if not cached)
+    # Download model from HF if not cached
     logger.info(f"Pulling {CLASSIFICATION_MODEL_REPO} from HuggingFace or cache ...")
     model_filepath = Path(
         hf_hub_download(
@@ -98,8 +99,8 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
 
-            # If you want to stagger process ramp-up, add a sleep here
-            time.sleep(0.5)
+            # HACK: Helps prevent process collisions
+            time.sleep(CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY)
 
         for future in as_completed(futures):
             cuda_gpu = futures[future]
@@ -157,11 +158,11 @@ def process_classification_batch_of_items(
             if b is not None:
                 scan_images[fname] = decode_image_bytes(b)
 
-        # Classify in batches (could also chunk this by batch size if desired)
+        # Classify in batches - TODO - chunk this by batch size?
         classified: list[Classification] = []
         classification_times = []
         preproc_times = []
-        batch_size = 16  # You might want to auto-tune this
+        batch_size = 16  # TODO - pass as argument
 
         from more_itertools import chunked
         from datetime import datetime
@@ -172,8 +173,16 @@ def process_classification_batch_of_items(
             meta = []
             t0_proc = datetime.now()
             for d in det_batch:
-                # Get crop (as np.ndarray) from raw scan, using your crop utility
-                crop = d.crop(scan_images[d.scan_filename])
+                if d.scan_filename not in scan_images:
+                    logger.warning(
+                        f"scan image for {d.scan_filename} not found in RAM. Skipping detection id={d.id_detection}."
+                    )
+                    continue
+                try:
+                    crop = d.crop(scan_images[d.scan_filename])
+                except Exception as e:
+                    logger.warning(f"Crop failed for detection id={d.id_detection}: {e}; skipping.")
+                    continue
                 crops.append(crop)
                 meta.append(d)
             t1_proc = datetime.now()
@@ -222,7 +231,7 @@ def process_classification_batch_of_items(
             del yolo_preds
             torch.cuda.empty_cache()
 
-        # --- Write out (replace existing for this batch item) ---
+        # --- Replace existing for this batch item ---
         start_db = datetime.now()
         Classification.delete().where(
             Classification.pipeline_batch_item == id_pipeline_batch_item,
