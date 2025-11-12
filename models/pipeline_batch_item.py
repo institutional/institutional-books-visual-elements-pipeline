@@ -102,7 +102,8 @@ class PipelineBatchItem(peewee.Model):
                         with tar.extractfile(member) as fh:
                             image_bytes = fh.read()
 
-                        images_by_filename[filename] = image_bytes
+                        # Normalize to string to prevent type mismatch
+                        images_by_filename[str(filename.name)] = image_bytes
 
                     # OCR-extracted text
                     if filename.suffix == ".txt":
