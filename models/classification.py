@@ -26,7 +26,11 @@ class Classification(peewee.Model):
 
     # Reference to the specific Detection this classifies
     detection = peewee.ForeignKeyField(
-        model=Detection, field="id_detection", index=True, backref="classifications"
+        model=Detection,
+        field="id_detection",
+        index=True,
+        backref="classifications",
+        on_delete="CASCADE",
     )
 
     scan_filename = peewee.CharField(index=True)
