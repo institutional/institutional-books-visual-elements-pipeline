@@ -12,7 +12,7 @@ import numpy as np
 from more_itertools import chunked
 
 from utils import get_db, process_db_write_batch
-from models import PipelineBatch, PipelineBatchItem, IBVolume, Detection
+from models import PipelineBatch, PipelineBatchItem, IBVolume, Detection, Classification
 
 from const import (
     DETECTION_MODEL_REPO,
@@ -254,6 +254,11 @@ def process_batch_of_items(
         # Record detections in db. Replace existing records for pipeline batch item
         #
         start = datetime.now()
+
+        # Delete classifications first
+        Classification.delete().where(
+            Classification.pipeline_batch_item == id_pipeline_batch_item
+        ).execute()
 
         Detection.delete().where(
             Detection.pipeline_batch_item == id_pipeline_batch_item,
