@@ -10,6 +10,8 @@ click.command("retrieve-captions")
 
 
 def retrieve_captions():
+    # allow user to check status of batch, cancel batch, list batches, or retrieve the results of the batch runs
+    # for retrieving the results, we want to save said results to the database
     pass
 
 
