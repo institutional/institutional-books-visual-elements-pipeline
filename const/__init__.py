@@ -80,7 +80,12 @@ Sets a delay before creating GPU processes.
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
 
+#
 # Classification model (applying class to crop)
+#
+CLASSIFICATION_MODEL_PROCESSES_PER_GPU = int(os.getenv("CLASSIFICATION_MODEL_PROCESSES_PER_GPU", 1))
+""" Determines how many classification processes can run on a given GPU. """
+
 CLASSIFICATION_MODEL_REPO = (
     "institutional/institutional-books-visual-elements-classification-yolo11s-cls"
 )
@@ -96,12 +101,31 @@ CLASSIFICATION_MODEL_CONF = 0.25
 """ `conf` value to pass to YOLO during inference. """
 
 CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY = float(
-    os.getenv("DETECTION_MODEL_PROCESSES_FORK_DELAY", 0.5)
+    os.getenv("CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY", 0.5)
 )
 """ 
 Sets a delay before creating GPU processes. 
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
+
+#
+# Dedupe Embeddings
+#
+PREFETCH_FACTOR_EMBED = 4
+""" 
+Sets the number of batches PyTocrh's DataLoader preloads for passing into the 
+embedding model
+"""
+NUM_WORKERS_EMBED = 64
+""" 
+Sets the number of workers that the dataloader uses
+"""
+
+
+#
+# Captioning
+#
+MAX_TOKENS_PER_DAY = 14000000000
 
 #
 # Misc
