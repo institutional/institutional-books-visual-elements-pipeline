@@ -14,6 +14,7 @@ from utils import get_db, process_db_write_batch
 from models import PipelineBatchItem, Detection, Classification
 
 from const import (
+    CLASSIFICATION_MODEL_PROCESSES_PER_GPU,
     CLASSIFICATION_MODEL_REPO,
     CLASSIFICATION_MODEL_FILEPATH,
     CLASSIFICATION_MODEL_IMGSZ,
@@ -49,7 +50,8 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
-    processes_total = cuda_gpus_total  # 1 process per GPU (can adjust if needed)
+    processes_per_gpu = CLASSIFICATION_MODEL_PROCESSES_PER_GPU
+    processes_total = cuda_gpus_total * processes_per_gpu
     item_id_batches: list[list[int]] = [[] for _ in range(processes_total)]
 
     per_task_cpus_limit = int(round(cpus_limit / cuda_gpus_total))
@@ -128,7 +130,7 @@ def classify_batch_of_items(
 
     import os
 
-    # set CUDA_VISIBLE_DEVICES *before* importing torch/ultralytics
+    # set CUDA_VISIBLE_DEVICES before importing torch/ultralytics - avoids defaulting to cuda:0
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device.replace("cuda:", "")
     import torch
     from ultralytics import YOLO, settings
@@ -173,7 +175,7 @@ def classify_batch_of_items(
         time_db = timedelta(0)
         time_clear_gpu = timedelta(0)
 
-        # We'll group crops in batches for GPU efficiency
+        # Group crops in batches for GPU efficiency
         crop_image_records = []  # tuples of (Detection, np.ndarray, filename)
 
         # Preprocessing: decode scan images, do crop according to bbox
@@ -218,7 +220,7 @@ def classify_batch_of_items(
             continue
 
         # Augment with classification
-        max_batch = 16  # safety: don't overload GPU with too many big crops
+        max_batch = 16  # safety: don't overload GPU with too many big crops - TODO: check what optimal max_batch should be
         crop_batches = list(chunked(crop_image_records, max_batch))
 
         for batch in crop_batches:
@@ -279,7 +281,7 @@ def classify_batch_of_items(
 
         # Save all to the database
         start_db = datetime.now()
-        # WARNING: you may want to delete previous Classification entries for this item
+        # Delete previous Classification entries for this item
         Classification.delete().where(
             Classification.pipeline_batch_item == id_pipeline_batch_item
         ).execute()
