@@ -3,20 +3,15 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from pathlib import Path
 import gc
 import time
-
+from datetime import datetime, timezone, timedelta
 import click
 from loguru import logger
 from huggingface_hub import hf_hub_download
 import cv2
 import numpy as np
 from more_itertools import chunked
-
 from utils import get_db, process_db_write_batch
 from models import PipelineBatchItem, Detection, Classification
-
-import torch
-from ultralytics import YOLO, settings
-from datetime import datetime, timedelta
 
 from const import (
     CLASSIFICATION_MODEL_REPO,
@@ -131,11 +126,19 @@ def classify_batch_of_items(
     cpus_limit: int,
 ):
 
+    import os
+
+    # set CUDA_VISIBLE_DEVICES *before* importing torch/ultralytics
+    os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device.replace("cuda:", "")
+    import torch
+    from ultralytics import YOLO, settings
+
     settings.update({"sync": False})
+    device = "cuda:0"  # since the corresponding device is the only one visible, it becomes cuda:0
 
     # Load model
     model = YOLO(model_filepath, verbose=False)
-    model.to(cuda_device)
+    model.to(device)
     class_names = list(model.names.values())
 
     # For each item/volume
@@ -227,7 +230,7 @@ def classify_batch_of_items(
                 list(images_batch),
                 imgsz=CLASSIFICATION_MODEL_IMGSZ,
                 conf=CLASSIFICATION_MODEL_CONF,
-                device=cuda_device,
+                device=device,
                 verbose=False,
             )
             end_inf = datetime.now()
@@ -241,7 +244,6 @@ def classify_batch_of_items(
                     )
                     continue
                 pred_idx = probs.top1
-                logger.info(str(pred_idx))
                 try:
                     pred_class = class_names[pred_idx]
                 except Exception:
@@ -260,6 +262,8 @@ def classify_batch_of_items(
                     )
                     continue
 
+                now = datetime.now(timezone.utc)
+
                 classified_entries.append(
                     Classification(
                         detection_id=detections_batch[idx].id_detection,
@@ -269,6 +273,7 @@ def classify_batch_of_items(
                         pipeline_batch_item=id_pipeline_batch_item,
                         scan_filename=filenames_batch[idx],
                         pred_conf=pred_conf,
+                        created=now,
                     )
                 )
 
@@ -287,7 +292,7 @@ def classify_batch_of_items(
 
         # Clear GPU cache and run GC
         start_gpu = datetime.now()
-        with torch.cuda.device(int(cuda_device.replace("cuda:", ""))):
+        with torch.cuda.device(0):
             torch.cuda.empty_cache()
         gc.collect()
         end_gpu = datetime.now()
@@ -298,9 +303,9 @@ def classify_batch_of_items(
             f"{volume_barcode} | Crops: {n_crops} - "
             f"Failed crops: {failed_crops} - "
             f"Device: {cuda_device} - "
-            f"Preproc: {time_preproc} - "
-            f"Infer: {time_infer} - "
-            f"DB: {time_db} - "
+            f"Preprocessing: {time_preproc} - "
+            f"Inference: {time_infer} - "
+            f"DB write: {time_db} - "
             f"Clear GPU: {time_clear_gpu} - "
             f"Total: {time_preproc + time_infer + time_db + time_clear_gpu}"
         )
