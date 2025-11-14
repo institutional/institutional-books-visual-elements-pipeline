@@ -111,15 +111,14 @@ Helpful hack to manage multpiple processes on a single GPU while avoiding collis
 #
 # Dedupe Embeddings
 #
-PREFETCH_FACTOR_EMBED = 4
-""" 
-Sets the number of batches PyTocrh's DataLoader preloads for passing into the 
-embedding model
-"""
-NUM_WORKERS_EMBED = 64
-""" 
-Sets the number of workers that the dataloader uses
-"""
+DEDUPE_EMBEDDING_MODEL_REPO = "institutional/fork-of-original-repo"
+""" Name of the repo containing weights for the dedupe model. """
+DEDUPE_EMBEDDING_MODEL_FILEPATH = "sscd_disc_mixup.torchscript.pt"
+""" Filepath of the embeddings model within `DEDUPE_EMBEDDING_MODEL_REPO`. """
+
+DEDUPE_EMBEDDING_MODEL_REPO_OWNER = "institutional-data-initiative"
+
+DEDUPE_EMBEDDING_MODEL_REPO_BRANCH = "main"
 
 
 #
