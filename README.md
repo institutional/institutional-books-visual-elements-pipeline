@@ -34,6 +34,7 @@ The Institutional Data Initiative's pipeline for extracting, analyzing, and publ
 
 ### External dependencies
 - A [PostgreSQL database](https://www.postgresql.org/), which can be local or remote.
+  - pgvector extension
 - An S3-compatible storage bucket for storing intermediary outputs
 
 ### Other requirements
