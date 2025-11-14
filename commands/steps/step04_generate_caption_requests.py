@@ -1,111 +1,208 @@
-import json
-from typing import List, Dict, Tuple, Any, Optional
-import click
 import os
-from glob import glob
-import openai
+import json
 import base64
 import io
+from typing import List, Dict, Tuple, Any, Optional
+from datetime import datetime, timezone, timedelta
 from PIL import Image
+import openai
+import click
+from loguru import logger
+from more_itertools import chunked
+from models import PipelineBatchItem, Detection, IBVolume
+from const import CPUS_LIMIT, MAX_TOKENS_PER_DAY
 
 client = openai.OpenAI()
 
+from const import (
+    CAPTION_BATCH_DIR,
+    CAPTION_BATCH_SIZE,
+    CAPTION_MAX_FILE_MB,
+    CAPTION_MAX_IMG_DIM,
+    CAPTION_MAX_IMG_TOKENS,
+    CAPTIONS_TABLE,
+    CAPTION_TOKENS_TABLE,
+    CAPTION_MODEL_NAME,
+)
 
-click.command("request-captions")
+
+@click.command("step04-caption")
+@click.option("--id-pipeline-batch", type=int, required=True)
+def request_captions(id_pipeline_batch: int):
+    """
+    Generate OpenAI batch files for image (crop) captions with OCR and submit as jobs.
+    """
+    os.makedirs(CAPTION_BATCH_DIR, exist_ok=True)
+
+    # --- Aggregate instances to caption (Detection records for this batch with crops)
+    # Each detection should have: volume_id, scan_filename, bbox (to crop), and OCR text
+    query = (
+        Detection.select()
+        .join(PipelineBatchItem)
+        .where(PipelineBatchItem.pipeline_batch == id_pipeline_batch)
+        .order_by(PipelineBatchItem.id_pipeline_batch_item, Detection.id_detection)
+    )
+
+    caption_requests = []
+    token_counter = 0
+
+    logger.info(f"Generating caption jobs for {query.count()} crops (batch {id_pipeline_batch})")
+    for det in query:
+        # Get associated batch item and volume to retrieve text/lang
+        item = det.pipeline_batch_item
+        volume = item.ib_volume
+
+        # Get language from IBVolume metadata
+        try:
+            lang = json.loads(volume.metadata)["language_src"]
+        except Exception:
+            lang = "English"  # sensible fallback
+
+        # Get OCR text for scan/crop
+        ocr_filename = os.path.splitext(det.scan_filename)[0] + ".txt"
+        try:
+            context_text = item.data.texts.get(ocr_filename, "")
+            if not context_text:
+                logger.info(
+                    f"No OCR context for crop {det.scan_filename} (volume {volume.barcode}), using empty."
+                )
+        except Exception as e:
+            context_text = ""
+            logger.error(f"Error reading OCR for crop {det.scan_filename}: {e}")
+
+        # Get and crop image bytes from cache
+        try:
+            image_bytes = item.data.images[str(det.scan_filename)]
+            from models import Detection  # local to avoid circular import
+
+            scan_img = decode_image_bytes(image_bytes)
+            crop_img = det.crop(scan_img)
+        except Exception as e:
+            logger.warning(f"Failed to crop {det.scan_filename}: {e}")
+            continue
+
+        # Prepare image as base64
+        try:
+            img_b64 = base64_png_bytes(crop_img)
+        except Exception as e:
+            logger.warning(f"Failed to encode image for {det.scan_filename}: {e}")
+            continue
+
+        caption_requests.append(
+            {
+                "image_b64": img_b64,
+                "ocr_text": context_text,
+                "language": lang,
+                "batch_item_id": item.id_pipeline_batch_item,
+                "detection_id": det.id_detection,
+                "scan_filename": det.scan_filename,
+                "volume_barcode": volume.barcode,
+            }
+        )
+        token_counter += CAPTION_MAX_IMG_TOKENS
+
+    # --- Batch into chunked files; enforce OpenAI limits and daily token quota
+    today_tok = get_today_token_count()
+    if today_tok + token_counter > MAX_TOKENS_PER_DAY:
+        logger.error(
+            f"Token budget for today exceeded: planned {token_counter}, today {today_tok}, max {MAX_TOKENS_PER_DAY}"
+        )
+        raise click.ClickException("Would exceed MAX_TOKENS_PER_DAY")
+
+    add_token_count(token_counter)
+    batch_chunks = list(chunked(caption_requests, min(CAPTION_BATCH_SIZE, len(caption_requests))))
+    batch_file_paths = []
+
+    for i, batch in enumerate(batch_chunks):
+        # Write batch to JSONL as per create_batch_file spec.
+        batch_jsonl_fn = os.path.join(
+            CAPTION_BATCH_DIR, f"captions_batch_{id_pipeline_batch}_{i:04d}.jsonl"
+        )
+        with open(batch_jsonl_fn, "w", encoding="utf-8") as outfile:
+            for idx, req in enumerate(batch, 1):
+                system_message, user_messages = create_prompt(req["language"])
+                # Compose just like in create_batch_file
+                messages = (
+                    [system_message]
+                    + user_messages
+                    + [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": req["ocr_text"]},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/png;base64,{req['image_b64']}"
+                                    },
+                                },
+                            ],
+                        }
+                    ]
+                )
+                body = {
+                    "model": CAPTION_MODEL_NAME,
+                    "messages": messages,
+                    "max_tokens": CAPTION_MAX_IMG_TOKENS,
+                    "logprobs": True,
+                    "top_logprobs": 2,
+                    "temperature": 0,
+                }
+                obj = {
+                    "custom_id": f"{id_pipeline_batch}-{req['detection_id']}-{idx}",
+                    "method": "POST",
+                    "url": "/v1/chat/completions",
+                    "body": body,
+                }
+                outfile.write(json.dumps(obj, ensure_ascii=False) + "\n")
+        batch_file_paths.append(batch_jsonl_fn)
+        logger.info(f"Wrote {len(batch)} requests to {batch_jsonl_fn}")
+
+    # Submit the batches and log their openai batch IDs
+    # for batch_file in batch_file_paths:
+    #     batch = process_batch(batch_file, metadata={...})
+    #     TODO: Save batch info to log
 
 
-def request_captions():
-    # grab the text by using the institutional-books dataset
-    # grab language using the institutional-books dataset
-    # get batch of crops from cache using crop function
-    # create batch files using batch of image crops
-    # run process_batch() for each jsonl file
+def base64_png_bytes(ndarray_img) -> str:
+    # Convert np.array uint8 image to base64 PNG for OpenAI Batch format
+    img = Image.fromarray(ndarray_img)
+    # Resize for safety
+    img = resize_image(img, CAPTION_MAX_IMG_DIM)
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+
+def resize_image(image: Image.Image, max_dimension: int):
+    width, height = image.size
+    if width > max_dimension or height > max_dimension:
+        if width > height:
+            new_width = max_dimension
+            new_height = int(height * (max_dimension / width))
+        else:
+            new_height = max_dimension
+            new_width = int(width * (max_dimension / height))
+        return image.resize((new_width, new_height), Image.LANCZOS)
+    return image
+
+
+def get_today_token_count():
+    # TODO: Fetch sum(tokens) from caption_tokens where date is today
+    # return int
+    return 0  # stub
+
+
+def add_token_count(count):
+    # TODO: Write to DB or update your token ledger for the day
     pass
 
 
-def create_batch_file(
-    jsonl_filename: str,
-    image_urls: List[str],
-    page_texts: List[str],
-    language: str,
-    max_tokens: int,
-) -> int:
-    """
-    Creates a JSONL batch file given lists of images and page texts, composing
-    messages with the provided system/user messages and model parameters.
+def decode_image_bytes(image_bytes) -> Any:
+    import numpy as np, cv2
 
-    Args:
-        jsonl_filename: Path to output file (.jsonl).
-        image_urls: File with list of base64-encoded image strings (one per request).
-        page_texts: File with list of text content (one per request; must align with image_urls).
-        system_message: Dictionary configuring the system message.
-        user_messages: List of user message dicts (contextual messages).
-        max_tokens: Maximum tokens for each model request.
-    Returns:
-        The number of requests written to the file.
-    Raises:
-        ValueError: If input lists are not aligned.
-    """
-
-    system_message, user_messages = create_prompt(language)
-
-    image_urls = load_text_lines(image_urls)
-    page_texts = load_text_lines(page_texts)
-
-    if len(image_urls) != len(page_texts):
-        raise ValueError(
-            f"Length mismatch: {len(image_urls)} image_urls vs {len(page_texts)} page_texts"
-        )
-
-    model_name = "gpt-4.1-nano"
-    logprobs_value = True
-    top_logprobs_value = 2
-    temperature_value = 0
-
-    with open(jsonl_filename, "w", encoding="utf-8") as outfile:
-        for idx, (img, text) in enumerate(zip(image_urls, page_texts), start=1):
-            custom_id = f"request-{idx}"
-
-            image_and_text_message = {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": text},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img}"},
-                    },
-                ],
-            }
-
-            messages = [system_message] + user_messages + [image_and_text_message]
-
-            body = {
-                "model": model_name,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "logprobs": logprobs_value,
-                "top_logprobs": top_logprobs_value,
-                "temperature": temperature_value,
-            }
-
-            obj = {
-                "custom_id": custom_id,
-                "method": "POST",
-                "url": "/v1/chat/completions",
-                "body": body,
-            }
-
-            outfile.write(json.dumps(obj, ensure_ascii=False) + "\n")
-
-    click.echo(f"Wrote {len(image_urls)} requests to {jsonl_filename}")
-
-
-def load_text_lines(path):
-    """Loads a file as lines or as a JSON list."""
-    with open(path, "r", encoding="utf-8") as f:
-        f.seek(0)
-        f.seek(0)
-        return [line.rstrip("\n") for line in f]
+    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
+    return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)
 
 
 def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
@@ -118,8 +215,7 @@ def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     Returns:
         A tuple containing:
             - system_message: Dictionary with the system's context.
-            - user_messages: List of user message dictionaries, including
-              the caption instruction and the specified language.
+            - user_messages: List of user message dictionaries, including the caption instruction and the specified language.
     """
     system_message = {
         "role": "system",
@@ -156,168 +252,3 @@ def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     ]
 
     return system_message, user_messages
-
-
-def preprocess(input_dir, output_dir):
-    """Resize all images in INPUT_DIR and save to OUTPUT_DIR"""
-    os.makedirs(output_dir, exist_ok=True)
-    # Accept jpg and png images
-    patterns = [
-        os.path.join(input_dir, "*.jpg"),
-        os.path.join(input_dir, "*.jpeg"),
-        os.path.join(input_dir, "*.png"),
-    ]
-    image_paths = []
-    for pattern in patterns:
-        image_paths.extend(glob(pattern))
-    if not image_paths:
-        click.echo(f"No images found in {input_dir}")
-        return
-    for img_path in image_paths:
-        # Assuming process_image returns a PIL Image and new dimensions
-        new_image, new_dims = process_image(img_path, 1248)
-        filename = os.path.basename(img_path)
-        out_path = os.path.join(output_dir, filename)
-        new_image.save(out_path)
-        click.echo(f"Processed: {img_path} -> {out_path} ({new_dims[0]}x{new_dims[1]})")
-    click.echo("Processing complete.")
-
-
-def process_batch(batch_file, metadata):
-    """Upload BATCH_FILE and create a batch job with optional --metadata."""
-    # Handle metadata
-    metadata_dict = {}
-    if metadata:
-        try:
-            metadata_dict = json.loads(metadata)
-        except json.JSONDecodeError:
-            try:
-                with open(metadata, "r") as f:
-                    metadata_dict = json.load(f)
-            except Exception as e:
-                click.echo(f"Error with metadata: {e}")
-                return
-    # Upload the file
-    click.echo(f"Uploading {batch_file}...")
-    file = upload_batch(client, batch_file)
-    # Create the batch
-    click.echo("Creating batch...")
-    batch = create_batch(client, file, metadata=metadata_dict)
-    click.echo(f"Batch created: {batch}")
-
-
-def upload_batch(client: Any, batch_filename: str) -> Any:
-    """
-    Uploads a batch file to the API client.
-
-    Args:
-        client: The API client with file upload capability.
-        batch_filename: Path to the batch file to upload.
-
-    Returns:
-        The uploaded file object as returned by the client.
-    """
-    # Use context manager to ensure file is closed properly
-    with open(batch_filename, "rb") as file_obj:
-        batch_input_file = client.files.create(file=file_obj, purpose="batch")
-    return batch_input_file
-
-
-def create_batch(client: Any, batch_file: Any, metadata: Optional[Dict[str, str]] = None) -> Any:
-    """
-    Creates a new batch using the uploaded file's ID.
-
-    Args:
-        client: The API client.
-        batch_file: The uploaded batch file object (should have 'id').
-        metadata: Optional metadata dictionary.
-
-    Returns:
-        The created batch object.
-    """
-    if metadata is None:
-        metadata = {}
-    batch_input_file_id = batch_file.id
-    batch = client.batches.create(
-        input_file_id=batch_input_file_id,
-        endpoint="/v1/chat/completions",
-        completion_window="24h",
-        metadata=metadata,
-    )
-    print(f"Created batch: {batch}")
-    return batch
-
-
-def resize_image(image: Image.Image, max_dimension: int) -> Image.Image:
-    """
-    Resizes the given image so that its largest dimension is at most max_dimension,
-    maintaining the aspect ratio. Uses LANCZOS filter for resizing.
-
-    Args:
-        image: A PIL Image object.
-        max_dimension: The maximum width or height of the output image.
-
-    Returns:
-        A resized PIL Image object, or the original image if resizing is not needed.
-    """
-    width, height = image.size
-
-    if width > max_dimension or height > max_dimension:
-        if width > height:
-            new_width = max_dimension
-            new_height = int(height * (max_dimension / width))
-        else:
-            new_height = max_dimension
-            new_width = int(width * (max_dimension / height))
-        return image.resize((new_width, new_height), Image.LANCZOS)
-    return image
-
-
-def convert_to_png(image: Image.Image) -> bytes:
-    """
-    Converts the given PIL Image to PNG bytes.
-
-    Args:
-        image: A PIL Image object.
-
-    Returns:
-        PNG-encoded image bytes.
-    """
-    with io.BytesIO() as output:
-        image.save(output, format="PNG")
-        return output.getvalue()
-
-
-def process_image(path: str, max_size: int) -> Tuple[str, int]:
-    """
-    Opens an image file, checks if it's already a PNG and under the max size.
-    If not, resizes and converts it to PNG, then base64 encodes the image.
-
-    Args:
-        path: Path to the source image on disk.
-        max_size: Maximum allowed width or height of the image in pixels.
-
-    Returns:
-        A tuple of (base64-encoded PNG image string, original largest dimension).
-    """
-    with Image.open(path) as image:
-        width, height = image.size
-
-        # Attempt to determine mime type: get_format_mimetype is available in Pillow>=7.0.0
-        try:
-            mimetype = image.get_format_mimetype()
-        except AttributeError:
-            # Fallback: infer mimetype from format if needed
-            mimetype = Image.MIME.get(image.format, "application/octet-stream")
-
-        if mimetype == "image/png" and width <= max_size and height <= max_size:
-            # Image is already a PNG and fits size requirements; just read as is
-            with open(path, "rb") as file:
-                encoded_image = base64.b64encode(file.read()).decode("utf-8")
-            return encoded_image, max(width, height)
-        else:
-            # Resize and convert to PNG as necessary
-            resized_image = resize_image(image, max_size)
-            png_image = convert_to_png(resized_image)
-            encoded_image = base64.b64encode(png_image).decode("utf-8")
-            return encoded_image, max(width, height)
