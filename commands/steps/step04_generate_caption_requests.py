@@ -11,6 +11,8 @@ from loguru import logger
 from more_itertools import chunked
 from models import PipelineBatchItem, Detection, IBVolume
 from const import CPUS_LIMIT, MAX_TOKENS_PER_DAY
+from models.caption_token_ledger import CaptionTokenLedger
+from datetime import date
 
 client = openai.OpenAI()
 
@@ -188,14 +190,25 @@ def resize_image(image: Image.Image, max_dimension: int):
 
 
 def get_today_token_count():
-    # TODO: Fetch sum(tokens) from caption_tokens where date is today
-    # return int
-    return 0  # stub
+    today = date.today()
+    try:
+        rec, _ = CaptionTokenLedger.get_or_create(date=today)
+        return rec.tokens_used
+    except Exception as e:
+        logger.error(f"Could not get today's token usage: {e}")
+        return 0
 
 
 def add_token_count(count):
-    # TODO: Write to DB or update your token ledger for the day
-    pass
+    today = date.today()
+    # Use a transaction for concurrency-safety, and lock this row
+    db = CaptionTokenLedger._meta.database
+    with db.atomic():
+        rec, _ = CaptionTokenLedger.get_or_create(date=today)
+        query = CaptionTokenLedger.update(tokens_used=CaptionTokenLedger.tokens_used + count).where(
+            CaptionTokenLedger.date == today
+        )
+        query.execute()
 
 
 def decode_image_bytes(image_bytes) -> Any:
