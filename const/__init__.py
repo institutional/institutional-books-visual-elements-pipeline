@@ -126,6 +126,23 @@ DEDUPE_EMBEDDING_MODEL_REPO_BRANCH = "main"
 #
 MAX_TOKENS_PER_DAY = 14000000000
 
+CAPTION_BATCH_DIR = "caption_batches"
+CAPTION_BATCH_SIZE = 50000
+""" Max requests per OpenAI batch"""
+CAPTION_MAX_FILE_MB = 200
+""" Max file size per batch file"""
+CAPTION_MAX_IMG_DIM = 1024
+""" Max dimension to send to OpenAI (pixels)"""
+CAPTION_MAX_IMG_TOKENS = 4500
+""" Estimate for each image+text (depends on model)"""
+CAPTIONS_TABLE = "caption_batches"
+""" Where we log batch jobs"""
+CAPTION_TOKENS_TABLE = "caption_tokens"
+""" Where we log per-day tokens used"""
+CAPTION_MODEL_NAME = "gpt-4.1-nano"
+""" Model to generate captions"""
+
+
 #
 # Misc
 #
