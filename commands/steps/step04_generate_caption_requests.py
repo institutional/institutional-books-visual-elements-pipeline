@@ -31,7 +31,7 @@ from const import (
 CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
 
 
-@click.command("step04-caption")
+@click.command("step04-generate-caption-requests")
 @click.option("--id-pipeline-batch", type=int, required=True)
 @click.option(
     "--cpus-limit",
@@ -39,7 +39,7 @@ CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
     default=CPUS_LIMIT,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
-def request_captions(
+def step04_generate_caption_requests(
     id_pipeline_batch: int,
     cpus_limit: int,
 ):
