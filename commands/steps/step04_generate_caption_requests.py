@@ -12,11 +12,13 @@ from more_itertools import chunked
 from models import PipelineBatchItem, CaptionTokenLedger
 from datetime import date
 from iso639 import Lang
+import multiprocessing
+import threading
+from functools import partial
 
 client = openai.OpenAI()
 
 from const import (
-    CAPTION_BATCH_DIR,
     CAPTION_BATCH_SIZE,
     CAPTION_MAX_FILE_MB,
     CAPTION_MAX_IMG_DIM,
@@ -27,6 +29,8 @@ from const import (
     CAPTION_JSONL_FILES_PATH,
 )
 
+CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
+
 
 @click.command("step04-caption")
 @click.option("--id-pipeline-batch", type=int, required=True)
@@ -34,7 +38,7 @@ def request_captions(id_pipeline_batch: int):
     """
     Generate OpenAI batch files for image (crop) captions with OCR and submit as jobs.
     """
-    os.makedirs(CAPTION_BATCH_DIR, exist_ok=True)
+    os.makedirs(CAPTION_JSONL_FILES_PATH, exist_ok=True)
 
     # --- Aggregate instances to caption (Detection records for this batch with crops)
     # Each detection should have: volume_id, scan_filename, bbox (to crop), and OCR text
@@ -120,7 +124,7 @@ def request_captions(id_pipeline_batch: int):
     for i, batch in enumerate(batch_chunks):
         # Write batch to JSONL as per create_batch_file spec.
         batch_jsonl_fn = os.path.join(
-            CAPTION_BATCH_DIR, f"captions_batch_{id_pipeline_batch}_{i:04d}.jsonl"
+            CAPTION_JSONL_FILES_PATH, f"captions_batch_{id_pipeline_batch}_{i:04d}.jsonl"
         )
         with open(batch_jsonl_fn, "w", encoding="utf-8") as outfile:
             for idx, req in enumerate(batch, 1):
