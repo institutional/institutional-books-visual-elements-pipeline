@@ -120,6 +120,11 @@ DEDUPE_EMBEDDING_MODEL_REPO_OWNER = "institutional-data-initiative"
 
 DEDUPE_EMBEDDING_MODEL_REPO_BRANCH = "main"
 
+DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 0.5
+""" 
+Sets a delay before creating GPU processes. 
+Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
+"""
 
 #
 # Captioning
@@ -131,16 +136,13 @@ CAPTION_BATCH_SIZE = 50000
 """ Max requests per OpenAI batch"""
 CAPTION_MAX_FILE_MB = 200
 """ Max file size per batch file"""
-CAPTION_MAX_IMG_DIM = 1024
+CAPTION_MAX_IMG_DIM = 1248
 """ Max dimension to send to OpenAI (pixels)"""
 CAPTION_MAX_IMG_TOKENS = 4500
 """ Estimate for each image+text (depends on model)"""
-CAPTIONS_TABLE = "caption_batches"
-""" Where we log batch jobs"""
-CAPTION_TOKENS_TABLE = "caption_tokens"
-""" Where we log per-day tokens used"""
 CAPTION_MODEL_NAME = "gpt-4.1-nano"
 """ Model to generate captions"""
+CAPTION_JSONL_FILES_PATH = "jsonl_files/"
 
 
 #
