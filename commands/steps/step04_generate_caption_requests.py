@@ -9,10 +9,9 @@ import openai
 import click
 from loguru import logger
 from more_itertools import chunked
-from models import PipelineBatchItem, Detection, IBVolume
-from const import CPUS_LIMIT, MAX_TOKENS_PER_DAY
-from models.caption_token_ledger import CaptionTokenLedger
+from models import PipelineBatchItem, CaptionTokenLedger
 from datetime import date
+from iso639 import Lang
 
 client = openai.OpenAI()
 
@@ -22,9 +21,10 @@ from const import (
     CAPTION_MAX_FILE_MB,
     CAPTION_MAX_IMG_DIM,
     CAPTION_MAX_IMG_TOKENS,
-    CAPTIONS_TABLE,
-    CAPTION_TOKENS_TABLE,
     CAPTION_MODEL_NAME,
+    CPUS_LIMIT,
+    MAX_TOKENS_PER_DAY,
+    CAPTION_JSONL_FILES_PATH,
 )
 
 
@@ -57,8 +57,10 @@ def request_captions(id_pipeline_batch: int):
         # Get language from IBVolume metadata
         try:
             lang = json.loads(volume.metadata)["language_src"]
+            lang = Lang(lang)
+            lang = lang.name  # convert from ISO code to spelled out name
         except Exception:
-            lang = "English"  # sensible fallback
+            lang = "English"  # fallback to English
 
         # Get OCR text for scan/crop
         ocr_filename = os.path.splitext(det.scan_filename)[0] + ".txt"
@@ -160,10 +162,10 @@ def request_captions(id_pipeline_batch: int):
         batch_file_paths.append(batch_jsonl_fn)
         logger.info(f"Wrote {len(batch)} requests to {batch_jsonl_fn}")
 
-    # Submit the batches and log their openai batch IDs
+    # Submit the batches and log their openai batch IDs - commented out for testing
     # for batch_file in batch_file_paths:
     #     batch = process_batch(batch_file, metadata={...})
-    #     TODO: Save batch info to log
+    #     log batch info
 
 
 def base64_png_bytes(ndarray_img) -> str:
@@ -265,3 +267,68 @@ def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     ]
 
     return system_message, user_messages
+
+
+def process_batch(batch_file, metadata):
+    """Upload BATCH_FILE and create a batch job with optional --metadata."""
+    # Handle metadata
+    metadata_dict = {}
+    if metadata:
+        try:
+            metadata_dict = json.loads(metadata)
+        except json.JSONDecodeError:
+            try:
+                with open(metadata, "r") as f:
+                    metadata_dict = json.load(f)
+            except Exception as e:
+                click.echo(f"Error with metadata: {e}")
+                return
+    # Upload the file
+    click.echo(f"Uploading {batch_file}...")
+    file = upload_batch(client, batch_file)
+    # Create the batch
+    click.echo("Creating batch...")
+    batch = create_batch(client, file, metadata=metadata_dict)
+    click.echo(f"Batch created: {batch}")
+
+
+def upload_batch(client: Any, batch_filename: str) -> Any:
+    """
+    Uploads a batch file to the API client.
+
+    Args:
+        client: The API client with file upload capability.
+        batch_filename: Path to the batch file to upload.
+
+    Returns:
+        The uploaded file object as returned by the client.
+    """
+    # Use context manager to ensure file is closed properly
+    with open(batch_filename, "rb") as file_obj:
+        batch_input_file = client.files.create(file=file_obj, purpose="batch")
+    return batch_input_file
+
+
+def create_batch(client: Any, batch_file: Any, metadata: Optional[Dict[str, str]] = None) -> Any:
+    """
+    Creates a new batch using the uploaded file's ID.
+
+    Args:
+        client: The API client.
+        batch_file: The uploaded batch file object (should have 'id').
+        metadata: Optional metadata dictionary.
+
+    Returns:
+        The created batch object.
+    """
+    if metadata is None:
+        metadata = {}
+    batch_input_file_id = batch_file.id
+    batch = client.batches.create(
+        input_file_id=batch_input_file_id,
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        metadata=metadata,
+    )
+    print(f"Created batch: {batch}")
+    return batch
