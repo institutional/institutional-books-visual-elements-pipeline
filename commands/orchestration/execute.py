@@ -162,6 +162,16 @@ def execute(
             logger.info(
                 f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
             )
+            start = time.perf_counter()
+            # Step 4: Generate caption requests
+            if not has_crashed:
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step04_generate_caption_requests,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            logger.info(f"step04_generate_caption_requests took {time.perf_counter() - start:.2f}s")
 
             # Etc ...
 
