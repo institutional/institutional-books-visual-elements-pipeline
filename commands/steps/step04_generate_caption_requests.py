@@ -7,28 +7,23 @@ from PIL import Image
 import openai
 import click
 from loguru import logger
-from models import PipelineBatchItem, CaptionTokenLedger, Detection, IBVolume
-from datetime import date
+from models import PipelineBatchItem, Detection, IBVolume
 from iso639 import Lang
-import multiprocessing
 from functools import partial
 from more_itertools import chunked
 import os
+import multiprocessing
 
 client = openai.OpenAI()
 
 from const import (
-    CAPTION_BATCH_SIZE,
-    CAPTION_MAX_FILE_MB,
     CAPTION_MAX_IMG_DIM,
-    CAPTION_MAX_IMG_TOKENS,
+    CAPTION_MAX_TOKENS,
     CAPTION_MODEL_NAME,
-    CPUS_LIMIT,
-    MAX_TOKENS_PER_DAY,
+    CPUS_LIMIT_CAPTIONS,
     CAPTION_JSONL_FILES_PATH,
+    MAX_REQUESTS_PER_FILE,
 )
-
-CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
 
 
 @click.command("step04-generate-caption-requests")
@@ -36,7 +31,7 @@ CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
 @click.option(
     "--cpus-limit",
     type=int,
-    default=20,
+    default=CPUS_LIMIT_CAPTIONS,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
 def step04_generate_caption_requests(
@@ -48,6 +43,8 @@ def step04_generate_caption_requests(
     Enforces daily token limits and JSONL file size.
     """
     os.makedirs(CAPTION_JSONL_FILES_PATH, exist_ok=True)
+
+    # TODO: save batch in subfolder named based on id-pipeline-batch
 
     # Query all detections in this batch, group by volume barcode
 
@@ -70,21 +67,19 @@ def step04_generate_caption_requests(
 
     # Use multiprocessing to process per-volume
     ctx = multiprocessing.get_context("spawn")
-    manager = ctx.Manager()
-    shared_token = manager.Value("i", get_today_token_count())
-    lock = manager.Lock()  # Ensures token increments atomic
-
-    # Compose partial function for the pool
-    partial_fn = partial(
-        process_volume, id_pipeline_batch=id_pipeline_batch, shared_token=shared_token, lock=lock
-    )
 
     # Kick off the jobs
     pool = ctx.Pool(cpus_limit)
 
     jobs = []
     for barcode, dets in dets_by_volume.items():
-        jobs.append(pool.apply_async(partial_fn, args=(barcode, dets)))
+        jobs.append(
+            pool.apply_async(
+                process_volume,
+                args=(barcode, dets),
+                kwds={"id_pipeline_batch": id_pipeline_batch, "cpus_limit": cpus_limit},
+            )
+        )
     pool.close()
     pool.join()
 
@@ -97,11 +92,6 @@ def get_language(volume):
     except Exception:
         lang = "English"
     return lang
-
-
-def get_context_text(det, item):
-    ocr_filename = os.path.splitext(det.scan_filename)[0] + ".txt"
-    return item.data.texts.get(ocr_filename, "")
 
 
 def base64_png_bytes(ndarray_img) -> str:
@@ -123,27 +113,6 @@ def resize_image(image: Image.Image, max_dimension: int):
             new_width = int(width * (max_dimension / height))
         return image.resize((new_width, new_height), Image.LANCZOS)
     return image
-
-
-def get_today_token_count():
-    today = date.today()
-    try:
-        rec, _ = CaptionTokenLedger.get_or_create(date=today)
-        return rec.tokens_used
-    except Exception as e:
-        logger.error(f"Could not get today's token usage: {e}")
-        return 0
-
-
-def add_token_count(count):
-    today = date.today()
-    db = CaptionTokenLedger._meta.database
-    with db.atomic():
-        rec, _ = CaptionTokenLedger.get_or_create(date=today)
-        query = CaptionTokenLedger.update(tokens_used=CaptionTokenLedger.tokens_used + count).where(
-            CaptionTokenLedger.date == today
-        )
-        query.execute()
 
 
 def decode_image_bytes(image_bytes) -> Any:
@@ -189,7 +158,12 @@ def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     return system_message, user_messages
 
 
-def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
+def process_volume(
+    barcode,
+    dets,
+    id_pipeline_batch,
+    cpus_limit: int = 1,
+):
     item = dets[0].pipeline_batch_item
     volume = item.ib_volume
     lang = get_language(volume)
@@ -201,12 +175,17 @@ def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
     # Decode images
     image_bytes_by_filename = dict(list(item.data.images.items()))
     image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
+
+    # get context texts
+    texts_by_filename = dict(list(item.data.texts.items()))
+    texts_by_filename = {str(k): v for k, v in texts_by_filename.items()}
+
     used_filenames = set(str(det.scan_filename) for det in dets)
 
     loaded_images = {}
     from concurrent.futures import ThreadPoolExecutor, wait
 
-    with ThreadPoolExecutor(max_workers=8) as decode_executor:
+    with ThreadPoolExecutor(max_workers=cpus_limit) as decode_executor:
         futures = {}
         for fn in used_filenames:
             if fn not in image_bytes_by_filename:
@@ -223,17 +202,17 @@ def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
             except Exception:
                 logger.warning(f"Could not decode scan {barcode}.{fn}")
 
-    # Split into batches of size CAPTION_BATCH_SIZE
-    for batch_idx, dets_chunk in enumerate(chunked(dets, CAPTION_BATCH_SIZE)):
+    # Split into batches of size MAX_REQUESTS_PER_FILE
+    for batch_idx, dets_chunk in enumerate(chunked(dets, MAX_REQUESTS_PER_FILE)):
         jsonl_entries = []
-        jsonl_bytes = 0
         batch_captions = 0
         file_idx = batch_idx  # Will be incremented if file size hits limit
 
         for det in dets_chunk:
             # OCR/context
             try:
-                context_text = get_context_text(det, item)
+                filename = det.scan_filename.split(".")[0] + ".txt"
+                context_text = texts_by_filename[filename]
             except Exception:
                 context_text = ""
                 failed_captions += 1
@@ -276,7 +255,7 @@ def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
             body = {
                 "model": CAPTION_MODEL_NAME,
                 "messages": messages,
-                "max_tokens": CAPTION_MAX_IMG_TOKENS,
+                "max_tokens": CAPTION_MAX_TOKENS,
                 "logprobs": True,
                 "top_logprobs": 2,
                 "temperature": 0,
@@ -290,21 +269,8 @@ def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
 
             json_line = json.dumps(obj, ensure_ascii=False) + "\n"
             jsonl_entries.append(json_line)
-            jsonl_bytes += len(json_line.encode("utf-8"))
             batch_captions += 1
             n_captions += 1
-
-            # If adding the next would push over file size, dump so far
-            if jsonl_bytes >= CAPTION_MAX_JSONL_BYTES:
-                jsonl_fn = os.path.join(
-                    CAPTION_JSONL_FILES_PATH, f"captions_vol_{barcode}_{file_idx:04d}.jsonl"
-                )
-                with open(jsonl_fn, "w", encoding="utf-8") as outfile:
-                    outfile.writelines(jsonl_entries)
-                outfiles.append(jsonl_fn)
-                file_idx += 1
-                jsonl_entries = []
-                jsonl_bytes = 0
 
         # Write any remainder from this chunk
         if jsonl_entries:
@@ -314,25 +280,6 @@ def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
             with open(jsonl_fn, "w", encoding="utf-8") as outfile:
                 outfile.writelines(jsonl_entries)
             outfiles.append(jsonl_fn)
-
-    # ----- Enforce token daily limit safely -----
-    tokens_for_captions = n_captions * CAPTION_MAX_IMG_TOKENS
-    with lock:
-        if shared_token.value + tokens_for_captions > MAX_TOKENS_PER_DAY:
-            logger.error(
-                f"{barcode} | Would exceed MAX_TOKENS_PER_DAY. Skipping: {n_captions} captions."
-            )
-            failed_captions += n_captions
-            for fn in outfiles:
-                try:
-                    os.remove(fn)
-                except Exception:
-                    pass
-            outfiles = []
-            n_captions = 0
-        else:
-            shared_token.value += tokens_for_captions
-            add_token_count(tokens_for_captions)
 
     logger.info(
         f"{barcode} | n_captions: {n_captions} - jsonl_filename: {outfiles} - failed crops: {failed_crops} - failed_captions: {failed_captions}"
