@@ -8,3 +8,4 @@ from .embedding import Embedding
 from .imagehash import ImageHash
 from .caption_batch_log import CaptionBatchLog
 from .caption_token_ledger import CaptionTokenLedger
+from .openai_batch_item import OpenAIBatchObject
