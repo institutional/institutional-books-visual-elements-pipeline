@@ -2,18 +2,18 @@ import os
 import json
 import base64
 import io
-from typing import List, Dict, Tuple, Any, Optional
-from datetime import datetime, timezone, timedelta
+from typing import List, Dict, Tuple, Any
 from PIL import Image
 import openai
 import click
 from loguru import logger
-from models import PipelineBatchItem, CaptionTokenLedger, Detection
+from models import PipelineBatchItem, CaptionTokenLedger, Detection, IBVolume
 from datetime import date
 from iso639 import Lang
 import multiprocessing
 from functools import partial
 from more_itertools import chunked
+import os
 
 client = openai.OpenAI()
 
@@ -36,7 +36,7 @@ CAPTION_MAX_JSONL_BYTES = CAPTION_MAX_FILE_MB * 1024 * 1024
 @click.option(
     "--cpus-limit",
     type=int,
-    default=CPUS_LIMIT,
+    default=20,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
 def step04_generate_caption_requests(
@@ -50,14 +50,21 @@ def step04_generate_caption_requests(
     os.makedirs(CAPTION_JSONL_FILES_PATH, exist_ok=True)
 
     # Query all detections in this batch, group by volume barcode
+
     query = (
         Detection.select()
         .join(PipelineBatchItem)
+        .switch(Detection)
         .where(PipelineBatchItem.pipeline_batch == id_pipeline_batch)
         .order_by(PipelineBatchItem.id_pipeline_batch_item, Detection.id_detection)
+        .prefetch(PipelineBatchItem, IBVolume)
     )
+
+    detections = list(query)
+
     dets_by_volume = {}
-    for det in query:
+
+    for det in detections:
         vol = det.pipeline_batch_item.ib_volume
         dets_by_volume.setdefault(vol.barcode, []).append(det)
 
@@ -67,124 +74,6 @@ def step04_generate_caption_requests(
     shared_token = manager.Value("i", get_today_token_count())
     lock = manager.Lock()  # Ensures token increments atomic
 
-    def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
-        item = dets[0].pipeline_batch_item
-        volume = item.ib_volume
-        lang = get_language(volume)
-        outfiles = []
-        n_captions = 0
-        failed_crops = 0
-        failed_captions = 0
-
-        # Split into batches of size CAPTION_BATCH_SIZE
-        for batch_idx, dets_chunk in enumerate(chunked(dets, CAPTION_BATCH_SIZE)):
-            jsonl_entries = []
-            jsonl_bytes = 0
-            batch_captions = 0
-            file_idx = batch_idx  # Will be incremented if file size hits limit
-
-            for det in dets_chunk:
-                # OCR/context
-                try:
-                    context_text = get_context_text(det, item)
-                except Exception:
-                    context_text = ""
-                    failed_captions += 1
-                    continue
-
-                # Crop & encode image
-                try:
-                    image_bytes = item.data.images[str(det.scan_filename)]
-                    scan_img = decode_image_bytes(image_bytes)
-                    crop_img = det.crop(scan_img)
-                    img_b64 = base64_png_bytes(crop_img)
-                except Exception as e:
-                    logger.warning(f"Failed to crop/encode {det.scan_filename}: {e}")
-                    failed_crops += 1
-                    continue
-
-                # Compose JSONL item
-                system_message, user_messages = create_prompt(lang)
-                messages = (
-                    [system_message]
-                    + user_messages
-                    + [
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": context_text},
-                                {
-                                    "type": "image_url",
-                                    "image_url": {"url": f"data:image/png;base64,{img_b64}"},
-                                },
-                            ],
-                        }
-                    ]
-                )
-                body = {
-                    "model": CAPTION_MODEL_NAME,
-                    "messages": messages,
-                    "max_tokens": CAPTION_MAX_IMG_TOKENS,
-                    "logprobs": True,
-                    "top_logprobs": 2,
-                    "temperature": 0,
-                }
-                obj = {
-                    "custom_id": f"{id_pipeline_batch}-{det.id_detection}",
-                    "method": "POST",
-                    "url": "/v1/chat/completions",
-                    "body": body,
-                }
-                json_line = json.dumps(obj, ensure_ascii=False) + "\n"
-                jsonl_entries.append(json_line)
-                jsonl_bytes += len(json_line.encode("utf-8"))
-                batch_captions += 1
-                n_captions += 1
-
-                # If adding the next would push over file size, dump so far
-                if jsonl_bytes >= CAPTION_MAX_JSONL_BYTES:
-                    jsonl_fn = os.path.join(
-                        CAPTION_JSONL_FILES_PATH, f"captions_vol_{barcode}_{file_idx:04d}.jsonl"
-                    )
-                    with open(jsonl_fn, "w", encoding="utf-8") as outfile:
-                        outfile.writelines(jsonl_entries)
-                    outfiles.append(jsonl_fn)
-                    file_idx += 1
-                    jsonl_entries = []
-                    jsonl_bytes = 0
-
-            # Write any remainder from this chunk
-            if jsonl_entries:
-                jsonl_fn = os.path.join(
-                    CAPTION_JSONL_FILES_PATH, f"captions_vol_{barcode}_{file_idx:04d}.jsonl"
-                )
-                with open(jsonl_fn, "w", encoding="utf-8") as outfile:
-                    outfile.writelines(jsonl_entries)
-                outfiles.append(jsonl_fn)
-
-        # ----- Enforce token daily limit safely -----
-        tokens_for_captions = n_captions * CAPTION_MAX_IMG_TOKENS
-        with lock:
-            if shared_token.value + tokens_for_captions > MAX_TOKENS_PER_DAY:
-                logger.error(
-                    f"{barcode} | Would exceed MAX_TOKENS_PER_DAY. Skipping: {n_captions} captions."
-                )
-                failed_captions += n_captions
-                for fn in outfiles:
-                    try:
-                        os.remove(fn)
-                    except Exception:
-                        pass
-                outfiles = []
-                n_captions = 0
-            else:
-                shared_token.value += tokens_for_captions
-                add_token_count(tokens_for_captions)
-
-        logger.info(
-            f"{barcode} | n_captions: {n_captions} - jsonl_filename: {outfiles} - failed crops: {failed_crops} - failed_captions: {failed_captions}"
-        )
-
     # Compose partial function for the pool
     partial_fn = partial(
         process_volume, id_pipeline_batch=id_pipeline_batch, shared_token=shared_token, lock=lock
@@ -192,6 +81,7 @@ def step04_generate_caption_requests(
 
     # Kick off the jobs
     pool = ctx.Pool(cpus_limit)
+
     jobs = []
     for barcode, dets in dets_by_volume.items():
         jobs.append(pool.apply_async(partial_fn, args=(barcode, dets)))
@@ -299,68 +189,151 @@ def create_prompt(language: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     return system_message, user_messages
 
 
-# actually process in seperate script
+def process_volume(barcode, dets, id_pipeline_batch, shared_token, lock):
+    item = dets[0].pipeline_batch_item
+    volume = item.ib_volume
+    lang = get_language(volume)
+    outfiles = []
+    n_captions = 0
+    failed_crops = 0
+    failed_captions = 0
 
-# def process_batch(batch_file, metadata):
-#     """Upload BATCH_FILE and create a batch job with optional --metadata."""
-#     # Handle metadata
-#     metadata_dict = {}
-#     if metadata:
-#         try:
-#             metadata_dict = json.loads(metadata)
-#         except json.JSONDecodeError:
-#             try:
-#                 with open(metadata, "r") as f:
-#                     metadata_dict = json.load(f)
-#             except Exception as e:
-#                 click.echo(f"Error with metadata: {e}")
-#                 return
-#     # Upload the file
-#     click.echo(f"Uploading {batch_file}...")
-#     file = upload_batch(client, batch_file)
-#     # Create the batch
-#     click.echo("Creating batch...")
-#     batch = create_batch(client, file, metadata=metadata_dict)
-#     click.echo(f"Batch created: {batch}")
+    # Decode images
+    image_bytes_by_filename = dict(list(item.data.images.items()))
+    image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
+    used_filenames = set(str(det.scan_filename) for det in dets)
 
+    loaded_images = {}
+    from concurrent.futures import ThreadPoolExecutor, wait
 
-# def upload_batch(client: Any, batch_filename: str) -> Any:
-#     """
-#     Uploads a batch file to the API client.
+    with ThreadPoolExecutor(max_workers=8) as decode_executor:
+        futures = {}
+        for fn in used_filenames:
+            if fn not in image_bytes_by_filename:
+                logger.warning(
+                    f"Missing image bytes for scan {barcode}.{fn} - skipping this scan in captioning"
+                )
+                continue
+            futures[decode_executor.submit(decode_image_bytes, image_bytes_by_filename[fn])] = fn
+        done, _ = wait(futures)
+        for future in done:
+            fn = futures[future]
+            try:
+                loaded_images[fn] = future.result()
+            except Exception:
+                logger.warning(f"Could not decode scan {barcode}.{fn}")
 
-#     Args:
-#         client: The API client with file upload capability.
-#         batch_filename: Path to the batch file to upload.
+    # Split into batches of size CAPTION_BATCH_SIZE
+    for batch_idx, dets_chunk in enumerate(chunked(dets, CAPTION_BATCH_SIZE)):
+        jsonl_entries = []
+        jsonl_bytes = 0
+        batch_captions = 0
+        file_idx = batch_idx  # Will be incremented if file size hits limit
 
-#     Returns:
-#         The uploaded file object as returned by the client.
-#     """
-#     # Use context manager to ensure file is closed properly
-#     with open(batch_filename, "rb") as file_obj:
-#         batch_input_file = client.files.create(file=file_obj, purpose="batch")
-#     return batch_input_file
+        for det in dets_chunk:
+            # OCR/context
+            try:
+                context_text = get_context_text(det, item)
+            except Exception:
+                context_text = ""
+                failed_captions += 1
+                continue
 
+            # Look up scanned image via filename
+            scan_img = loaded_images.get(str(det.scan_filename))
+            if scan_img is None:
+                logger.warning(f"Decoded image missing for {barcode}.{det.scan_filename}")
+                failed_crops += 1
+                continue
 
-# def create_batch(client: Any, batch_file: Any, metadata: Optional[Dict[str, str]] = None) -> Any:
-#     """
-#     Creates a new batch using the uploaded file's ID.
+            # Crop & encode image
+            try:
+                crop_img = det.crop(scan_img)
+                img_b64 = base64_png_bytes(crop_img)
+            except Exception as e:
+                logger.warning(f"Failed to crop/encode {det.scan_filename}: {e}")
+                failed_crops += 1
+                continue
 
-#     Args:
-#         client: The API client.
-#         batch_file: The uploaded batch file object (should have 'id').
-#         metadata: Optional metadata dictionary.
+            # Compose JSONL item (unchanged)
+            system_message, user_messages = create_prompt(lang)
+            messages = (
+                [system_message]
+                + user_messages
+                + [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": context_text},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                            },
+                        ],
+                    }
+                ]
+            )
+            body = {
+                "model": CAPTION_MODEL_NAME,
+                "messages": messages,
+                "max_tokens": CAPTION_MAX_IMG_TOKENS,
+                "logprobs": True,
+                "top_logprobs": 2,
+                "temperature": 0,
+            }
+            obj = {
+                "custom_id": f"{id_pipeline_batch}-{det.id_detection}",
+                "method": "POST",
+                "url": "/v1/chat/completions",
+                "body": body,
+            }
 
-#     Returns:
-#         The created batch object.
-#     """
-#     if metadata is None:
-#         metadata = {}
-#     batch_input_file_id = batch_file.id
-#     batch = client.batches.create(
-#         input_file_id=batch_input_file_id,
-#         endpoint="/v1/chat/completions",
-#         completion_window="24h",
-#         metadata=metadata,
-#     )
-#     print(f"Created batch: {batch}")
-#     return batch
+            json_line = json.dumps(obj, ensure_ascii=False) + "\n"
+            jsonl_entries.append(json_line)
+            jsonl_bytes += len(json_line.encode("utf-8"))
+            batch_captions += 1
+            n_captions += 1
+
+            # If adding the next would push over file size, dump so far
+            if jsonl_bytes >= CAPTION_MAX_JSONL_BYTES:
+                jsonl_fn = os.path.join(
+                    CAPTION_JSONL_FILES_PATH, f"captions_vol_{barcode}_{file_idx:04d}.jsonl"
+                )
+                with open(jsonl_fn, "w", encoding="utf-8") as outfile:
+                    outfile.writelines(jsonl_entries)
+                outfiles.append(jsonl_fn)
+                file_idx += 1
+                jsonl_entries = []
+                jsonl_bytes = 0
+
+        # Write any remainder from this chunk
+        if jsonl_entries:
+            jsonl_fn = os.path.join(
+                CAPTION_JSONL_FILES_PATH, f"captions_vol_{barcode}_{file_idx:04d}.jsonl"
+            )
+            with open(jsonl_fn, "w", encoding="utf-8") as outfile:
+                outfile.writelines(jsonl_entries)
+            outfiles.append(jsonl_fn)
+
+    # ----- Enforce token daily limit safely -----
+    tokens_for_captions = n_captions * CAPTION_MAX_IMG_TOKENS
+    with lock:
+        if shared_token.value + tokens_for_captions > MAX_TOKENS_PER_DAY:
+            logger.error(
+                f"{barcode} | Would exceed MAX_TOKENS_PER_DAY. Skipping: {n_captions} captions."
+            )
+            failed_captions += n_captions
+            for fn in outfiles:
+                try:
+                    os.remove(fn)
+                except Exception:
+                    pass
+            outfiles = []
+            n_captions = 0
+        else:
+            shared_token.value += tokens_for_captions
+            add_token_count(tokens_for_captions)
+
+    logger.info(
+        f"{barcode} | n_captions: {n_captions} - jsonl_filename: {outfiles} - failed crops: {failed_crops} - failed_captions: {failed_captions}"
+    )
