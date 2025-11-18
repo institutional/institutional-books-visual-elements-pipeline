@@ -130,19 +130,25 @@ Helpful hack to manage multpiple processes on a single GPU while avoiding collis
 # Captioning
 #
 MAX_TOKENS_PER_DAY = 14000000000
-
-CAPTION_BATCH_DIR = "caption_batches"
-CAPTION_BATCH_SIZE = 50000
-""" Max requests per OpenAI batch"""
-CAPTION_MAX_FILE_MB = 200
-""" Max file size per batch file"""
+""" Daily token limit for OpenAI batches."""
 CAPTION_MAX_IMG_DIM = 1248
 """ Max dimension to send to OpenAI (pixels)"""
-CAPTION_MAX_IMG_TOKENS = 4500
-""" Estimate for each image+text (depends on model)"""
+CAPTION_MAX_TOKENS = 100
+""" Max tokens for model to produce"""
 CAPTION_MODEL_NAME = "gpt-4.1-nano"
 """ Model to generate captions"""
-CAPTION_JSONL_FILES_PATH = "jsonl_files/"
+CAPTION_JSONL_FILES_PATH = "caption_jsonl_files/"
+"""WHere to store the jsonl files (temp storage)"""
+MAX_REQUESTS_PER_FILE = 5
+""" Max requests per OpenAI batch. 
+Note: make sure that this produces files less than the size limit (as of Nov 2025, limit is set at 
+20 MB per jsonl batch file)"""
+# CAPTION_MAX_FILES_PROCESS_PER_DAY = 800000
+CAPTION_MAX_FILES_PROCESS_PER_DAY = 500
+""" Max requests per day. 
+[CAPTION_MAX_FILES_PROCESS_PER_DAY * (avg tokens / input jsonl file)] should be less than the daily token limit"""
+CPUS_LIMIT_CAPTIONS = 50
+CAPTION_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
 
 #
