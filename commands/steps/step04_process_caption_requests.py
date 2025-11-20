@@ -27,6 +27,7 @@ from const import (
     CAPTION_MAX_REQUESTS,
     OPENAI_REQUEST_TIMEOUT,
     MAX_OPENAI_CONCURRENT_REQUESTS,
+    CAPTION_REQUEST_RETRY_ATTEMPTS,
 )
 import openai
 from openai import APITimeoutError
