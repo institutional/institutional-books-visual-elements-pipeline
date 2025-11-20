@@ -144,12 +144,27 @@ MAX_REQUESTS_PER_FILE = 5
 Note: make sure that this produces files less than the size limit (as of Nov 2025, limit is set at 
 20 MB per jsonl batch file)"""
 # CAPTION_MAX_FILES_PROCESS_PER_DAY = 800000
-CAPTION_MAX_FILES_PROCESS_PER_DAY = 500
+CAPTION_MAX_FILES_PROCESS_PER_DAY = 100
 """ Max requests per day. 
 [CAPTION_MAX_FILES_PROCESS_PER_DAY * (avg tokens / input jsonl file)] should be less than the daily token limit"""
-CPUS_LIMIT_CAPTIONS = 50
+CPUS_LIMIT_CAPTIONS = 175
 CAPTION_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
+CAPTION_MODEL_TEMPERATURE = 0
+CAPTION_TOP_LOGPROBS = 2
+CAPTION_MAX_REQUESTS = 1000
+"""For budget reasons"""
+OPENAI_REQUEST_TIMEOUT = 20.0
+
+MAX_OPENAI_CONCURRENT_REQUESTS = 175
+
+CAPTION_REQUEST_RETRY_ATTEMPTS = 1
+
+
+#
+# Storage
+#
+BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
 #
 # Misc
