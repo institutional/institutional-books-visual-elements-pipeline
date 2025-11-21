@@ -132,36 +132,36 @@ def execute(
                 pipeline_batch=pipeline_batch,
             )
 
-            # # Step 1: Extraction
-            # if not has_crashed:
-            #     has_crashed = not execute_batch_level_step(
-            #         step_fn=commands.steps.step01_detect,
-            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-            #         pipeline_run=pipeline_run,
-            #         pipeline_batch=pipeline_batch,
-            #     )
-            # start = time.perf_counter()
-            # # Step 2: Classification
-            # if not has_crashed:
-            #     has_crashed = not execute_batch_level_step(
-            #         step_fn=commands.steps.step02_classify,
-            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-            #         pipeline_run=pipeline_run,
-            #         pipeline_batch=pipeline_batch,
-            #     )
-            # logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
-            # start = time.perf_counter()
-            # # Step 3: Embeddings
-            # if not has_crashed:
-            #     has_crashed = not execute_batch_level_step(
-            #         step_fn=commands.steps.step03_generate_dedupe_embeddings,
-            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-            #         pipeline_run=pipeline_run,
-            #         pipeline_batch=pipeline_batch,
-            #     )
-            # logger.info(
-            #     f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
-            # )
+            # Step 1: Extraction
+            if not has_crashed:
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step01_detect,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            start = time.perf_counter()
+            # Step 2: Classification
+            if not has_crashed:
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step02_classify,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
+            start = time.perf_counter()
+            # Step 3: Embeddings
+            if not has_crashed:
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step03_generate_dedupe_embeddings,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            logger.info(
+                f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
+            )
             start = time.perf_counter()
             # Step 4: Send caption requests to OpenAI
             if not has_crashed:
@@ -172,6 +172,16 @@ def execute(
                     pipeline_batch=pipeline_batch,
                 )
             logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
+            start = time.perf_counter()
+            # Step 4: Send caption requests to OpenAI
+            if not has_crashed:
+                has_crashed = not execute_batch_level_step(
+                    step_fn=commands.steps.step05_store,
+                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+                    pipeline_run=pipeline_run,
+                    pipeline_batch=pipeline_batch,
+                )
+            logger.info(f"step05_store took {time.perf_counter() - start:.2f}s")
 
             # Etc ...
 
