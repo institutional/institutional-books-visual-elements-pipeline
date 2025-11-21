@@ -28,6 +28,7 @@ from const import (
     OPENAI_REQUEST_TIMEOUT,
     MAX_OPENAI_CONCURRENT_REQUESTS,
     CAPTION_REQUEST_RETRY_ATTEMPTS,
+    CPUS_LIMIT,
 )
 import openai
 from openai import APITimeoutError
@@ -41,7 +42,7 @@ client = openai.OpenAI()
 @click.option(
     "--cpus-limit",
     type=int,
-    default=CPUS_LIMIT_CAPTIONS,
+    default=CPUS_LIMIT,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
 def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):

@@ -1,16 +1,6 @@
-# NOTE:
-# This is the last item of the batch-level steps series.
-#
-# Because every step after that is dataset-scale and will not have easy access to scans,
-# the goal of this step would be to store intermediary objects to remote storage for easy access.
-#
-# In that case, we want to store crops on R2:
-# - `bucket/crops/{id_pipeline_batch_item}/{barcode}/{filename}_{detection_id}.png`
-#
-# We should keep track of these crops and their properties in the database so they're easy to retrieve and analyze.
-
 import io
 import traceback
+import tarfile
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 import click
@@ -30,7 +20,7 @@ from const import BUCKET_NAME, CPUS_LIMIT
 @click.option(
     "--cpus-limit",
     type=int,
-    default=175,
+    default=CPUS_LIMIT,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
 def step05_store(
@@ -133,8 +123,8 @@ def store_batch_of_items(item_ids: list[int], cpus_limit: int):
                     logger.warning(f"{barcode}: Failed to decode {fn}")
         time_decode = datetime.now() - start_decode
 
-        # Create crops and prepare upload tasks
-        crop_upload_tasks = []
+        # Create crops and collect them for tar.gz
+        crops_data = []  # List of (filename_in_tar, crop_array)
         failed_crops = 0
 
         for det in dets:
@@ -145,55 +135,34 @@ def store_batch_of_items(item_ids: list[int], cpus_limit: int):
             try:
                 crop = det.crop(img)
 
-                # Generate S3 key path
-                # Format: {id_pipeline_batch_item}/{barcode}/{filename}_{detection_id}.png
+                # Generate filename for inside the tar: {filename}_{detection_id}.png
                 scan_base = det.scan_filename.rsplit(".", 1)[0]  # Remove extension
-                s3_key = (
-                    f"crops/{id_pipeline_batch_item}/{barcode}/{scan_base}_{det.id_detection}.png"
-                )
+                filename_in_tar = f"{scan_base}_{det.id_detection}.png"
 
-                crop_upload_tasks.append((det.id_detection, crop, s3_key))
+                crops_data.append((filename_in_tar, crop))
 
             except Exception as e:
                 logger.warning(f"{barcode}: Failed to crop detection {det.id_detection}: {e}")
                 failed_crops += 1
 
-        if not crop_upload_tasks:
+        if not crops_data:
             logger.info(f"{barcode}: All crops failed.")
             continue
 
-        # Upload crops in parallel
+        # Create tar.gz file with all crops
         start_upload = datetime.now()
-        uploaded_count = 0
-        failed_uploads = 0
+        s3_key = f"crops/{id_pipeline_batch_item}/{barcode}.tar.gz"
 
-        with ThreadPoolExecutor(max_workers=cpus_limit) as upload_pool:
-            upload_futures = {
-                upload_pool.submit(upload_crop_to_s3, s3_client, crop, s3_key, BUCKET_NAME): (
-                    det_id,
-                    s3_key,
+        try:
+            success = create_and_upload_tarball(s3_client, crops_data, s3_key, BUCKET_NAME)
+            if success:
+                logger.info(
+                    f"{barcode} | Uploaded: {len(crops_data)} crops in tar.gz | Failed crops: {failed_crops} | Decode time: {time_decode} | Upload time: {datetime.now() - start_upload}"
                 )
-                for det_id, crop, s3_key in crop_upload_tasks
-            }
-
-            for fut in as_completed(upload_futures):
-                det_id, s3_key = upload_futures[fut]
-                try:
-                    success = fut.result()
-                    if success:
-                        uploaded_count += 1
-                    else:
-                        failed_uploads += 1
-                        logger.warning(f"{barcode}: Failed to upload detection {det_id}")
-                except Exception as e:
-                    failed_uploads += 1
-                    logger.warning(f"{barcode}: Exception uploading detection {det_id}: {e}")
-
-        time_upload = datetime.now() - start_upload
-
-        logger.info(
-            f"{barcode} | Uploaded: {uploaded_count} | Failed crops: {failed_crops} | Failed uploads: {failed_uploads} | Decode time: {time_decode} | Upload time: {time_upload}"
-        )
+            else:
+                logger.error(f"{barcode}: Failed to upload tar.gz")
+        except Exception as e:
+            logger.error(f"{barcode}: Exception creating/uploading tar.gz: {e}")
 
     return True
 
@@ -204,13 +173,15 @@ def decode_image_bytes(image_bytes):
     return cv2.imdecode(buffer, cv2.IMREAD_COLOR)
 
 
-def upload_crop_to_s3(s3_client, crop_array, s3_key: str, bucket_name: str) -> bool:
+def create_and_upload_tarball(
+    s3_client, crops_data: list[tuple[str, np.ndarray]], s3_key: str, bucket_name: str
+) -> bool:
     """
-    Convert crop array to PNG and upload to S3.
+    Create a tar.gz file containing all crops and upload to S3.
 
     Args:
         s3_client: boto3 S3 client
-        crop_array: numpy array of the crop (OpenCV format, BGR)
+        crops_data: List of (filename, crop_array) tuples
         s3_key: S3 key path
         bucket_name: S3 bucket name
 
@@ -218,24 +189,39 @@ def upload_crop_to_s3(s3_client, crop_array, s3_key: str, bucket_name: str) -> b
         bool: True if successful, False otherwise
     """
     try:
-        # Convert BGR (OpenCV) to RGB (PIL)
-        crop_rgb = cv2.cvtColor(crop_array, cv2.COLOR_BGR2RGB)
+        # Create tar.gz in memory
+        tar_buffer = io.BytesIO()
 
-        # Convert to PIL Image
-        img = Image.fromarray(crop_rgb)
+        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+            for filename, crop_array in crops_data:
+                # Convert BGR (OpenCV) to RGB (PIL)
+                crop_rgb = cv2.cvtColor(crop_array, cv2.COLOR_BGR2RGB)
 
-        # Save to bytes buffer as PNG (full resolution, lossless)
-        buf = io.BytesIO()
-        img.save(buf, format="PNG", compress_level=6)  # compress_level 6 is good balance
-        buf.seek(0)
+                # Convert to PIL Image
+                img = Image.fromarray(crop_rgb)
+
+                # Save to bytes buffer as PNG
+                png_buffer = io.BytesIO()
+                img.save(png_buffer, format="PNG", compress_level=6)
+                png_bytes = png_buffer.getvalue()
+
+                # Add to tar
+                tarinfo = tarfile.TarInfo(name=filename)
+                tarinfo.size = len(png_bytes)
+                tarinfo.mtime = datetime.now().timestamp()
+                tar.addfile(tarinfo, io.BytesIO(png_bytes))
+
+        # Get the tar.gz bytes
+        tar_buffer.seek(0)
+        tar_bytes = tar_buffer.getvalue()
 
         # Upload to S3
         s3_client.put_object(
-            Bucket=bucket_name, Key=s3_key, Body=buf.getvalue(), ContentType="image/png"
+            Bucket=bucket_name, Key=s3_key, Body=tar_bytes, ContentType="application/gzip"
         )
 
         return True
 
     except Exception as e:
-        logger.error(f"Error uploading to {s3_key}: {e}")
+        logger.error(f"Error creating/uploading tar.gz to {s3_key}: {e}")
         return False
