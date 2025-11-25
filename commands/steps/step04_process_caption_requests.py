@@ -15,7 +15,7 @@ from more_itertools import chunked
 from iso639 import Lang
 
 from utils import get_db, process_db_write_batch
-from models import PipelineBatchItem, Detection, Caption
+from models import PipelineBatchItem, Detection, Caption, Classification
 
 from const import (
     CAPTION_MAX_IMG_DIM,
@@ -23,10 +23,8 @@ from const import (
     CAPTION_MODEL_TEMPERATURE,
     CAPTION_MAX_TOKENS,
     CAPTION_TOP_LOGPROBS,
-    CPUS_LIMIT_CAPTIONS,
     CAPTION_MAX_REQUESTS,
     OPENAI_REQUEST_TIMEOUT,
-    MAX_OPENAI_CONCURRENT_REQUESTS,
     CAPTION_REQUEST_RETRY_ATTEMPTS,
     CPUS_LIMIT,
 )
@@ -56,13 +54,15 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
     if processes_total > 1:
         per_task_cpus_limit = max(2, cpus_limit // 2)
 
-    # Select only items with detections
+    # Select only items with detections that have classifications where pred_class is not 2, 6, or 10
     eligible_query = (
         PipelineBatchItem.select(PipelineBatchItem)
         .where(
             (PipelineBatchItem.pipeline_batch == id_pipeline_batch)
             & PipelineBatchItem.id_pipeline_batch_item.in_(
                 Detection.select(Detection.pipeline_batch_item)
+                .join(Classification, on=(Detection.id_detection == Classification.detection))
+                .where(Classification.pred_class.not_in(["2", "6", "10"]))
             )
         )
         .distinct()
@@ -106,10 +106,16 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         volume = item.ib_volume
         barcode = volume.barcode
 
+        # Only get detections where pred_class is not 2, 6, or 10
         dets = (
             Detection.select()
-            .where(Detection.pipeline_batch_item == id_pipeline_batch_item)
+            .join(Classification, on=(Detection.id_detection == Classification.detection))
+            .where(
+                (Detection.pipeline_batch_item == id_pipeline_batch_item)
+                & Classification.pred_class.not_in(["2", "6", "10"])
+            )
             .order_by(Detection.id_detection)
+            .distinct()
         )
 
         if dets.count() == 0:
@@ -169,9 +175,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
 
         for batch in chunked(crop_records, max_batch):
 
-            max_openai_concurrent = MAX_OPENAI_CONCURRENT_REQUESTS  # tune based on rate limits
-
-            with ThreadPoolExecutor(max_workers=max_openai_concurrent) as api_pool:
+            with ThreadPoolExecutor(max_workers=cpus_limit) as api_pool:
                 future_to_det = {}
                 for det, crop in batch:
                     context_file = det.scan_filename.split(".")[0] + ".txt"
@@ -263,25 +267,45 @@ def base64_png_bytes(arr) -> str:
 
 
 def send_to_openai(input_blocks, id):
-    try:
-        response = client.responses.create(
-            model=CAPTION_MODEL_NAME,
-            input=input_blocks,
-            max_output_tokens=CAPTION_MAX_TOKENS,
-            temperature=CAPTION_MODEL_TEMPERATURE,
-            top_logprobs=CAPTION_TOP_LOGPROBS,
-            timeout=OPENAI_REQUEST_TIMEOUT,
-        )
-        for item in response.output:
-            for content in item.content:
-                if getattr(content, "type", None) in ("output_text", "summary_text"):
-                    return content.text.strip()
-    except APITimeoutError:
-        logger.info(f"OpenAI API request timed out for {id}.")
-        return False
-    except Exception as e:
-        logger.info(f"An error occurred for {id}: {e}")
-        return False
+    """Send request to OpenAI with retry logic"""
+    last_exception = None
+
+    for attempt in range(CAPTION_REQUEST_RETRY_ATTEMPTS):
+        try:
+            response = client.responses.create(
+                model=CAPTION_MODEL_NAME,
+                input=input_blocks,
+                max_output_tokens=CAPTION_MAX_TOKENS,
+                temperature=CAPTION_MODEL_TEMPERATURE,
+                top_logprobs=CAPTION_TOP_LOGPROBS,
+                timeout=OPENAI_REQUEST_TIMEOUT,
+            )
+            for item in response.output:
+                for content in item.content:
+                    if getattr(content, "type", None) in ("output_text", "summary_text"):
+                        return content.text.strip()
+        except APITimeoutError as e:
+            last_exception = e
+            logger.warning(
+                f"OpenAI API request timed out for {id} (attempt {attempt + 1}/{CAPTION_REQUEST_RETRY_ATTEMPTS})."
+            )
+            if attempt < CAPTION_REQUEST_RETRY_ATTEMPTS - 1:
+                time.sleep(2**attempt)  # Exponential backoff
+                continue
+        except Exception as e:
+            last_exception = e
+            logger.warning(
+                f"An error occurred for {id} (attempt {attempt + 1}/{CAPTION_REQUEST_RETRY_ATTEMPTS}): {e}"
+            )
+            if attempt < CAPTION_REQUEST_RETRY_ATTEMPTS - 1:
+                time.sleep(2**attempt)  # Exponential backoff
+                continue
+
+    # All retries failed
+    logger.error(
+        f"All {CAPTION_REQUEST_RETRY_ATTEMPTS} attempts failed for {id}. Last error: {last_exception}"
+    )
+    return False
 
 
 def build_instruction(language: str) -> str:
