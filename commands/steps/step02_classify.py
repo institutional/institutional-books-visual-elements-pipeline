@@ -22,6 +22,7 @@ from const import (
     CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY,
     CUDA_GPUS,
     CPUS_LIMIT,
+    CLASSIFICATION_MAX_BATCH,
 )
 
 
@@ -219,9 +220,7 @@ def classify_batch_of_items(
             logger.info(f"{volume_barcode}: All crops failed, skipping.")
             continue
 
-        # Augment with classification
-        max_batch = 16  # safety: don't overload GPU with too many big crops - TODO: check what optimal max_batch should be
-        crop_batches = list(chunked(crop_image_records, max_batch))
+        crop_batches = list(chunked(crop_image_records, CLASSIFICATION_MAX_BATCH))
 
         for batch in crop_batches:
             detections_batch, images_batch, filenames_batch = zip(*batch)
@@ -231,7 +230,6 @@ def classify_batch_of_items(
             results = model(
                 list(images_batch),
                 imgsz=CLASSIFICATION_MODEL_IMGSZ,
-                conf=CLASSIFICATION_MODEL_CONF,
                 device=device,
                 verbose=False,
             )
@@ -253,6 +251,7 @@ def classify_batch_of_items(
                 pred_conf = None
                 if hasattr(probs, "data"):
                     pred_conf = float(probs.data[pred_idx])
+                    # TODO: if pred_conf < CLASSIFICATION_MODEL_CONF, pred_class = 0
                 elif hasattr(probs, "__getitem__"):
                     try:
                         pred_conf = float(probs[pred_idx])
