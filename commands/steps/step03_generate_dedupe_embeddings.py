@@ -12,20 +12,17 @@ import numpy as np
 from more_itertools import chunked
 import imagehash
 
-from utils import get_db, process_db_write_batch
+from utils import get_db, process_db_write_batch, get_s3_client
 from models import PipelineBatchItem, Detection, Embedding, ImageHash
 
 from const import (
-    DEDUPE_EMBEDDING_MODEL_REPO,
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
-    DEDUPE_EMBEDDING_MODEL_REPO_OWNER,
-    DEDUPE_EMBEDDING_MODEL_REPO_BRANCH,
+    DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
     DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY,
     CUDA_GPUS,
     CPUS_LIMIT,
+    BUCKET_NAME,
 )
-import requests
-import os
 
 
 @click.command("step03-embed")
@@ -64,16 +61,12 @@ def step03_generate_dedupe_embeddings(
     if processes_total > 1:
         per_task_cpus_limit = max(2, per_task_cpus_limit // 2)
 
-    local_model_path = Path("pretrained", os.path.basename(DEDUPE_EMBEDDING_MODEL_FILEPATH))
+    # Download model BEFORE spawning processes to avoid race conditions
+    local_model_path = DEDUPE_EMBEDDING_MODEL_FILEPATH
     if not local_model_path.exists():
-        logger.info(f"Downloading TorchScript model from GitHub ...")
-        download_github_file(
-            repo_owner=DEDUPE_EMBEDDING_MODEL_REPO_OWNER,
-            repo_name=DEDUPE_EMBEDDING_MODEL_REPO,
-            file_path=DEDUPE_EMBEDDING_MODEL_FILEPATH,
-            branch=DEDUPE_EMBEDDING_MODEL_REPO_BRANCH,
-            destination_path=local_model_path,
-        )
+        logger.info(f"Downloading TorchScript model from S3 Storage...")
+        download_model()
+        logger.info(f"✓ Model downloaded and verified successfully")
     else:
         logger.info(f"Model file found at {local_model_path}, skipping download.")
     model_filepath = local_model_path
@@ -289,17 +282,71 @@ def decode_image_bytes(image_bytes) -> np.ndarray:
     return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)
 
 
-def download_github_file(repo_owner, repo_name, file_path, branch="main", destination_path=None):
-    if destination_path is None:
-        destination_path = os.path.basename(file_path)
-    raw_url = f"https://raw.githubusercontent.com/{repo_owner}/{repo_name}/{branch}/{file_path}"
-    response = requests.get(raw_url)
-    if response.status_code == 200:
-        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
-        with open(destination_path, "wb") as f:
-            f.write(response.content)
-        logger.info(f"File '{file_path}' downloaded to '{destination_path}' successfully.")
-    else:
-        raise Exception(
-            f"Failed to download file. Status code: {response.status_code}\nURL was: {raw_url}"
+def download_model():
+    s3 = get_s3_client("OUTPUT")
+
+    # Ensure the parent directory exists
+    DEDUPE_EMBEDDING_MODEL_FILEPATH.parent.mkdir(parents=True, exist_ok=True)
+
+    # Download to a temporary file first, then rename (atomic operation)
+    temp_filepath = DEDUPE_EMBEDDING_MODEL_FILEPATH.with_suffix(".pt.tmp")
+
+    # Construct the full S3 key for the model file
+    s3_key = DEDUPE_EMBEDDING_MODEL_STORAGE_PATH
+    if not s3_key.endswith(".pt"):
+        s3_key = f"{s3_key.rstrip('/')}/sscd_disc_mixup.torchscript.pt"
+
+    try:
+        # Remove any existing files
+        if temp_filepath.exists():
+            temp_filepath.unlink()
+        if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
+            DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
+
+        # First, check if the object exists and get its metadata
+        click.echo(f"  Checking S3 object: {s3_key}")
+        try:
+            head_response = s3.head_object(Bucket=BUCKET_NAME, Key=s3_key)
+            expected_size = head_response["ContentLength"]
+            click.echo(f"  Expected file size: {expected_size:,} bytes")
+
+            if expected_size < 1_000_000:
+                raise RuntimeError(
+                    f"S3 object is too small ({expected_size} bytes), likely not a valid model"
+                )
+        except s3.exceptions.NoSuchKey:
+            logger.error(f"S3 object not found: s3://{BUCKET_NAME}/{s3_key}")
+            raise
+        except Exception as e:
+            logger.error(f"Error checking S3 object: {e}")
+            raise
+
+        # Download the file
+        click.echo(f"  Downloading {s3_key} from bucket {BUCKET_NAME}...")
+        s3.download_file(BUCKET_NAME, s3_key, str(temp_filepath))
+
+        # Verify file size matches
+        actual_size = temp_filepath.stat().st_size
+        click.echo(f"  Downloaded {actual_size:,} bytes")
+
+        if actual_size != expected_size:
+            raise RuntimeError(
+                f"File size mismatch: expected {expected_size:,} bytes, got {actual_size:,} bytes"
+            )
+
+        # Move temp file to final location (atomic)
+        temp_filepath.rename(DEDUPE_EMBEDDING_MODEL_FILEPATH)
+        click.echo(
+            f"  ✓ Model successfully downloaded and validated: {DEDUPE_EMBEDDING_MODEL_FILEPATH}"
         )
+
+    except Exception as e:
+        logger.error(f"Error downloading model from S3: {e}")
+        # Clean up temp file
+        if temp_filepath.exists():
+            temp_filepath.unlink()
+        # Clean up corrupted final file
+        if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
+            DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
+        raise
+
