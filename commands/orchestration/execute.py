@@ -162,16 +162,16 @@ def execute(
             # logger.info(
             #     f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
             # )
-            start = time.perf_counter()
-            # Step 4: Send caption requests to OpenAI
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step04_process_caption_requests,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
+            # start = time.perf_counter()
+            # # Step 4: Send caption requests to OpenAI
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step04_process_caption_requests,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
             # start = time.perf_counter()
             # # Step 4: Send caption requests to OpenAI
             # if not has_crashed:
@@ -219,12 +219,17 @@ def execute(
         logger.warning("Dataset-wide steps were skipped (--batch-processing-only)")
     else:
         # Run dedupe:
+        has_crashed = not execute_run_level_step(
+            step_fn=commands.steps.step06_dedupe_hash,
+            step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
+            pipeline_run=pipeline_run,
+        )
         # has_crashed = not execute_run_level_step(
         #     step_fn=commands.steps.step07_dedupe,
         #     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
         #     pipeline_run=pipeline_run,
         # )
-        pass
+
     #
     # End of run
     #
