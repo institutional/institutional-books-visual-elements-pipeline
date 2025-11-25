@@ -7,3 +7,4 @@ from .classification import Classification
 from .embedding import Embedding
 from .imagehash import ImageHash
 from .caption import Caption
+from .deduped_embedding import DedupedEmbedding
