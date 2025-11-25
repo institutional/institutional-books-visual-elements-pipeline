@@ -132,36 +132,36 @@ def execute(
                 pipeline_batch=pipeline_batch,
             )
 
-            # Step 1: Extraction
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step01_detect,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            start = time.perf_counter()
-            # Step 2: Classification
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step02_classify,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
-            start = time.perf_counter()
-            # Step 3: Embeddings
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step03_generate_dedupe_embeddings,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            logger.info(
-                f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
-            )
+            # # Step 1: Extraction
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step01_detect,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # start = time.perf_counter()
+            # # Step 2: Classification
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step02_classify,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
+            # start = time.perf_counter()
+            # # Step 3: Embeddings
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step03_generate_dedupe_embeddings,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # logger.info(
+            #     f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
+            # )
             start = time.perf_counter()
             # Step 4: Send caption requests to OpenAI
             if not has_crashed:
@@ -172,16 +172,16 @@ def execute(
                     pipeline_batch=pipeline_batch,
                 )
             logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
-            start = time.perf_counter()
-            # Step 4: Send caption requests to OpenAI
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step05_store,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            logger.info(f"step05_store took {time.perf_counter() - start:.2f}s")
+            # start = time.perf_counter()
+            # # Step 4: Send caption requests to OpenAI
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step05_store,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # logger.info(f"step05_store took {time.perf_counter() - start:.2f}s")
 
             # Etc ...
 
@@ -218,6 +218,12 @@ def execute(
     if batch_processing_only:
         logger.warning("Dataset-wide steps were skipped (--batch-processing-only)")
     else:
+        # Run dedupe:
+        # has_crashed = not execute_run_level_step(
+        #     step_fn=commands.steps.step07_dedupe,
+        #     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
+        #     pipeline_run=pipeline_run,
+        # )
         pass
     #
     # End of run
@@ -302,6 +308,50 @@ def execute_batch_level_step(
     # Stats
     end = datetime.now(timezone.utc)
     log_progress(f"{step_fn_name}", pipeline_run, pipeline_batch, time=(end - start))
+
+    return success
+
+
+def execute_run_level_step(
+    step_fn,
+    step_fn_kwargs: dict,
+    pipeline_run: PipelineRun,
+) -> bool:
+    """
+    Executes a run-level step.
+    Returns False if step exited with non-zero code.
+
+    NOTE:
+    - Runs GPU cache flushes and GC calls after each step
+    """
+    start = datetime.now(timezone.utc)
+    end = None
+    step_fn_name = f"{step_fn}"
+    success = True
+    ctx = click.get_current_context()
+
+    # Try to pretty print function name, depending on its nature
+    try:
+        step_fn_name = step_fn.name.split(".")[-1]
+    except:
+        step_fn_name = step_fn.__name__.split(".")[-1]
+
+    log_progress(f"{step_fn_name}", pipeline_run)
+
+    # Run step
+    try:
+        ctx.invoke(step_fn, **step_fn_kwargs)
+    except KeyboardInterrupt as err:
+        logger.error(f"{step_fn_name} was interrupted.")
+        success = False
+    except click.exceptions.Exit as err:
+        if err.exit_code != 0:
+            logger.error(f"{step_fn_name} exited with code {err.exit_code}.")
+            success = False
+
+    # Stats
+    end = datetime.now(timezone.utc)
+    log_progress(f"{step_fn_name}", pipeline_run, time=(end - start))
 
     return success
 
