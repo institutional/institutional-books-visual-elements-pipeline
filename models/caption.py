@@ -35,15 +35,12 @@ class Caption(Model):
 
     scan_filename = CharField(index=True)
 
-    # Bounding box associated with caption (optional)
-    bbox_xyxy = ArrayField(field_class=FloatField, dimensions=4, null=True)
-
     # The generated caption text
     caption = TextField()
 
-    # Confidence score for the caption (if your captioner provides one)
-    caption_conf = FloatField(null=True)
+    lang = CharField(max_length=50)
+
+    # Store the logprobs from the model response as JSON
+    logprobs = BinaryJSONField(null=True)
 
     created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
-
-    # TODO sperate out the caption logprobs, etc from the caption text
