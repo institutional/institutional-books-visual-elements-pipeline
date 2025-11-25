@@ -251,17 +251,22 @@ def classify_batch_of_items(
                 pred_conf = None
                 if hasattr(probs, "data"):
                     pred_conf = float(probs.data[pred_idx])
-                    # TODO: if pred_conf < CLASSIFICATION_MODEL_CONF, pred_class = 0
                 elif hasattr(probs, "__getitem__"):
                     try:
                         pred_conf = float(probs[pred_idx])
                     except Exception:
                         pass
+
                 if pred_conf is None:
                     logger.warning(
                         f"No pred_conf for crop {filenames_batch[idx]} on {volume_barcode}; skipping."
                     )
                     continue
+
+                # Apply confidence threshold - if below threshold, set to class 0
+                if pred_conf < CLASSIFICATION_MODEL_CONF:
+                    pred_class = "0"
+                    pred_idx = 0
 
                 now = datetime.now(timezone.utc)
 
