@@ -202,18 +202,25 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                     fut = api_pool.submit(send_to_openai, input_blocks, det.id_detection)
                     future_to_det[fut] = det
 
+                # Process results with logprobs
                 for fut in as_completed(future_to_det):
                     det = future_to_det[fut]
-                    caption_text = fut.result()
+                    result = fut.result()
 
-                    if not caption_text:
+                    if not result:
                         failed_captions += 1
+                        caption_text = ""
+                        logprobs_data = None
+                    else:
+                        caption_text = result["text"]
+                        logprobs_data = result["logprobs"]
 
                     captioned_entries.append(
                         Caption(
-                            detection_id=det.id_detection,
+                            detection=det.id_detection,
                             caption=caption_text,
                             lang=lang,
+                            logprobs=logprobs_data,
                             pipeline_batch_item=id_pipeline_batch_item,
                             scan_filename=det.scan_filename,
                             created=datetime.now(timezone.utc),
@@ -277,13 +284,22 @@ def send_to_openai(input_blocks, id):
                 input=input_blocks,
                 max_output_tokens=CAPTION_MAX_TOKENS,
                 temperature=CAPTION_MODEL_TEMPERATURE,
+                include=["message.output_text.logprobs"],
                 top_logprobs=CAPTION_TOP_LOGPROBS,
                 timeout=OPENAI_REQUEST_TIMEOUT,
             )
             for item in response.output:
                 for content in item.content:
                     if getattr(content, "type", None) in ("output_text", "summary_text"):
-                        return content.text.strip()
+                        # Extract and serialize logprobs if available
+                        logprobs_data = None
+                        if hasattr(content, "logprobs") and content.logprobs:
+                            logprobs_data = serialize_logprobs(content.logprobs)
+
+                        return {"text": content.text.strip(), "logprobs": logprobs_data}
+
+            return None
+
         except APITimeoutError as e:
             last_exception = e
             logger.warning(
@@ -305,7 +321,38 @@ def send_to_openai(input_blocks, id):
     logger.error(
         f"All {CAPTION_REQUEST_RETRY_ATTEMPTS} attempts failed for {id}. Last error: {last_exception}"
     )
-    return False
+    return None
+
+
+def serialize_logprobs(logprobs_list):
+    """
+    Serialize logprobs from OpenAI response to a JSON-compatible format.
+    """
+    if not logprobs_list:
+        return None
+
+    serialized = []
+    for logprob_item in logprobs_list:
+        item_dict = {
+            "token": logprob_item.token,
+            "bytes": logprob_item.bytes if hasattr(logprob_item, "bytes") else None,
+            "logprob": logprob_item.logprob,
+        }
+
+        # Serialize top_logprobs if present
+        if hasattr(logprob_item, "top_logprobs") and logprob_item.top_logprobs:
+            item_dict["top_logprobs"] = [
+                {
+                    "token": top.token,
+                    "bytes": top.bytes if hasattr(top, "bytes") else None,
+                    "logprob": top.logprob,
+                }
+                for top in logprob_item.top_logprobs
+            ]
+
+        serialized.append(item_dict)
+
+    return serialized
 
 
 def build_instruction(language: str) -> str:
