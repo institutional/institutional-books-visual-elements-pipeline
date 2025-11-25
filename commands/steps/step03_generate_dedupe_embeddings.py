@@ -243,7 +243,7 @@ def embed_batch_of_items(
                 )
                 # Hash (pHash)
                 crop_img_pil = Image.fromarray(crops_batch[idx].astype(np.uint8))
-                h = imagehash.phash(crop_img_pil, hash_size=8)
+                h = imagehash.phash(crop_img_pil, hash_size=12)
                 imagehash_val = str(h)  # hex string (e.g. 'feaf3452aaa21344')
                 imagehash_entries.append(
                     ImageHash(
@@ -349,4 +349,3 @@ def download_model():
         if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
             DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
         raise
-
