@@ -9,3 +9,4 @@ tmp/
 run.sh
 pretrained-models/
 peek_output/
+__pycache__/
