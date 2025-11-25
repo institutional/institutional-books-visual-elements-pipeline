@@ -97,7 +97,7 @@ CLASSIFICATION_MODEL_FILEPATH = "weights/best.pt"
 CLASSIFICATION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-CLASSIFICATION_MODEL_CONF = 0.25
+CLASSIFICATION_MODEL_CONF = 0.90
 """ `conf` value to pass to YOLO during inference. """
 
 CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY = float(
@@ -108,17 +108,16 @@ Sets a delay before creating GPU processes.
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
 
+CLASSIFICATION_MAX_BATCH = 16
+
 #
 # Dedupe Embeddings
 #
 DEDUPE_EMBEDDING_MODEL_REPO = "institutional/fork-of-original-repo"
 """ Name of the repo containing weights for the dedupe model. """
-DEDUPE_EMBEDDING_MODEL_FILEPATH = "sscd_disc_mixup.torchscript.pt"
+DEDUPE_EMBEDDING_MODEL_FILEPATH = Path("pretrained-models/sscd_disc_mixup.torchscript.pt")
 """ Filepath of the embeddings model within `DEDUPE_EMBEDDING_MODEL_REPO`. """
-
-DEDUPE_EMBEDDING_MODEL_REPO_OWNER = "institutional-data-initiative"
-
-DEDUPE_EMBEDDING_MODEL_REPO_BRANCH = "main"
+DEDUPE_EMBEDDING_MODEL_STORAGE_PATH = "pretrained-models"
 
 DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 0.5
 """ 
