@@ -34,7 +34,6 @@ class Classification(peewee.Model):
     )
 
     scan_filename = peewee.CharField(index=True)
-    bbox_xyxy = ArrayField(field_class=peewee.FloatField, dimensions=4, null=True)
     pred_idx = peewee.IntegerField()
     pred_class = peewee.CharField()
     pred_conf = peewee.FloatField()  # Confidence value for predicted class
