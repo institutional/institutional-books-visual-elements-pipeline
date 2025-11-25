@@ -147,7 +147,6 @@ Note: make sure that this produces files less than the size limit (as of Nov 202
 CAPTION_MAX_FILES_PROCESS_PER_DAY = 100
 """ Max requests per day. 
 [CAPTION_MAX_FILES_PROCESS_PER_DAY * (avg tokens / input jsonl file)] should be less than the daily token limit"""
-CPUS_LIMIT_CAPTIONS = 175
 CAPTION_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
 CAPTION_MODEL_TEMPERATURE = 0
