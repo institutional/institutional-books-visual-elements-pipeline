@@ -110,6 +110,17 @@ Helpful hack to manage multpiple processes on a single GPU while avoiding collis
 
 CLASSIFICATION_MAX_BATCH = 16
 
+CLASS_DICT = {
+    "0": "Other",
+    "1": "Image/Illustration",
+    "2": "Ex Libris/Decorative",
+    "3": "Advertisement",
+    "5": "Music",
+    "6": "Handwritten",
+    "9": "Diagram/Graph",
+    "10": "Artifact",
+}
+
 #
 # Dedupe Embeddings
 #
