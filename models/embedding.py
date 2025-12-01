@@ -38,5 +38,3 @@ class Embedding(peewee.Model):
     embedding = VectorField(dimensions=512, null=False)
 
     created = peewee.DateTimeField(constraints=[peewee.SQL("DEFAULT CURRENT_TIMESTAMP")])
-
-    # Add other stuff???

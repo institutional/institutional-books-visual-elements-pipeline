@@ -6,6 +6,7 @@ from .step04_process_caption_requests import step04_process_caption_requests
 from .step05_store import step05_store
 from .step06_dedupe_hash import step06_dedupe_hash
 from .step07_dedupe import step07_dedupe
+from .step08_analyze import step08_analyze
 
 
 @click.group("steps")
@@ -20,3 +21,4 @@ steps.add_command(step04_process_caption_requests)
 steps.add_command(step05_store)
 steps.add_command(step06_dedupe_hash)
 steps.add_command(step07_dedupe)
+steps.add_command(step08_analyze)

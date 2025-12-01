@@ -42,5 +42,3 @@ class Classification(peewee.Model):
 
     # Store all class probabilities as an array
     probs = ArrayField(field_class=peewee.FloatField, null=True)
-
-    # Other stuff?
