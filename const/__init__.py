@@ -210,3 +210,4 @@ DEFAULT_DB_BATCH_SIZE = 1000
     This value is used to determine how often the pipeline should attempt to write to the database.
     Applies across the codebase unless specified otherwise.
 """
+MAX_S3_REQUESTS_PER_SECOND = 25
