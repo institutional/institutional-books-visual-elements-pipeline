@@ -135,6 +135,7 @@ DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 0.5
 Sets a delay before creating GPU processes. 
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
+HASH_SIZE = 12  # NOTE: change the max_length of the ImageHash model accordingly
 
 #
 # Captioning

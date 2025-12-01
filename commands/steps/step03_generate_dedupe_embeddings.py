@@ -19,6 +19,7 @@ from const import (
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
     DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
     DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY,
+    HASH_SIZE,
     CUDA_GPUS,
     CPUS_LIMIT,
     BUCKET_NAME,
@@ -243,7 +244,7 @@ def embed_batch_of_items(
                 )
                 # Hash (pHash)
                 crop_img_pil = Image.fromarray(crops_batch[idx].astype(np.uint8))
-                h = imagehash.phash(crop_img_pil, hash_size=12)
+                h = imagehash.phash(crop_img_pil, hash_size=HASH_SIZE)
                 imagehash_val = str(h)  # hex string (e.g. 'feaf3452aaa21344')
                 imagehash_entries.append(
                     ImageHash(

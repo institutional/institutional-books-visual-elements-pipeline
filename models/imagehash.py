@@ -31,6 +31,6 @@ class ImageHash(peewee.Model):
 
     scan_filename = peewee.CharField(index=True)
 
-    image_hash = peewee.CharField(max_length=32, index=True)  # Hex string
+    image_hash = peewee.CharField(max_length=100, index=True)  # Hex string
 
     created = peewee.DateTimeField(constraints=[peewee.SQL("DEFAULT CURRENT_TIMESTAMP")])
