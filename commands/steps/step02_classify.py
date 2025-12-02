@@ -48,6 +48,14 @@ from const import (
 def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Runs the classification model on element crops from each volume containing detections.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+    - Runs X processes per GPU.
+      - Adjust `CLASSIFICATION_MODEL_PROCESSES_PER_GPU` env var based on available resources.
+      - Adjust `CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY` env var to adjust pre-fork delay.
+        This may help prevent processes from blocking each each other (HACK).
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
@@ -92,7 +100,7 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         logger.warning("No eligible items with detections found for this batch. Exiting.")
         click.get_current_context().exit(0)
 
-    # 3. Pool
+    # 3. Pool - Classifying batches
     with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
@@ -166,7 +174,7 @@ def classify_batch_of_items(
         # Force change to string
         image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
 
-        # Aggregators
+        # Aggregators for recording stats
         classified_entries: list[Classification] = []
         n_crops = 0
         failed_crops = 0
@@ -263,7 +271,7 @@ def classify_batch_of_items(
                     )
                     continue
 
-                # Apply confidence threshold - if below threshold, set to class 0
+                # Apply confidence threshold - if below threshold, set to class 0 <- "Other" class
                 if pred_conf < CLASSIFICATION_MODEL_CONF:
                     pred_class = "0"
                     pred_idx = 0
