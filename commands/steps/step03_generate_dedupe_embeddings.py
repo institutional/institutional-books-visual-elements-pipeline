@@ -23,6 +23,8 @@ from const import (
     CUDA_GPUS,
     CPUS_LIMIT,
     BUCKET_NAME,
+    DEDUPE_EMBEDDING_BATCH_SIZE,
+    DEDUPE_EMBEDDING_MODEL_NAME,
 )
 
 
@@ -51,6 +53,10 @@ def step03_generate_dedupe_embeddings(
     """
     Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch,
     and saves them to the database, per GPU.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
@@ -134,11 +140,12 @@ def embed_batch_of_items(
 ):
     import os
 
+    # set CUDA_VISIBLE_DEVICES before importing torch/ultralytics - avoids defaulting to cuda:0
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device.replace("cuda:", "")
     import torch
     from PIL import Image
 
-    device = "cuda:0"
+    device = "cuda:0"  # since the corresponding device is the only one visible, it becomes cuda:0
 
     # Load TorchScript model only ONCE per process
     model = torch.jit.load(str(model_filepath), map_location=device)
@@ -173,7 +180,7 @@ def embed_batch_of_items(
         image_bytes_by_filename = dict(list(item.data.images.items()))
         image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
 
-        # 1. Decode all scans needed for this item
+        # 1. Decode all scans needed for this item in parallel
         with ThreadPoolExecutor(max_workers=cpus_limit) as decode_executor:
             futures = {}
             used_filenames = set(str(det.scan_filename) for det in item_detections)
@@ -217,7 +224,7 @@ def embed_batch_of_items(
                 failed_embeds += 1
 
         # Prepare model inputs in minibatches
-        batch_size = 1024
+        batch_size = DEDUPE_EMBEDDING_BATCH_SIZE
         crop_batches = list(chunked(crops_and_meta, batch_size))
 
         for batch in crop_batches:
@@ -295,7 +302,7 @@ def download_model():
     # Construct the full S3 key for the model file
     s3_key = DEDUPE_EMBEDDING_MODEL_STORAGE_PATH
     if not s3_key.endswith(".pt"):
-        s3_key = f"{s3_key.rstrip('/')}/sscd_disc_mixup.torchscript.pt"
+        s3_key = f"{s3_key.rstrip('/')}/{DEDUPE_EMBEDDING_MODEL_NAME}"
 
     try:
         # Remove any existing files
