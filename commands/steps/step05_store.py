@@ -226,13 +226,10 @@ def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, byte
     Returns:
         Tuple of (filename, png_bytes)
     """
-    # OpenCV imencode - much faster than PIL
-    # Use compression level 0-9 (0 = no compression, 9 = max compression)
-    # PNG compression parameter: cv2.IMWRITE_PNG_COMPRESSION (0-9)
     success, png_bytes = cv2.imencode(
         ".png",
         crop_array,
-        [cv2.IMWRITE_PNG_COMPRESSION, 1],  # 1 is fast with good compression; 0 is fastest
+        [cv2.IMWRITE_PNG_COMPRESSION, 0],  # 0 compression when encoding
     )
 
     if not success:
