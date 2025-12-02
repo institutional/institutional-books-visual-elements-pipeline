@@ -16,8 +16,6 @@
 # - Distribution of associated metrics (e.g: detection confidence score by high-level topic)
 # - etc.
 
-# TODO: fix topic,date_published,language,title,author
-
 import csv
 import json
 from pathlib import Path
@@ -35,8 +33,6 @@ from models import (
     PipelineBatchItem,
     IBVolume,
     Detection,
-    Classification,
-    Caption,
     DedupedHash,
     DedupedEmbedding,
 )
@@ -113,13 +109,15 @@ def process_detection(args):
 
         # Volume metadata
         metadata = detection.pipeline_batch_item.ib_volume.metadata
-        row["topic"] = extract_metadata_field(metadata, "topic", "subject", "classification")
-        row["date_published"] = extract_metadata_field(
-            metadata, "date", "pub_date", "publication_date"
-        )
-        row["language"] = extract_metadata_field(metadata, "language", "lang")
-        row["title"] = extract_metadata_field(metadata, "title")
-        row["author"] = extract_metadata_field(metadata, "author", "creator")
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        elif metadata is None:
+            metadata = {}
+        row["topic"] = metadata.get("topic_or_subject_src")
+        row["date_published"] = metadata.get("date1_src")
+        row["language"] = metadata.get("language_src")
+        row["title"] = metadata.get("title_src")
+        row["author"] = metadata.get("author_src")
 
         # Crop dimensions
         width, height = calculate_crop_dimensions(detection.bbox_xywh)
