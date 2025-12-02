@@ -221,23 +221,24 @@ def decode_image_bytes(image_bytes):
 
 def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, bytes]:
     """
-    Encode a single crop to PNG bytes.
+    Encode a single crop to PNG bytes using OpenCV.
 
     Returns:
         Tuple of (filename, png_bytes)
     """
-    # Convert BGR (OpenCV) to RGB (PIL)
-    crop_rgb = cv2.cvtColor(crop_array, cv2.COLOR_BGR2RGB)
+    # OpenCV imencode - much faster than PIL
+    # Use compression level 0-9 (0 = no compression, 9 = max compression)
+    # PNG compression parameter: cv2.IMWRITE_PNG_COMPRESSION (0-9)
+    success, png_bytes = cv2.imencode(
+        ".png",
+        crop_array,
+        [cv2.IMWRITE_PNG_COMPRESSION, 1],  # 1 is fast with good compression; 0 is fastest
+    )
 
-    # Convert to PIL Image and save as PNG
-    img = Image.fromarray(crop_rgb)
-    png_buffer = io.BytesIO()
+    if not success:
+        raise ValueError(f"Failed to encode {filename} to PNG")
 
-    # compress_level=1 is much faster than 6 with minimal size difference
-    # compress_level=0 is fastest (no compression)
-    img.save(png_buffer, format="PNG", compress_level=1)
-
-    return filename, png_buffer.getvalue()
+    return filename, png_bytes.tobytes()
 
 
 def create_tarball_parallel(
