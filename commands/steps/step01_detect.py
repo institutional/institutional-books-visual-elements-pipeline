@@ -12,7 +12,7 @@ import numpy as np
 from more_itertools import chunked
 
 from utils import get_db, process_db_write_batch
-from models import PipelineBatch, PipelineBatchItem, IBVolume, Detection, Classification
+from models import PipelineBatchItem, IBVolume, Detection, Classification
 
 from const import (
     DETECTION_MODEL_REPO,
