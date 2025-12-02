@@ -27,6 +27,8 @@ from const import (
     OPENAI_REQUEST_TIMEOUT,
     CAPTION_REQUEST_RETRY_ATTEMPTS,
     CPUS_LIMIT,
+    CAPTION_CLASSES_EXCLUDED,
+    CAPTION_MAX_BATCH_SIZE,
 )
 import openai
 from openai import APITimeoutError
@@ -46,6 +48,11 @@ client = openai.OpenAI()
 def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
     """
     Runs caption-generation on the cropped regions of each volume that contains detections.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+    - Adjust `CAPTION_MAX_REQUESTS` env var based on your OpenAI API tier and usage.
     """
 
     processes_total = cpus_limit
@@ -54,7 +61,7 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
     if processes_total > 1:
         per_task_cpus_limit = max(2, cpus_limit // 2)
 
-    # Select only items with detections that have classifications where pred_class is not 2, 6, or 10
+    # Select only items with detections that have classifications where pred_class is not in excluded classes
     eligible_query = (
         PipelineBatchItem.select(PipelineBatchItem)
         .where(
@@ -62,14 +69,14 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
             & PipelineBatchItem.id_pipeline_batch_item.in_(
                 Detection.select(Detection.pipeline_batch_item)
                 .join(Classification, on=(Detection.id_detection == Classification.detection))
-                .where(Classification.pred_class.not_in(["2", "6", "10"]))
+                .where(Classification.pred_class.not_in(CAPTION_CLASSES_EXCLUDED))
             )
         )
         .distinct()
     )
     eligible_items = list(eligible_query)
 
-    # REMOVE WHEN ACTUALLY RUNNING PIPELINE - HERE FOR BUDGET REASONS
+    # TODO: REMOVE WHEN ACTUALLY RUNNING PIPELINE - HERE FOR BUDGET REASONS
     eligible_items = eligible_items[:CAPTION_MAX_REQUESTS]
 
     if not eligible_items:
@@ -106,13 +113,13 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         volume = item.ib_volume
         barcode = volume.barcode
 
-        # Only get detections where pred_class is not 2, 6, or 10
+        # Only get detections where pred_class is not in excluded classes
         dets = (
             Detection.select()
             .join(Classification, on=(Detection.id_detection == Classification.detection))
             .where(
                 (Detection.pipeline_batch_item == id_pipeline_batch_item)
-                & Classification.pred_class.not_in(["2", "6", "10"])
+                & Classification.pred_class.not_in(CAPTION_CLASSES_EXCLUDED)
             )
             .order_by(Detection.id_detection)
             .distinct()
@@ -169,7 +176,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
 
         # caption batches (OpenAI API calls)
         captioned_entries = []
-        max_batch = 8
+        max_batch = CAPTION_MAX_BATCH_SIZE
 
         lang = get_language(volume)
 
@@ -227,7 +234,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                         )
                     )
 
-            # DB write
+        # DB write
         Caption.delete().where(Caption.pipeline_batch_item == id_pipeline_batch_item).execute()
         process_db_write_batch(Caption, captioned_entries)
 
