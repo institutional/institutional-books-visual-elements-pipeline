@@ -38,6 +38,7 @@ REQUIRED_ENV_VARS = [
 ]
 """ Lists project-wide required environment variables. """
 
+
 #
 # Data directory
 #
@@ -47,14 +48,16 @@ DATA_DIR_PATH = os.environ.get("DATA_DIR_PATH", "data/")
 CACHE_DIR_PATH = Path(DATA_DIR_PATH, "cache")
 """ Data directory: cache """
 
+
 #
 # Input dataset params
 #
 IB_10_METADATA_DATASET_REPO = "institutional/institutional-books-1.0-metadata"
 """ Name of the metadata-only version of Institutional Books 1.0 on Hugging Face. """
 
+
 #
-# YOLO models params
+# Detectiom model params
 #
 DETECTION_MODEL_REPO = "institutional/institutional-books-visual-elements-detection-yolov11n"
 """ Name of the repo containing final weights for the detection model. """
@@ -80,8 +83,9 @@ Sets a delay before creating GPU processes.
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
 
+
 #
-# Classification model (applying class to crop)
+# Classification model params
 #
 CLASSIFICATION_MODEL_PROCESSES_PER_GPU = int(os.getenv("CLASSIFICATION_MODEL_PROCESSES_PER_GPU", 1))
 """ Determines how many classification processes can run on a given GPU. """
@@ -109,6 +113,7 @@ Helpful hack to manage multpiple processes on a single GPU while avoiding collis
 """
 
 CLASSIFICATION_MAX_BATCH = 16
+""" Maximum batch size to pass into the YOLO classification model """
 
 CLASS_DICT = {
     "0": "Other",
@@ -120,61 +125,86 @@ CLASS_DICT = {
     "9": "Diagram/Graph",
     "10": "Artifact",
 }
+""" Dictionary mapping class to class label """
+
 
 #
-# Dedupe Embeddings
+# Dedupe Embeddings/Hashes
 #
-DEDUPE_EMBEDDING_MODEL_REPO = "institutional/fork-of-original-repo"
-""" Name of the repo containing weights for the dedupe model. """
-DEDUPE_EMBEDDING_MODEL_FILEPATH = Path("pretrained-models/sscd_disc_mixup.torchscript.pt")
-""" Filepath of the embeddings model within `DEDUPE_EMBEDDING_MODEL_REPO`. """
 DEDUPE_EMBEDDING_MODEL_STORAGE_PATH = "pretrained-models"
+""" S3 folder in which the deduplication model is saved. """
+
+DEDUPE_EMBEDDING_MODEL_NAME = "sscd_disc_mixup.torchscript.pt"
+
+DEDUPE_EMBEDDING_MODEL_FILEPATH = Path(
+    f"{DEDUPE_EMBEDDING_MODEL_STORAGE_PATH}/{DEDUPE_EMBEDDING_MODEL_NAME}"
+)
+""" Local filepath to save downloaded embedding model. """
 
 DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 0.5
 """ 
 Sets a delay before creating GPU processes. 
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
+
 HASH_SIZE = 12  # NOTE: change the max_length of the ImageHash model accordingly
+"""Size of phash. The hash will be of size HASH_SIZE*HASH_SIZE bytes"""
+
+DEDUPE_EMBEDDING_BATCH_SIZE = 1024
+"""Size of minibatches to pass to the embedding model"""
+
+HASH_DB_CHUNK_SIZE = 10000
+"""Size of chunks to write grouped embeddings to DB"""
+
+HASH_DEDUPE_HAMMING_THRESHOLD = 16
+"""Max Hamming distance to be considered duplicate"""
+
+HASH_DEDUPE_TOTAL_SHARDS = 10
+"""Total number of shards to split dataset into when grouping"""
+
+HASH_DEDUPE_MAX_HASHES_PER_SHARD = 1000
+"""Maximum hashes per shard (auto-shard if exceeded)"""
+
 
 #
 # Captioning
 #
-MAX_TOKENS_PER_DAY = 14000000000
-""" Daily token limit for OpenAI batches."""
 CAPTION_MAX_IMG_DIM = 1248
 """ Max dimension to send to OpenAI (pixels)"""
+
 CAPTION_MAX_TOKENS = 100
 """ Max tokens for model to produce"""
+
 CAPTION_MODEL_NAME = "gpt-4.1-nano"
 """ Model to generate captions"""
-CAPTION_JSONL_FILES_PATH = "caption_jsonl_files/"
-"""WHere to store the jsonl files (temp storage)"""
-MAX_REQUESTS_PER_FILE = 5
-""" Max requests per OpenAI batch. 
-Note: make sure that this produces files less than the size limit (as of Nov 2025, limit is set at 
-20 MB per jsonl batch file)"""
-# CAPTION_MAX_FILES_PROCESS_PER_DAY = 800000
-CAPTION_MAX_FILES_PROCESS_PER_DAY = 100
-""" Max requests per day. 
-[CAPTION_MAX_FILES_PROCESS_PER_DAY * (avg tokens / input jsonl file)] should be less than the daily token limit"""
-CAPTION_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
 CAPTION_MODEL_TEMPERATURE = 0
-CAPTION_TOP_LOGPROBS = 2
-CAPTION_MAX_REQUESTS = 1000
-"""For budget reasons"""
-OPENAI_REQUEST_TIMEOUT = 20.0
+"""Temperature setting for OpenAI model"""
 
-MAX_OPENAI_CONCURRENT_REQUESTS = 175
+CAPTION_TOP_LOGPROBS = 2
+"""Number of logprobs to retrieve for each token from OpenAI model"""
+
+CAPTION_MAX_REQUESTS = 1000
+"""Maximum caption requests to process (For budget reasons)"""
+
+OPENAI_REQUEST_TIMEOUT = 20.0
+"""Number of seconds to wait before API request timeout"""
 
 CAPTION_REQUEST_RETRY_ATTEMPTS = 1
+"""Number of times to retry caption request before moving on"""
+
+CAPTION_CLASSES_EXCLUDED = ["2", "6", "10"]
+"""Classes to exclude from captioning"""
+
+CAPTION_MAX_BATCH_SIZE = 16
+"""Max request batch size to send at once to OpenAI"""
 
 
 #
 # Storage
 #
 BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
+
 
 #
 # Misc
@@ -211,4 +241,6 @@ DEFAULT_DB_BATCH_SIZE = 1000
     This value is used to determine how often the pipeline should attempt to write to the database.
     Applies across the codebase unless specified otherwise.
 """
+
 MAX_S3_REQUESTS_PER_SECOND = 25
+"""Maximum upload requests to S3 per second (for step05_store)"""
