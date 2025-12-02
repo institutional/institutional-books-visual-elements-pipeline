@@ -6,7 +6,13 @@ from models import ImageHash, PipelineBatch, PipelineBatchItem, Detection
 from datetime import datetime
 import pickle
 import os
-from const import CPUS_LIMIT
+from const import (
+    CPUS_LIMIT,
+    HASH_DB_CHUNK_SIZE,
+    HASH_DEDUPE_HAMMING_THRESHOLD,
+    HASH_DEDUPE_TOTAL_SHARDS,
+    HASH_DEDUPE_MAX_HASHES_PER_SHARD,
+)
 import time
 from collections import defaultdict
 
@@ -33,7 +39,7 @@ class DedupedHash(Model):
 @click.option(
     "--hamming-threshold",
     type=int,
-    default=8,
+    default=HASH_DEDUPE_HAMMING_THRESHOLD,
     show_default=True,
     help="Hamming distance threshold for fuzzy matching (0 = exact match only)",
 )
@@ -46,14 +52,14 @@ class DedupedHash(Model):
 @click.option(
     "--total-shards",
     type=int,
-    default=1,
+    default=HASH_DEDUPE_TOTAL_SHARDS,
     show_default=True,
     help="Total number of shards to split dataset into",
 )
 @click.option(
     "--max-hashes-per-shard",
     type=int,
-    default=10_000_000,
+    default=HASH_DEDUPE_MAX_HASHES_PER_SHARD,
     show_default=True,
     help="Maximum hashes per shard (auto-shard if exceeded)",
 )
@@ -81,17 +87,7 @@ def step06_dedupe_hash(
     """
     Deduplicate image hashes using exact or fuzzy matching.
 
-    For large datasets (>10M hashes), use sharding:
-
-    \b
-    # Auto-shard (sequential):
-    python pipeline.py step06-dedupe-hashes --id-pipeline-run=1
-
-    \b
-    # Manual parallel sharding (run these in parallel):
-    python pipeline.py step06-dedupe-hashes --id-pipeline-run=1 --shard-id=0 --total-shards=10 &
-    python pipeline.py step06-dedupe-hashes --id-pipeline-run=1 --shard-id=1 --total-shards=10 &
-    ...
+    For large datasets (>10M hashes), use sharding.
     """
 
     logger.info("Starting hash-based deduplication...")
@@ -426,7 +422,7 @@ def _write_hash_assignments_batched(
     logger.info("Writing new assignments...")
     now = datetime.utcnow()
 
-    chunk_size = 5000
+    chunk_size = HASH_DB_CHUNK_SIZE
     hash_ids = list(dedupe_assignments.keys())
     total_written = 0
 
