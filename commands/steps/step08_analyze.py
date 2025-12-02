@@ -38,21 +38,6 @@ from models import (
 )
 
 
-def extract_metadata_field(metadata, *keys, default=None):
-    """
-    Safely extract a field from nested metadata dict.
-    Tries multiple keys in order and returns the first found.
-    """
-    if metadata is None:
-        return default
-
-    for key in keys:
-        if key in metadata:
-            return metadata[key]
-
-    return default
-
-
 def calculate_crop_dimensions(bbox_xywh):
     """Calculate width and height from bbox_xywh."""
     if bbox_xywh is None or len(bbox_xywh) != 4:
