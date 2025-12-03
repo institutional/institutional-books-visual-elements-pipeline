@@ -108,10 +108,45 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
 
 
 def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
-    for id_pipeline_batch_item in item_ids:
-        item = PipelineBatchItem.get(id_pipeline_batch_item=id_pipeline_batch_item)
+
+    # Fetch all items
+    items = list(
+        PipelineBatchItem.select().where(PipelineBatchItem.id_pipeline_batch_item.in_(item_ids))
+    )
+
+    # Fetch ALL detections for these items at once
+    detections_query = (
+        Detection.select()
+        .join(Classification, on=(Detection.id_detection == Classification.detection))
+        .where(
+            (Detection.pipeline_batch_item.in_(item_ids))
+            & (Classification.pred_class.not_in(CAPTION_CLASSES_EXCLUDED))
+        )
+        .distinct()
+    )
+
+    # Group detections by pipeline_batch_item
+    detections_by_item = {}
+    for det in detections_query:
+        item_id = det.pipeline_batch_item_id
+        if item_id not in detections_by_item:
+            detections_by_item[item_id] = []
+        detections_by_item[item_id].append(det)
+
+    all_captions = []
+    items_to_delete = []
+
+    for item in items:
+        # Access pre-fetched detections
+        dets = detections_by_item.get(item.id_pipeline_batch_item, [])
+        if not dets:
+            continue
+
+        id_pipeline_batch_item = item.id_pipeline_batch_item
         volume = item.ib_volume
         barcode = volume.barcode
+
+        items_to_delete.append(id_pipeline_batch_item)
 
         # Only get detections where pred_class is not in excluded classes
         dets = (
@@ -187,7 +222,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                 for det, crop in batch:
                     context_file = det.scan_filename.split(".")[0] + ".txt"
                     context = texts_by_filename.get(context_file, "")
-                    b64 = base64_png_bytes(crop)
+                    b64 = base64_jpg_bytes(crop)
                     instruction = build_instruction(lang)
 
                     input_blocks = [
@@ -233,22 +268,27 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                             created=datetime.now(timezone.utc),
                         )
                     )
-
-        # DB write
-        Caption.delete().where(Caption.pipeline_batch_item == id_pipeline_batch_item).execute()
-        process_db_write_batch(Caption, captioned_entries)
-
+        all_captions.extend(captioned_entries)
         logger.info(
             f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | Decode time: {time_decode} | Failed Captions {failed_captions}"
         )
+
+    # DB Write
+    Caption.delete().where(Caption.pipeline_batch_item.in_(items_to_delete)).execute()
+    process_db_write_batch(Caption, all_captions)
 
     return True
 
 
 def get_language(volume):
     try:
-        meta = json.loads(volume.metadata)
-        lang = Lang(meta.get("language_src")).name
+        metadata = volume.metadata
+        if isinstance(metadata, str):
+            metadata = json.loads(metadata)
+        elif metadata is None:
+            metadata = {}
+        lang = metadata.get("language_src")
+        lang = Lang(lang).name
     except:
         lang = "English"
     return lang
@@ -272,11 +312,15 @@ def resize_image(img: Image.Image, max_dim: int):
     return img.resize((new_w, new_h), Image.LANCZOS)
 
 
-def base64_png_bytes(arr) -> str:
-    img = Image.fromarray(arr)
+def base64_jpg_bytes(arr) -> str:
+    # Convert OpenCV (BGR) to RGB once
+    rgb = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(rgb)
+
+    # Using JPEG to send to OpenAI for faster encoding and smaller size
     img = resize_image(img, CAPTION_MAX_IMG_DIM)
     buf = io.BytesIO()
-    img.save(buf, format="PNG")
+    img.save(buf, format="JPEG", quality=85, optimize=True)
     return base64.b64encode(buf.getvalue()).decode()
 
 
@@ -364,8 +408,15 @@ def serialize_logprobs(logprobs_list):
 
 def build_instruction(language: str) -> str:
     return (
-        "You are a librarian that captions images in precise and concise language. "
-        "Create a caption in 50 words or less for the image, given the page text as context. "
-        "Reply only with the caption. "
-        f"Write the caption in {language}."
+        "You are a librarian who writes precise, concise captions for image crops.\n"
+        "- Use the page text only as supporting context, and only when it clearly "
+        "relates to what is visible in the image crop.\n"
+        "- Focus on describing what is visually present in the crop. Do not summarize "
+        "or restate the page text.\n"
+        "- Do not add background information, interpretations, or educated guesses "
+        "that are not directly shown in the image crop.\n"
+        "- If you are unsure about something, describe it generically (for example, "
+        '"a person," "a diagram," "a building") rather than guessing.\n'
+        "- The caption must be 50 words or less.\n"
+        f"- Reply only with the caption, in {language}, with no additional commentary."
     )
