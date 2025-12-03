@@ -190,13 +190,13 @@ CAPTION_MAX_REQUESTS = 1000
 OPENAI_REQUEST_TIMEOUT = 20.0
 """Number of seconds to wait before API request timeout"""
 
-CAPTION_REQUEST_RETRY_ATTEMPTS = 1
+CAPTION_REQUEST_RETRY_ATTEMPTS = 2
 """Number of times to retry caption request before moving on"""
 
 CAPTION_CLASSES_EXCLUDED = ["2", "6", "10"]
 """Classes to exclude from captioning"""
 
-CAPTION_MAX_BATCH_SIZE = 16
+CAPTION_MAX_BATCH_SIZE = 8
 """Max request batch size to send at once to OpenAI"""
 
 
