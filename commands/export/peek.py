@@ -14,7 +14,7 @@ from const import CLASS_DICT
 @click.command("peek")
 @click.option("--step", type=click.Choice(["detect", "dedupe"]), required=True)
 @click.option("--id-pipeline-batch", type=int, required=True, help="Pipeline batch ID to inspect")
-@click.option("--n", default=5, help="Number of random volumes to select (integer or 'all')")
+@click.option("--n", help="Number of random volumes to select (integer or 'all')")
 @click.option(
     "--output-dir",
     type=click.Path(),
