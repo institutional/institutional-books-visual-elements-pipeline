@@ -172,16 +172,16 @@ def execute(
             #         pipeline_batch=pipeline_batch,
             #     )
             # logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
-            start = time.perf_counter()
-            # Step 5: Store crops
-            if not has_crashed:
-                has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step05_store,
-                    step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
-                    pipeline_run=pipeline_run,
-                    pipeline_batch=pipeline_batch,
-                )
-            logger.info(f"step05_store took {time.perf_counter() - start:.2f}s")
+            # start = time.perf_counter()
+            # # Step 5: Store crops
+            # if not has_crashed:
+            #     has_crashed = not execute_batch_level_step(
+            #         step_fn=commands.steps.step05_store,
+            #         step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
+            #         pipeline_run=pipeline_run,
+            #         pipeline_batch=pipeline_batch,
+            #     )
+            # logger.info(f"step05_store took {time.perf_counter() - start:.2f}s")
 
         #
         # Exceptions catch-all
@@ -216,19 +216,20 @@ def execute(
     if batch_processing_only:
         logger.warning("Dataset-wide steps were skipped (--batch-processing-only)")
     else:
-        # try:
-        #     # Run dedupe:
-        #     has_crashed = not execute_run_level_step(
-        #         step_fn=commands.steps.step06_dedupe_hash,
-        #         step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
-        #         pipeline_run=pipeline_run,
-        #     )
-        #     if not has_crashed:
-        #         has_crashed = not execute_run_level_step(
-        #             step_fn=commands.steps.step07_dedupe,
-        #             step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
-        #             pipeline_run=pipeline_run,
-        #         )
+        try:
+            if not has_crashed:
+                # Run dedupe:
+                has_crashed = not execute_run_level_step(
+                    step_fn=commands.steps.step06_dedupe_hash,
+                    step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
+                    pipeline_run=pipeline_run,
+                )
+            # if not has_crashed:
+            #     has_crashed = not execute_run_level_step(
+            #         step_fn=commands.steps.step07_dedupe,
+            #         step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
+            #         pipeline_run=pipeline_run,
+            #     )
         #     # Run analyze
         #     if not has_crashed:
         #         has_crashed = not execute_run_level_step(
@@ -237,10 +238,10 @@ def execute(
         #             pipeline_run=pipeline_run,
         #         )
 
-        # except Exception as err:
-        #     has_crashed = True
-        #     logger.debug(traceback.format_exc())
-        pass
+        except Exception as err:
+            has_crashed = True
+            logger.debug(traceback.format_exc())
+    # pass
 
     #
     # End of run

@@ -159,10 +159,10 @@ HASH_DB_CHUNK_SIZE = 10000
 HASH_DEDUPE_HAMMING_THRESHOLD = 16
 """Max Hamming distance to be considered duplicate"""
 
-HASH_DEDUPE_TOTAL_SHARDS = 10
+HASH_DEDUPE_TOTAL_SHARDS = 1
 """Total number of shards to split dataset into when grouping"""
 
-HASH_DEDUPE_MAX_HASHES_PER_SHARD = 1000
+HASH_DEDUPE_MAX_HASHES_PER_SHARD = 1000000
 """Maximum hashes per shard (auto-shard if exceeded)"""
 
 

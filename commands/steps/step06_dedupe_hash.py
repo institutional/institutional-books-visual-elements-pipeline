@@ -1,11 +1,13 @@
 import click
-from peewee import fn
+from peewee import fn, SQL
 from playhouse.postgres_ext import *
 from loguru import logger
 from models import ImageHash, PipelineBatch, PipelineBatchItem, Detection
 from datetime import datetime
 import pickle
 import os
+import h5py
+import numpy as np
 from const import (
     CPUS_LIMIT,
     HASH_DB_CHUNK_SIZE,
@@ -15,6 +17,8 @@ from const import (
 )
 import time
 from collections import defaultdict
+import multiprocessing as mp
+from functools import partial
 
 
 class DedupedHash(Model):
@@ -64,16 +68,23 @@ class DedupedHash(Model):
     help="Maximum hashes per shard (auto-shard if exceeded)",
 )
 @click.option(
-    "--checkpoint-file",
-    type=str,
-    default="dedupe_hash_checkpoint.pkl",
-    help="File to save progress for resuming",
+    "--workers",
+    type=int,
+    default=CPUS_LIMIT,
+    show_default=True,
+    help="Number of parallel workers for hash comparison",
 )
 @click.option(
-    "--resume",
+    "--cache-dir",
+    type=str,
+    default="./hash_cache",
+    help="Directory to cache hash data files",
+)
+@click.option(
+    "--force-reload",
     is_flag=True,
     default=False,
-    help="Resume from checkpoint file",
+    help="Force reload hashes from database (ignore cache)",
 )
 def step06_dedupe_hash(
     id_pipeline_run,
@@ -81,8 +92,9 @@ def step06_dedupe_hash(
     shard_id,
     total_shards,
     max_hashes_per_shard,
-    checkpoint_file,
-    resume,
+    workers,
+    cache_dir,
+    force_reload,
 ):
     """
     Deduplicate image hashes using exact or fuzzy matching.
@@ -96,15 +108,53 @@ def step06_dedupe_hash(
     db = ImageHash._meta.database
     db.create_tables([DedupedHash], safe=True)
 
-    # Count total hashes
+    # Create cache directory
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # Get pipeline batches for this run
     pipeline_batches = list(
         PipelineBatch.select().where(PipelineBatch.pipeline_run == id_pipeline_run)
     )
-    pb_item_ids = [item.id_pipeline_batch_item for pb in pipeline_batches for item in pb.items]
 
-    total_hashes = ImageHash.select().where(ImageHash.pipeline_batch_item.in_(pb_item_ids)).count()
+    if not pipeline_batches:
+        logger.error(f"No pipeline batches found for run {id_pipeline_run}")
+        return
+
+    # Get pipeline batch IDs
+    pb_ids = [pb.id_pipeline_batch for pb in pipeline_batches]
+    logger.info(f"Found {len(pb_ids)} pipeline batches")
+
+    # Query pipeline batch items
+    pb_items = list(
+        PipelineBatchItem.select(PipelineBatchItem.id_pipeline_batch_item).where(
+            PipelineBatchItem.pipeline_batch.in_(pb_ids)
+        )
+    )
+
+    if not pb_items:
+        logger.error(f"No pipeline batch items found for run {id_pipeline_run}")
+        return
+
+    pb_item_ids = [item.id_pipeline_batch_item for item in pb_items]
+
+    logger.info(f"Found {len(pb_item_ids)} pipeline batch items")
+
+    # Count total hashes using subquery to avoid large IN clause
+    total_hashes = (
+        ImageHash.select()
+        .join(
+            PipelineBatchItem,
+            on=(ImageHash.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+        )
+        .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
+        .count()
+    )
 
     logger.info(f"Total hashes in pipeline run {id_pipeline_run}: {total_hashes:,}")
+
+    if total_hashes == 0:
+        logger.warning("No hashes found for this pipeline run")
+        return
 
     # Auto-shard if needed
     if shard_id is None and total_hashes > max_hashes_per_shard:
@@ -128,16 +178,15 @@ def step06_dedupe_hash(
             logger.info(f"SHARD {i+1}/{required_shards}")
             logger.info(f"{'='*70}\n")
 
-            shard_checkpoint = f"dedupe_hash_checkpoint_shard{i}_of_{required_shards}.pkl"
-
             _process_single_shard(
                 id_pipeline_run=id_pipeline_run,
-                pb_item_ids=pb_item_ids,
+                pb_ids=pb_ids,
                 shard_id=i,
                 total_shards=required_shards,
                 hamming_threshold=hamming_threshold,
-                checkpoint_file=shard_checkpoint,
-                resume=resume,
+                workers=workers,
+                cache_dir=cache_dir,
+                force_reload=force_reload,
             )
 
         logger.info(f"\n{'='*70}")
@@ -146,29 +195,27 @@ def step06_dedupe_hash(
         return
 
     # Process single shard (or entire dataset if small)
-    if shard_id is not None:
-        logger.info(f"Processing shard {shard_id + 1}/{total_shards}")
-        checkpoint_file = f"dedupe_hash_checkpoint_shard{shard_id}_of_{total_shards}.pkl"
-
     _process_single_shard(
         id_pipeline_run=id_pipeline_run,
-        pb_item_ids=pb_item_ids,
+        pb_ids=pb_ids,
         shard_id=shard_id,
         total_shards=total_shards,
         hamming_threshold=hamming_threshold,
-        checkpoint_file=checkpoint_file,
-        resume=resume,
+        workers=workers,
+        cache_dir=cache_dir,
+        force_reload=force_reload,
     )
 
 
 def _process_single_shard(
     id_pipeline_run,
-    pb_item_ids,
+    pb_ids,
     shard_id,
     total_shards,
     hamming_threshold,
-    checkpoint_file,
-    resume,
+    workers,
+    cache_dir,
+    force_reload,
 ):
     """Process a single shard of hashes"""
 
@@ -180,34 +227,27 @@ def _process_single_shard(
     if shard_id is not None:
         logger.info(f"Shard: {shard_id + 1}/{total_shards}")
 
-    # Get hashes for this shard
-    t0 = time.time()
-    logger.info("Loading hash metadata...")
+    # Generate cache filename
+    if shard_id is not None:
+        cache_file = os.path.join(
+            cache_dir, f"hashes_run{id_pipeline_run}_shard{shard_id}_of_{total_shards}.h5"
+        )
+    else:
+        cache_file = os.path.join(cache_dir, f"hashes_run{id_pipeline_run}.h5")
 
-    hashes_meta = {}
-    query = ImageHash.select(
-        ImageHash.id_imagehash,
-        ImageHash.pipeline_batch_item,
-        ImageHash.detection,
-        ImageHash.scan_filename,
-        ImageHash.image_hash,
-    ).where(ImageHash.pipeline_batch_item.in_(pb_item_ids))
+    # Load or create hash data file
+    if os.path.exists(cache_file) and not force_reload:
+        logger.info(f"Loading hashes from cache: {cache_file}")
+        hashes_meta, hash_ids, hash_values_array = _load_hashes_from_file(cache_file)
+    else:
+        logger.info(f"Loading hashes from database and saving to: {cache_file}")
+        hashes_meta, hash_ids, hash_values_array = _load_and_save_hashes(
+            pb_ids, shard_id, total_shards, cache_file
+        )
 
-    # Add shard filter if sharding
-    if shard_id is not None and total_shards > 1:
-        query = query.where((ImageHash.id_imagehash % total_shards) == shard_id)
+    logger.info(f"Loaded {len(hash_ids):,} hashes")
 
-    for h in query.dicts():
-        hashes_meta[h["id_imagehash"]] = {
-            "pipeline_batch_item": h["pipeline_batch_item"],
-            "detection": h["detection"],
-            "scan_filename": h["scan_filename"],
-            "image_hash": h["image_hash"],
-        }
-
-    logger.info(f"Found {len(hashes_meta):,} hashes to process in {time.time() - t0:.1f}s")
-
-    if not hashes_meta:
+    if not hash_ids:
         logger.warning("No hashes found to deduplicate.")
         return
 
@@ -215,28 +255,183 @@ def _process_single_shard(
     if hamming_threshold == 0:
         similar_pairs = _find_exact_matches(hashes_meta)
     else:
-        similar_pairs = _find_fuzzy_matches(hashes_meta, hamming_threshold, checkpoint_file, resume)
+        similar_pairs = _find_fuzzy_matches_parallel(
+            hash_ids, hash_values_array, hamming_threshold, workers
+        )
 
     logger.info(f"Found {len(similar_pairs):,} similar pairs")
 
     # Cluster using Union-Find
     logger.info("Clustering hashes using Union-Find...")
-    dedupe_assignments, num_groups = _cluster_hashes(hashes_meta.keys(), similar_pairs)
+    dedupe_assignments, num_groups = _cluster_hashes(hash_ids, similar_pairs)
     logger.info(f"Assigned {len(dedupe_assignments):,} hashes to {num_groups:,} dedupe groups.")
 
     # Write assignments
-    _write_hash_assignments_batched(
-        hashes_meta, dedupe_assignments, pb_item_ids, shard_id, total_shards
-    )
-
-    # Cleanup checkpoint
-    if os.path.exists(checkpoint_file):
-        os.remove(checkpoint_file)
-        logger.info(f"Removed checkpoint file: {checkpoint_file}")
+    _write_hash_assignments_batched(hashes_meta, dedupe_assignments, shard_id, total_shards)
 
     logger.info(
         f"✓ Hash deduplication complete: {len(dedupe_assignments):,} hashes in {num_groups:,} groups."
     )
+
+
+def _load_and_save_hashes(pb_ids, shard_id, total_shards, cache_file):
+    """Load hashes from database and save to HDF5 file"""
+    t0 = time.time()
+    logger.info("Loading hash metadata from database...")
+
+    hashes_meta = {}
+    hash_ids = []
+    hash_values = []
+    hash_strings = []  # Keep string representation
+
+    # Use JOIN to avoid large IN clause
+    query = (
+        ImageHash.select(
+            ImageHash.id_imagehash,
+            ImageHash.pipeline_batch_item,
+            ImageHash.detection,
+            ImageHash.scan_filename,
+            ImageHash.image_hash,
+        )
+        .join(
+            PipelineBatchItem,
+            on=(ImageHash.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+        )
+        .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
+    )
+
+    # Add shard filter if sharding - use SQL() to inject raw modulo operation
+    if shard_id is not None and total_shards > 1:
+        # Use raw SQL to avoid peewee interpreting % as LIKE
+        query = query.where(SQL(f"(image_hash.id_imagehash % {total_shards}) = {shard_id}"))
+
+    # Check if query will return any results
+    count = query.count()
+    logger.info(f"Query will return {count:,} hashes")
+
+    if count == 0:
+        logger.warning("No hashes found for this shard")
+        return {}, [], np.array([], dtype=object)
+
+    logger.info("Executing query and loading data...")
+    hash_length = None
+    for i, h in enumerate(query.dicts(), 1):
+        hash_id = h["id_imagehash"]
+        hex_str = h["image_hash"]
+
+        # Check hash length on first item
+        if hash_length is None:
+            hash_length = len(hex_str)
+            logger.info(f"Hash length: {hash_length} hex chars ({hash_length * 4} bits)")
+            if hash_length > 16:
+                logger.warning(
+                    f"Hash length ({hash_length}) exceeds uint64 capacity (16 hex chars)"
+                )
+                logger.info("Will use Python arbitrary precision integers")
+
+        try:
+            hash_int = int(hex_str, 16)
+        except ValueError:
+            logger.warning(f"Invalid hash format for ID {hash_id}: {hex_str}")
+            hash_int = 0
+
+        hash_ids.append(hash_id)
+        hash_values.append(hash_int)
+        hash_strings.append(hex_str)
+        hashes_meta[hash_id] = {
+            "pipeline_batch_item": h["pipeline_batch_item"],
+            "detection": h["detection"],
+            "scan_filename": h["scan_filename"],
+            "image_hash": hex_str,
+        }
+
+        # Progress logging for large datasets
+        if i % 10000 == 0:
+            logger.info(f"Loaded {i:,}/{count:,} hashes ({100*i/count:.1f}%)")
+
+    logger.info(f"Loaded {len(hash_ids):,} hashes in {time.time() - t0:.1f}s")
+
+    # Use object dtype for arbitrary precision Python integers
+    # This is needed for hashes longer than 64 bits
+    hash_values_array = np.array(hash_values, dtype=object)
+
+    # Save to HDF5 file
+    logger.info(f"Saving hashes to {cache_file}...")
+    with h5py.File(cache_file, "w") as f:
+        f.create_dataset("hash_ids", data=np.array(hash_ids, dtype=np.int64))
+        # Store as strings since HDF5 doesn't support arbitrary precision ints
+        f.create_dataset(
+            "hash_strings", data=np.array(hash_strings, dtype=h5py.string_dtype(encoding="utf-8"))
+        )
+
+        # Save metadata as attributes (more efficient for small data)
+        meta_group = f.create_group("metadata")
+        for hash_id, meta in hashes_meta.items():
+            item_group = meta_group.create_group(str(hash_id))
+            item_group.attrs["pipeline_batch_item"] = meta["pipeline_batch_item"]
+            item_group.attrs["detection"] = meta["detection"]
+            item_group.attrs["scan_filename"] = meta["scan_filename"]
+            item_group.attrs["image_hash"] = meta["image_hash"]
+
+    logger.info(f"Saved hash data to {cache_file}")
+
+    return hashes_meta, hash_ids, hash_values_array
+
+
+def _load_hashes_from_file(cache_file):
+    """Load hashes from HDF5 file"""
+    t0 = time.time()
+
+    with h5py.File(cache_file, "r") as f:
+        hash_ids = f["hash_ids"][:].tolist()
+
+        # Load hash strings and convert to integers
+        hash_strings = f["hash_strings"][:].astype(str)
+        hash_values_array = np.array([int(h, 16) for h in hash_strings], dtype=object)
+
+        # Load metadata
+        hashes_meta = {}
+        meta_group = f["metadata"]
+        for hash_id_str in meta_group.keys():
+            hash_id = int(hash_id_str)
+            item_group = meta_group[hash_id_str]
+            hashes_meta[hash_id] = {
+                "pipeline_batch_item": item_group.attrs["pipeline_batch_item"],
+                "detection": item_group.attrs["detection"],
+                "scan_filename": item_group.attrs["scan_filename"],
+                "image_hash": item_group.attrs["image_hash"],
+            }
+
+    logger.info(f"Loaded {len(hash_ids):,} hashes from file in {time.time() - t0:.1f}s")
+
+    return hashes_meta, hash_ids, hash_values_array
+
+
+def _compare_hash_chunk(args):
+    """Worker function to compare a chunk of hashes (for multiprocessing)"""
+    start_idx, end_idx, hash_ids, hash_values, hamming_threshold, total_hashes = args
+
+    pairs = []
+
+    for i in range(start_idx, end_idx):
+        hash_val_i = hash_values[i]
+        hash_id_i = hash_ids[i]
+
+        # Compare with all subsequent hashes
+        for j in range(i + 1, total_hashes):
+            hash_val_j = hash_values[j]
+            hash_id_j = hash_ids[j]
+
+            # Calculate Hamming distance using XOR and popcount
+            # Python's bin() works with arbitrary precision integers
+            xor_result = hash_val_i ^ hash_val_j
+            distance = bin(xor_result).count("1")
+
+            if distance <= hamming_threshold:
+                pair = tuple(sorted([hash_id_i, hash_id_j]))
+                pairs.append(pair)
+
+    return pairs
 
 
 def _find_exact_matches(hashes_meta):
@@ -264,87 +459,56 @@ def _find_exact_matches(hashes_meta):
     return similar_pairs
 
 
-def _find_fuzzy_matches(hashes_meta, hamming_threshold, checkpoint_file, resume):
-    """Find fuzzy matches using Hamming distance"""
+def _find_fuzzy_matches_parallel(hash_ids, hash_values_array, hamming_threshold, workers):
+    """Find fuzzy matches using Hamming distance with parallel processing"""
     logger.info(f"Finding fuzzy matches (Hamming distance <= {hamming_threshold})...")
+    logger.info(f"Using {workers} parallel workers")
 
-    # Load checkpoint if resuming
-    if resume and os.path.exists(checkpoint_file):
-        logger.info(f"Loading checkpoint from {checkpoint_file}...")
-        with open(checkpoint_file, "rb") as f:
-            checkpoint = pickle.load(f)
-            similar_pairs = list(checkpoint.get("similar_pairs", []))
-            processed_idx = checkpoint.get("processed_idx", 0)
-        logger.info(f"Resumed: {len(similar_pairs)} pairs found, processed {processed_idx} hashes")
-    else:
-        similar_pairs = []
-        processed_idx = 0
-
-    hash_ids = list(hashes_meta.keys())
     total_hashes = len(hash_ids)
+    logger.info(f"Comparing {total_hashes:,} hashes...")
 
-    # Convert hex strings to integers for faster comparison
-    hash_values = {}
-    for hash_id in hash_ids:
-        hex_str = hashes_meta[hash_id]["image_hash"]
-        try:
-            hash_values[hash_id] = int(hex_str, 16)
-        except ValueError:
-            logger.warning(f"Invalid hash format for ID {hash_id}: {hex_str}")
-            hash_values[hash_id] = 0
+    # Split work into chunks for parallel processing
+    # Each worker gets a range of starting indices
+    chunk_size = max(
+        1, total_hashes // (workers * 4)
+    )  # More chunks than workers for better load balancing
+    chunks = []
 
-    logger.info(f"Comparing {total_hashes:,} hashes (this may take a while)...")
-
-    checkpoint_interval = max(1000, total_hashes // 100)
-    last_checkpoint_time = time.time()
-
-    for i in range(processed_idx, total_hashes):
-        hash_id_i = hash_ids[i]
-        hash_val_i = hash_values[hash_id_i]
-
-        # Compare with all subsequent hashes
-        for j in range(i + 1, total_hashes):
-            hash_id_j = hash_ids[j]
-            hash_val_j = hash_values[hash_id_j]
-
-            # Calculate Hamming distance using XOR and popcount
-            distance = bin(hash_val_i ^ hash_val_j).count("1")
-
-            if distance <= hamming_threshold:
-                pair = tuple(sorted([hash_id_i, hash_id_j]))
-                similar_pairs.append(pair)
-
-        # Progress logging
-        if (i + 1) % 1000 == 0:
-            progress = 100 * (i + 1) / total_hashes
-            logger.info(
-                f"Progress: {i + 1:,}/{total_hashes:,} ({progress:.1f}%) - "
-                f"Found {len(similar_pairs):,} pairs"
-            )
-
-        # Checkpoint periodically
-        if (i + 1) % checkpoint_interval == 0 or time.time() - last_checkpoint_time > 300:
-            _save_hash_checkpoint(checkpoint_file, similar_pairs, i + 1)
-            last_checkpoint_time = time.time()
-
-    # Final checkpoint
-    _save_hash_checkpoint(checkpoint_file, similar_pairs, total_hashes)
-
-    logger.info(f"Found {len(similar_pairs):,} fuzzy match pairs")
-    return similar_pairs
-
-
-def _save_hash_checkpoint(checkpoint_file, similar_pairs, processed_idx):
-    """Save progress to checkpoint file"""
-    with open(checkpoint_file, "wb") as f:
-        pickle.dump(
-            {
-                "similar_pairs": similar_pairs,
-                "processed_idx": processed_idx,
-            },
-            f,
+    for start_idx in range(0, total_hashes, chunk_size):
+        end_idx = min(start_idx + chunk_size, total_hashes)
+        chunks.append(
+            (start_idx, end_idx, hash_ids, hash_values_array, hamming_threshold, total_hashes)
         )
-    logger.debug(f"Checkpoint saved: {len(similar_pairs)} pairs, processed {processed_idx} hashes")
+
+    logger.info(f"Split into {len(chunks)} chunks for parallel processing")
+
+    # Process chunks in parallel
+    t0 = time.time()
+    similar_pairs = []
+
+    with mp.Pool(processes=workers) as pool:
+        results = []
+        for i, chunk_pairs in enumerate(pool.imap_unordered(_compare_hash_chunk, chunks), 1):
+            similar_pairs.extend(chunk_pairs)
+            if i % max(1, len(chunks) // 20) == 0:
+                progress = 100 * i / len(chunks)
+                elapsed = time.time() - t0
+                rate = i / elapsed if elapsed > 0 else 0
+                eta = (len(chunks) - i) / rate if rate > 0 else 0
+                logger.info(
+                    f"Progress: {i}/{len(chunks)} chunks ({progress:.1f}%) - "
+                    f"Found {len(similar_pairs):,} pairs - "
+                    f"ETA: {eta/60:.1f} min"
+                )
+
+    elapsed = time.time() - t0
+    logger.info(f"Found {len(similar_pairs):,} fuzzy match pairs in {elapsed:.1f}s")
+
+    # Remove duplicates (pairs might be found by multiple workers)
+    similar_pairs = list(set(similar_pairs))
+    logger.info(f"After deduplication: {len(similar_pairs):,} unique pairs")
+
+    return similar_pairs
 
 
 def _cluster_hashes(hash_ids, similar_pairs):
@@ -402,9 +566,7 @@ def _cluster_hashes(hash_ids, similar_pairs):
     return dedupe_assignments, num_groups
 
 
-def _write_hash_assignments_batched(
-    hashes_meta, dedupe_assignments, pb_item_ids, shard_id, total_shards
-):
+def _write_hash_assignments_batched(hashes_meta, dedupe_assignments, shard_id, total_shards):
     """Write deduplication assignments to database in batches"""
     db = DedupedHash._meta.database
     db.create_tables([DedupedHash], safe=True)
@@ -414,8 +576,14 @@ def _write_hash_assignments_batched(
     hash_ids_to_delete = list(dedupe_assignments.keys())
 
     if hash_ids_to_delete:
-        deleted = DedupedHash.delete().where(DedupedHash.hash_id.in_(hash_ids_to_delete)).execute()
-        logger.info(f"Deleted {deleted} existing assignments")
+        # Delete in chunks to avoid too large IN clause
+        chunk_size = 1000
+        total_deleted = 0
+        for i in range(0, len(hash_ids_to_delete), chunk_size):
+            chunk = hash_ids_to_delete[i : i + chunk_size]
+            deleted = DedupedHash.delete().where(DedupedHash.hash_id.in_(chunk)).execute()
+            total_deleted += deleted
+        logger.info(f"Deleted {total_deleted} existing assignments")
     else:
         logger.info("No existing assignments to delete")
 
