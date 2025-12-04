@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 from more_itertools import chunked
 from utils import get_db, process_db_write_batch
+from turbojpeg import TurboJPEG
 from models import PipelineBatchItem, Detection, Classification
 
 from const import (
@@ -152,6 +153,16 @@ def classify_batch_of_items(
     model.to(device)
     class_names = list(model.names.values())
 
+    # Collect all classifications from all items
+    all_classified_entries: list[Classification] = []
+
+    # Track timing for all items
+    total_time_preproc = timedelta(0)
+    total_time_infer = timedelta(0)
+    total_time_clear_gpu = timedelta(0)
+    total_n_crops = 0
+    total_failed_crops = 0
+
     # For each item/volume
     for id_pipeline_batch_item in item_ids:
         item = PipelineBatchItem.get(id_pipeline_batch_item=id_pipeline_batch_item)
@@ -181,7 +192,6 @@ def classify_batch_of_items(
 
         time_preproc = timedelta(0)
         time_infer = timedelta(0)
-        time_db = timedelta(0)
         time_clear_gpu = timedelta(0)
 
         # Group crops in batches for GPU efficiency
@@ -291,19 +301,6 @@ def classify_batch_of_items(
                     )
                 )
 
-        # Save all to the database
-        start_db = datetime.now()
-        # Delete previous Classification entries for this item
-        Classification.delete().where(
-            Classification.pipeline_batch_item == id_pipeline_batch_item
-        ).execute()
-        process_db_write_batch(
-            model=Classification,
-            entries_to_create=classified_entries,
-        )
-        end_db = datetime.now()
-        time_db += end_db - start_db
-
         # Clear GPU cache and run GC
         start_gpu = datetime.now()
         with torch.cuda.device(0):
@@ -312,17 +309,38 @@ def classify_batch_of_items(
         end_gpu = datetime.now()
         time_clear_gpu += end_gpu - start_gpu
 
-        # Stats
+        # Add to totals
+        total_time_preproc += time_preproc
+        total_time_infer += time_infer
+        total_time_clear_gpu += time_clear_gpu
+        total_n_crops += n_crops
+        total_failed_crops += failed_crops
+
+        # Add classifications to batch
+        all_classified_entries.extend(classified_entries)
+
+        # Stats for this volume
         logger.info(
             f"{volume_barcode} | Crops: {n_crops} - "
             f"Failed crops: {failed_crops} - "
             f"Device: {cuda_device} - "
             f"Preprocessing: {time_preproc} - "
             f"Inference: {time_infer} - "
-            f"DB write: {time_db} - "
             f"Clear GPU: {time_clear_gpu} - "
-            f"Total: {time_preproc + time_infer + time_db + time_clear_gpu}"
+            f"Total: {time_preproc + time_infer + time_clear_gpu}"
         )
+
+    #
+    # Save all classifications to the database (batch operation)
+    #
+    # Delete previous Classification entries for all items in this batch
+    Classification.delete().where(Classification.pipeline_batch_item.in_(item_ids)).execute()
+
+    # Batch write all classifications
+    process_db_write_batch(
+        model=Classification,
+        entries_to_create=all_classified_entries,
+    )
 
     return True
 

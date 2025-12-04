@@ -11,7 +11,12 @@ class DedupedHash(Model):
     pipeline_batch_item = ForeignKeyField(
         PipelineBatchItem, field="id_pipeline_batch_item", index=True
     )
-    detection = ForeignKeyField(Detection, field="id_detection", index=True)
+    detection = ForeignKeyField(
+        Detection,
+        field="id_detection",
+        index=True,
+        on_delete="CASCADE",
+    )
     scan_filename = CharField()
     image_hash = CharField(index=True)
     created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])

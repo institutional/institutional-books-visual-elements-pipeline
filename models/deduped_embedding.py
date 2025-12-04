@@ -11,7 +11,12 @@ class DedupedEmbedding(Model):
     pipeline_batch_item = ForeignKeyField(
         PipelineBatchItem, field="id_pipeline_batch_item", index=True
     )
-    detection = ForeignKeyField(Detection, field="id_detection", index=True)
+    detection = ForeignKeyField(
+        Detection,
+        field="id_detection",
+        index=True,
+        on_delete="CASCADE",
+    )
     scan_filename = CharField()
     embedding = ArrayField(FloatField, dimensions=1)
     created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])

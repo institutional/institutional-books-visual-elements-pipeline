@@ -114,7 +114,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         PipelineBatchItem.select().where(PipelineBatchItem.id_pipeline_batch_item.in_(item_ids))
     )
 
-    # Fetch ALL detections for these items at once
+    # Fetch ALL detections for these items at once (with non-excluded classifications)
     detections_query = (
         Detection.select()
         .join(Classification, on=(Detection.id_detection == Classification.detection))
@@ -122,6 +122,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
             (Detection.pipeline_batch_item.in_(item_ids))
             & (Classification.pred_class.not_in(CAPTION_CLASSES_EXCLUDED))
         )
+        .order_by(Detection.id_detection)
         .distinct()
     )
 
@@ -133,11 +134,15 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
             detections_by_item[item_id] = []
         detections_by_item[item_id].append(det)
 
+    # Collect all captions and track statistics
     all_captions = []
-    items_to_delete = []
+    total_n_crops = 0
+    total_failed_crops = 0
+    total_failed_captions = 0
+    total_decode_time = 0
 
     for item in items:
-        # Access pre-fetched detections
+        # Access pre-fetched detections (no duplicate query needed)
         dets = detections_by_item.get(item.id_pipeline_batch_item, [])
         if not dets:
             continue
@@ -145,24 +150,6 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         id_pipeline_batch_item = item.id_pipeline_batch_item
         volume = item.ib_volume
         barcode = volume.barcode
-
-        items_to_delete.append(id_pipeline_batch_item)
-
-        # Only get detections where pred_class is not in excluded classes
-        dets = (
-            Detection.select()
-            .join(Classification, on=(Detection.id_detection == Classification.detection))
-            .where(
-                (Detection.pipeline_batch_item == id_pipeline_batch_item)
-                & Classification.pred_class.not_in(CAPTION_CLASSES_EXCLUDED)
-            )
-            .order_by(Detection.id_detection)
-            .distinct()
-        )
-
-        if dets.count() == 0:
-            logger.info(f"{barcode}: No detections - skipping.")
-            continue
 
         # images + text context
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
@@ -186,7 +173,8 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                     loaded_images[fn] = fut.result()
                 except:
                     logger.warning(f"{barcode}: Failed to decode {fn}")
-        time_decode = datetime.now() - start_decode
+        time_decode = (datetime.now() - start_decode).total_seconds()
+        total_decode_time += time_decode
 
         # crops
         crop_records = []
@@ -268,13 +256,21 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                             created=datetime.now(timezone.utc),
                         )
                     )
+
+        # Add to batch totals
         all_captions.extend(captioned_entries)
+        total_n_crops += n_crops
+        total_failed_crops += failed_crops
+        total_failed_captions += failed_captions
+
         logger.info(
-            f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | Decode time: {time_decode} | Failed Captions {failed_captions}"
+            f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | Decode time: {time_decode:.2f}s | Failed Captions: {failed_captions}"
         )
 
-    # DB Write
-    Caption.delete().where(Caption.pipeline_batch_item.in_(items_to_delete)).execute()
+    #
+    # Batch DB operations - delete and write all at once
+    #
+    Caption.delete().where(Caption.pipeline_batch_item.in_(item_ids)).execute()
     process_db_write_batch(Caption, all_captions)
 
     return True

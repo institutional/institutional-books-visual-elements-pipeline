@@ -186,6 +186,14 @@ def process_batch_of_items(
     except Exception as err:
         raise Exception("Object detection model must be single-class.") from err
 
+    # Collect all detections from all items
+    all_detections: list[Detection] = []
+
+    # Track timing for all items
+    total_pre_processing_time = timedelta(seconds=0)
+    total_inference_time = timedelta(seconds=0)
+    total_clear_gpu_time = timedelta(seconds=0)
+
     #
     # Process 1 volume at a time
     #
@@ -198,7 +206,6 @@ def process_batch_of_items(
 
         pre_processing_time = timedelta(seconds=0)  # Cumulative
         inference_time = timedelta(seconds=0)  # Cumulative
-        db_write_time = timedelta(seconds=0)  # Cumulative
         clear_gpu_time = timedelta(seconds=0)  # Cumulative
 
         #
@@ -251,28 +258,6 @@ def process_batch_of_items(
             inference_time += end - start
 
         #
-        # Record detections in db. Replace existing records for pipeline batch item
-        #
-        start = datetime.now()
-
-        # Delete classifications first
-        Classification.delete().where(
-            Classification.pipeline_batch_item == id_pipeline_batch_item
-        ).execute()
-
-        Detection.delete().where(
-            Detection.pipeline_batch_item == id_pipeline_batch_item,
-        ).execute()
-
-        process_db_write_batch(
-            model=Detection,
-            entries_to_create=detections,
-        )
-
-        end = datetime.now()
-        db_write_time = end - start
-
-        #
         # Clear GPU cache and run GC
         #
         start = datetime.now()
@@ -285,6 +270,14 @@ def process_batch_of_items(
         end = datetime.now()
         clear_gpu_time = end - start
 
+        # Add to totals
+        total_pre_processing_time += pre_processing_time
+        total_inference_time += inference_time
+        total_clear_gpu_time += clear_gpu_time
+
+        # Add detections to batch
+        all_detections.extend(detections)
+
         #
         # Print stats for volume
         #
@@ -294,10 +287,26 @@ def process_batch_of_items(
             + f"Device: {cuda_device} - "
             + f"Preprocessing: {pre_processing_time} - "
             + f"Inference: {inference_time} - "
-            + f"DB write: {db_write_time} - "
             + f"Clear GPU cache: {clear_gpu_time} - "
-            + f"Total: {pre_processing_time + inference_time + db_write_time + clear_gpu_time}"
+            + f"Total: {pre_processing_time + inference_time + clear_gpu_time}"
         )
+
+    #
+    # Record all detections in db. Replace existing records for all pipeline batch items
+    #
+    # Delete classifications first (batch delete for all items)
+    Classification.delete().where(Classification.pipeline_batch_item.in_(item_ids)).execute()
+
+    # Delete existing detections (batch delete for all items)
+    Detection.delete().where(
+        Detection.pipeline_batch_item.in_(item_ids),
+    ).execute()
+
+    # Batch write all detections
+    process_db_write_batch(
+        model=Detection,
+        entries_to_create=all_detections,
+    )
 
     return True
 

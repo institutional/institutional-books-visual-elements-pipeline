@@ -11,6 +11,8 @@ import numpy as np
 
 from more_itertools import chunked
 import imagehash
+from turbojpeg import TurboJPEG
+
 
 from utils import get_db, process_db_write_batch, get_s3_client
 from models import PipelineBatchItem, Detection, Embedding, ImageHash
@@ -163,6 +165,14 @@ def embed_batch_of_items(
 
     from datetime import datetime, timezone
 
+    # Collect all embeddings and hashes from all items
+    all_embedding_entries = []
+    all_imagehash_entries = []
+
+    # Track statistics
+    total_n_embeds = 0
+    total_failed_embeds = 0
+
     for id_pipeline_batch_item in item_ids:
         item = PipelineBatchItem.get(id_pipeline_batch_item=id_pipeline_batch_item)
         volume_barcode = item.ib_volume.barcode
@@ -263,28 +273,45 @@ def embed_batch_of_items(
                     )
                 )
 
-        # Store in DB (replace previous for this batch item)
-        Embedding.delete().where(Embedding.pipeline_batch_item == id_pipeline_batch_item).execute()
-        ImageHash.delete().where(ImageHash.pipeline_batch_item == id_pipeline_batch_item).execute()
-        process_db_write_batch(
-            model=Embedding,
-            entries_to_create=embedding_entries,
-        )
-        process_db_write_batch(
-            model=ImageHash,
-            entries_to_create=imagehash_entries,
-        )
+        # Add to totals
+        total_n_embeds += n_embeds
+        total_failed_embeds += failed_embeds
+
+        # Add to batch collections
+        all_embedding_entries.extend(embedding_entries)
+        all_imagehash_entries.extend(imagehash_entries)
 
         logger.info(
             f"{volume_barcode} | n_crops: {n_embeds} - failed crops: {failed_embeds} - embeddings: {len(embedding_entries)} - hashes: {len(imagehash_entries)}"
         )
+
         # GC/CUDA clear
         torch.cuda.empty_cache()
         gc.collect()
 
+    #
+    # Store all embeddings and hashes in DB (batch operation for all items)
+    #
+    from datetime import datetime
+
+    # Delete previous entries for all items in this batch
+    Embedding.delete().where(Embedding.pipeline_batch_item.in_(item_ids)).execute()
+    ImageHash.delete().where(ImageHash.pipeline_batch_item.in_(item_ids)).execute()
+
+    # Batch write all embeddings and hashes
+    process_db_write_batch(
+        model=Embedding,
+        entries_to_create=all_embedding_entries,
+    )
+    process_db_write_batch(
+        model=ImageHash,
+        entries_to_create=all_imagehash_entries,
+    )
+
     return True
 
 
+# Use the detection/decode code as in detection pipeline
 def decode_image_bytes(image_bytes) -> np.ndarray:
     buffer = np.frombuffer(image_bytes, dtype=np.uint8)
     return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)

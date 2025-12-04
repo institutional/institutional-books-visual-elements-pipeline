@@ -118,18 +118,38 @@ def store_batch_of_items(item_ids: list[int], cpus_limit: int):
 
     s3_client = get_s3_client("OUTPUT")
 
-    for id_pipeline_batch_item in item_ids:
-        item = PipelineBatchItem.get(id_pipeline_batch_item=id_pipeline_batch_item)
+    # Fetch all items at once
+    items = list(
+        PipelineBatchItem.select().where(PipelineBatchItem.id_pipeline_batch_item.in_(item_ids))
+    )
+
+    # Fetch ALL detections for these items at once
+    detections_query = (
+        Detection.select()
+        .where(Detection.pipeline_batch_item.in_(item_ids))
+        .order_by(Detection.id_detection)
+    )
+
+    # Group detections by pipeline_batch_item
+    detections_by_item = {}
+    for det in detections_query:
+        item_id = det.pipeline_batch_item_id
+        if item_id not in detections_by_item:
+            detections_by_item[item_id] = []
+        detections_by_item[item_id].append(det)
+
+    # Track totals
+    total_failed_crops = 0
+
+    for item in items:
+        id_pipeline_batch_item = item.id_pipeline_batch_item
         volume = item.ib_volume
         barcode = volume.barcode
 
-        dets = (
-            Detection.select()
-            .where(Detection.pipeline_batch_item == id_pipeline_batch_item)
-            .order_by(Detection.id_detection)
-        )
+        # Access pre-fetched detections
+        dets = detections_by_item.get(id_pipeline_batch_item, [])
 
-        if dets.count() == 0:
+        if not dets:
             logger.info(f"{barcode}: No detections - skipping.")
             continue
 
