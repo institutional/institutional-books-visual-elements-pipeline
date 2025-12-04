@@ -257,10 +257,13 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                     # Detection number and class
                     class_info = ""
                     if det.classification_obj and det.classification_obj.pred_class:
+                        det_conf = det.bbox_conf
+                        detection_info = f" - Detection Confidence: {det_conf}"
                         class_num = str(det.classification_obj.pred_class)
                         class_name = CLASS_DICT.get(class_num, f"Unknown ({class_num})")
-                        class_info = f" - {class_name}"
-                    legend_lines.append(f"[{idx}]{class_info}")
+                        class_conf = str(det.classification_obj.pred_conf)
+                        class_info = f" - {class_name} - Class Confidence: {class_conf}"
+                    legend_lines.append(f"[{idx}]{detection_info}{class_info}")
 
                     # Caption
                     caption_text = (
@@ -559,7 +562,7 @@ def _process_dedupe_groups(
 
                 # Create filename
                 volume_barcode = item.ib_volume.barcode if item else "unknown"
-                scan_name = record.scan_filename.replace(".jp2", "").replace(".jpg", "")
+                scan_name = record.scan_filename.replace(".jp2", "").replace(".tiff", "")
                 filename = f"{idx:02d}_{volume_barcode}_{scan_name}_det{detection.id_detection}.jpg"
 
                 # Save

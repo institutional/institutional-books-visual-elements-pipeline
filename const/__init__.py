@@ -68,7 +68,7 @@ DETECTION_MODEL_FILEPATH = "weights/best.pt"
 DETECTION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-DETECTION_MODEL_CONF = 0.6
+DETECTION_MODEL_CONF = 0.7
 """ `conf` value to pass to YOLO during inference. """
 
 DETECTION_MODEL_IOU = 0.3
