@@ -293,7 +293,7 @@ def classify_batch_of_items(
                         detection_id=detections_batch[idx].id_detection,
                         pred_idx=int(pred_idx),
                         pred_class=pred_class,
-                        pred_probs=probs.data.tolist() if hasattr(probs, "data") else None,
+                        probs=probs.data.cpu().tolist(),
                         pipeline_batch_item=id_pipeline_batch_item,
                         scan_filename=filenames_batch[idx],
                         pred_conf=pred_conf,
