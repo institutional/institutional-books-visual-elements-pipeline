@@ -46,7 +46,7 @@ from const import CPUS_LIMIT
 @click.option(
     "--hnsw-ef-search",
     type=int,
-    default=100,
+    default=300,
     show_default=True,
     help="HNSW ef_search parameter (query time, higher=better recall)",
 )

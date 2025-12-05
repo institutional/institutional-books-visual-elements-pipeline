@@ -68,14 +68,14 @@ class DedupedHash(Model):
 @click.option(
     "--lsh-num-tables",
     type=int,
-    default=10,
+    default=15,
     show_default=True,
     help="Number of LSH hash tables (more = better recall, slower)",
 )
 @click.option(
     "--lsh-key-size",
     type=int,
-    default=16,
+    default=8,
     show_default=True,
     help="Number of bits per LSH key (smaller = more candidates, slower)",
 )
