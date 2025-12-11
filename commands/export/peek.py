@@ -12,7 +12,7 @@ from const import CLASS_DICT
 
 
 @click.command("peek")
-@click.option("--step", type=click.Choice(["detect", "dedupe"]), required=True)
+@click.option("--step", type=click.Choice(["batch", "run"]), required=True)
 @click.option("--id-pipeline-batch", type=int, required=True, help="Pipeline batch ID to inspect")
 @click.option("--n", help="Number of random volumes to select (integer or 'all')")
 @click.option(
@@ -26,8 +26,8 @@ def peek(step, id_pipeline_batch, n, output_dir):
     Visualize pipeline outputs for debugging and validation.
 
     Examples:
-        peek --step detect --id-pipeline-batch 123 --n 5
-        peek --step detect --id-pipeline-batch 123 --n all
+        peek --step batch --id-pipeline-batch 123 --n 5
+        peek --step run --id-pipeline-batch 123 --n all
     """
     get_db()
 
@@ -47,9 +47,9 @@ def peek(step, id_pipeline_batch, n, output_dir):
     logger.info(f"Peeking at batch {id_pipeline_batch}, step: {step}")
     logger.info(f"Output directory: {output_path}")
 
-    if step == "detect":
+    if step == "batch":
         peek_detect(batch, n, output_path)
-    if step == "dedupe":
+    if step == "run":
         peek_dedupe(batch, n, output_path)
 
     logger.info(f"✓ Peek complete! Results saved to: {output_path}")

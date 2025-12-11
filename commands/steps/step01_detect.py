@@ -64,6 +64,11 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     processes_per_gpu = DETECTION_MODEL_PROCESSES_PER_GPU
     processes_total = cuda_gpus_total * processes_per_gpu
 
+    logger.info(f"Number of GPUs: {cuda_gpus_total}")
+    logger.info(f"Number of processes: {processes_per_gpu}")
+    logger.info(f"Total processes: {processes_total}")
+    logger.info(f"Total cpus: {cpus_limit}")
+
     # 1 batch of items per GPU process (processes_total)
     item_id_batches: list[list[int]] = [[] for i in range(0, processes_total)]
 

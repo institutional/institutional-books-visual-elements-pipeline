@@ -11,7 +11,6 @@ import cv2
 import numpy as np
 from more_itertools import chunked
 from utils import get_db, process_db_write_batch
-from turbojpeg import TurboJPEG
 from models import PipelineBatchItem, Detection, Classification
 
 from const import (

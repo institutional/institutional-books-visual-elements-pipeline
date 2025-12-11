@@ -106,7 +106,7 @@ def step07_dedupe(
     """
     Deduplicate embeddings at scale using HNSW index with disk caching.
 
-    Embeddings are NOT stored in deduped_embedding table (use JOIN with embedding table).
+    NOTE: Embeddings are NOT stored in deduped_embedding table (use JOIN with embedding table).
     """
 
     logger.info(f"Starting deduplication for pipeline run {id_pipeline_run}")

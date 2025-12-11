@@ -34,7 +34,7 @@ The Institutional Data Initiative's pipeline for extracting, analyzing, and publ
 
 ### External dependencies
 - A [PostgreSQL database](https://www.postgresql.org/), which can be local or remote.
-  - pgvector extension
+  - [pgvector extension](https://github.com/pgvector/pgvector)
 - An S3-compatible storage bucket for storing intermediary outputs
 
 ### Other requirements
@@ -85,8 +85,6 @@ uv run pipeline.py --verbose command options &> run-{date}-{info}.log
 
 ## Concept
 
-> Work in progress
-
 **This pipeline was assembled with the following constraints in mind:**
 - The need to run inference using a series of small models against hundreds of millions of high-resolution scans
 - Balancing these two bottlenecks: 
@@ -107,7 +105,6 @@ uv run pipeline.py --verbose command options &> run-{date}-{info}.log
 
 ## Sequencing of a pipeline run
 
-> Work in progress
 
 ### 1. Build the database
 
@@ -160,14 +157,27 @@ uv run pipeline.py orchestration execute --id-pipeline-run=1 --batch-processing-
 
 ### 4. Export
 
-"Peek" at samples to confirm the pipeline is working as expected:
-> TODO
+> Work in progress
 
-Intermediary data for analysis:
-> TODO
+"Peek" at samples to confirm the pipeline is working as expected.
+The peek function allows for peeking at batch level steps (detection, classification, captioning) and run level steps (embedding and hash deduplication).
+Peek at the batch level steps using `--step batch` and run level steps using `--step run`. Specify a batch number and the number of random volumes to peek at.
+
+```bash
+uv run pipeline.py export peek --step run --id-pipeline-batch 1 --n 10
+
+# Run a specific batch
+uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n all
+
+# Run a specific batch
+uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n 5 --output-dir peek-5-volumes/
+```
 
 Full dataset:
-> TODO
+
+```bash
+uv run pipeline.py export to-hf ...
+```
 
 [👆 Back to the summary](#summary)
 
@@ -227,8 +237,6 @@ s3_output = utils.get_s3_client("OUTPUT")
 
 ## CLI: system
 
-> Work in progress
-
 > ⚠️ `system build` must be run at least once per database.
 
 <details>
@@ -271,8 +279,6 @@ uv run pipeline.py system status
 ---
 
 ## CLI: orchestration
-
-> Work in progress
 
 <details>
 <summary><h3>orchestration prepare</h3></summary>
@@ -355,26 +361,139 @@ uv run pipeline.py steps step01-detect --id-pipeline-batch=1
 
 </details>
 
-
-[👆 Back to the summary](#summary)
-
----
-
-## CLI: export
-
-> Work in progress
-
 <details>
-<summary><h3>export peek 🚧</h3></summary>
+<summary><h3>steps step02-classify</h3></summary>
+
+Runs the visual elements classification model against a batch of crops.
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+- Runs X processes per GPU.
+    - Adjust `CLASSIFICATION_MODEL_PROCESSES_PER_GPU` env var based on available resources.
+    - Adjust `CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY` env var to adjust pre-fork delay.
+    This may help prevent processes from blocking each each other (HACK).
+
+```bash
+uv run pipeline.py steps step02-classify --id-pipeline-batch=1
+```
+
 </details>
 
 <details>
-<summary><h3>export as-jsonl 🚧</h3></summary>
+<summary><h3>steps step03-embed</h3></summary>
+
+Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch, and saves them to the database, per GPU.
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+
+```bash
+uv run pipeline.py steps step03-embed --id-pipeline-batch=1
+```
+
 </details>
 
 <details>
-<summary><h3>export to-hf 🚧</h3></summary>
+<summary><h3>steps step04-process-caption-requests</h3></summary>
+
+Runs caption-generation on the cropped regions of each volume that contains detections.
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+- Adjust `CAPTION_MAX_REQUESTS` env var based on your OpenAI API tier and usage.
+
+
+```bash
+uv run pipeline.py steps step04-process-caption-requests --id-pipeline-batch=1
+```
+
 </details>
+
+<details>
+<summary><h3>steps step05-store</h3></summary>
+
+Stores cropped detection regions to S3/R2 storage in full resolution PNG format.
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+
+```bash
+uv run pipeline.py steps step05-store --id-pipeline-batch=1
+```
+
+</details>
+
+<details>
+<summary><h3>steps step06-dedupe-hashes</h3></summary>
+
+Deduplicate image hashes using exact or fuzzy matching.
+
+    - For exact matching (--hamming-threshold=0), uses hash grouping (very fast).
+    - For fuzzy matching (--hamming-threshold>0), uses LSH for efficient approximate matching.
+
+    Tuning:
+    - For high recall (find more matches): Increase --lsh-num-tables, decrease --lsh-key-size
+    - For speed: Decrease --lsh-num-tables, increase --lsh-key-size
+    - For 256-bit hashes with threshold ≤5: Default settings work well
+    - For larger thresholds: Increase --lsh-num-tables (each doubling of threshold needs ~2× tables)
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
+
+```bash
+uv run pipeline.py steps step06-dedupe-hashes --id-pipeline-run=1
+```
+
+</details>
+
+
+</details>
+
+<details>
+<summary><h3>steps step07-dedupe-embeddings</h3></summary>
+
+Deduplicate embeddings at scale using HNSW index with disk caching.
+
+NOTE: Embeddings are NOT stored in deduped_embedding table (use JOIN with embedding table).
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
+
+```bash
+uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
+```
+
+</details>
+
+
+</details>
+
+<details>
+<summary><h3>steps step08-analyze</h3></summary>
+
+Collect analysis data from a pipeline run and export to CSV for further analysis.
+
+Gathers crop-level metrics including metadata, dimensions, confidence scores, duplication information, and caption statistics.
+
+NOTE:
+- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+- This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
+
+```bash
+uv run pipeline.py steps step08-analyze --id-pipeline-run=1
+```
+
+</details>
+
+
+
+
 
 [👆 Back to the summary](#summary)
 

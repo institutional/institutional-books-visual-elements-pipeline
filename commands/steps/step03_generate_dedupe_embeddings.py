@@ -11,8 +11,6 @@ import numpy as np
 
 from more_itertools import chunked
 import imagehash
-from turbojpeg import TurboJPEG
-
 
 from utils import get_db, process_db_write_batch, get_s3_client
 from models import PipelineBatchItem, Detection, Embedding, ImageHash

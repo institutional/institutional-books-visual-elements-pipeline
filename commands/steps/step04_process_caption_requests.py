@@ -37,7 +37,7 @@ from openai import APITimeoutError
 client = openai.OpenAI()
 
 
-@click.command("step04_process_caption_requests")
+@click.command("step04-process-caption-requests")
 @click.option("--id-pipeline-batch", type=int, required=True)
 @click.option(
     "--cpus-limit",
