@@ -35,7 +35,6 @@ class Detection(peewee.Model):
         """
         Returns the crop defined by bbox_xyxy from the given scan image (an np.ndarray).
         """
-        # TODO: should be able to call images directly (self.pipeline_batch_item.images) instead of passing by argument
         if self.bbox_xyxy is None:
             raise ValueError("bbox_xyxy is None for this detection.")
         x1, y1, x2, y2 = [int(round(v)) for v in self.bbox_xyxy]

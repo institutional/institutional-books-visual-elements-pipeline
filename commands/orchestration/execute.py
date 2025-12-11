@@ -10,7 +10,6 @@ from models import PipelineRun, PipelineBatch, PipelineBatchItem
 import commands.steps
 from const import (
     CPUS_LIMIT,
-    MAX_DB_CONCURRENCY,
     MAX_S3_CONCURRENCY,
     CUDA_GPUS,
     NODE_NAME,
