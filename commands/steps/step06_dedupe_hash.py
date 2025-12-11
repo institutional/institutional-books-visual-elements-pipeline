@@ -12,6 +12,9 @@ from const import (
     CPUS_LIMIT,
     HASH_DB_CHUNK_SIZE,
     HASH_DEDUPE_HAMMING_THRESHOLD,
+    HASH_DEDUPE_CACHE_DIR,
+    HASH_DEDUPE_LSH_KEY_SIZE,
+    HASH_DEDUPE_LSH_NUM_TABLES,
 )
 import time
 from collections import defaultdict
@@ -56,7 +59,7 @@ class DedupedHash(Model):
 @click.option(
     "--cache-dir",
     type=str,
-    default="./hash_cache",
+    default=HASH_DEDUPE_CACHE_DIR,
     help="Directory to cache hash data files",
 )
 @click.option(
@@ -68,14 +71,14 @@ class DedupedHash(Model):
 @click.option(
     "--lsh-num-tables",
     type=int,
-    default=15,
+    default=HASH_DEDUPE_LSH_NUM_TABLES,
     show_default=True,
     help="Number of LSH hash tables (more = better recall, slower)",
 )
 @click.option(
     "--lsh-key-size",
     type=int,
-    default=8,
+    default=HASH_DEDUPE_LSH_KEY_SIZE,
     show_default=True,
     help="Number of bits per LSH key (smaller = more candidates, slower)",
 )

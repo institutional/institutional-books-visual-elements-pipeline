@@ -8,7 +8,7 @@ import random
 
 from models import PipelineBatch, Detection
 from utils import get_db
-from const import CLASS_DICT
+from const import CLASS_DICT, PEEK_OUTPUT_DIR
 
 
 @click.command("peek")
@@ -18,7 +18,7 @@ from const import CLASS_DICT
 @click.option(
     "--output-dir",
     type=click.Path(),
-    default="./peek_output",
+    default=PEEK_OUTPUT_DIR,
     help="Output directory for visualization",
 )
 def peek(step, id_pipeline_batch, n, output_dir):

@@ -129,7 +129,7 @@ CLASS_DICT = {
 
 
 #
-# Dedupe Embeddings/Hashes
+# Dedupe Embeddings
 #
 DEDUPE_EMBEDDING_MODEL_STORAGE_PATH = "pretrained-models"
 """ S3 folder in which the deduplication model is saved. """
@@ -147,11 +147,39 @@ Sets a delay before creating GPU processes.
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
 
-HASH_SIZE = 12  # NOTE: change the max_length of the ImageHash model accordingly
-"""Size of phash. The hash will be of size HASH_SIZE*HASH_SIZE bytes"""
-
 DEDUPE_EMBEDDING_BATCH_SIZE = 1024
 """Size of minibatches to pass to the embedding model"""
+
+DEDUPE_EMBEDDING_THRESHOLD = 0.14
+"""Max cosine distance between embeddings to be considered a duplicate"""
+
+DEDUPE_EMBEDDING_MAX_NEIGHBORS = 100
+"""Maximum neighbors to find per embedding (k in HNSW search)"""
+
+DEDUPE_EMBEDDING_MAX_CONNECTIONS = 16
+"""HNSW index M parameter (number of connections per layer)"""
+
+DEDUPE_EMBEDDING_HNSW_EF_CONST = 200
+"""HNSW ef_construction parameter (index build time, higher=better recall)"""
+
+DEDUPE_EMBEDDING_HNSW_EF_SEARCH = 300
+"""HNSW ef_search parameter (query time, higher=better recall)"""
+
+DEDUPE_EMBEDDING_HNSW_INDEX_BATCH = 100000
+"""Batch size for index building"""
+
+DEDUPE_EMBEDDING_SEARCH_BATCH = 10000
+"""Batch size for similarity search (smaller=less memory)"""
+
+DEDUPE_EMBEDDING_CACHE_DIR = "./embedding_cache"
+"""Directory to cache embedding data files"""
+
+
+#
+# Dedupe Hashes
+#
+HASH_SIZE = 12  # NOTE: change the max_length of the ImageHash model accordingly
+"""Size of phash. The hash will be of size HASH_SIZE*HASH_SIZE bytes"""
 
 HASH_DB_CHUNK_SIZE = 10000
 """Size of chunks to write grouped embeddings to DB"""
@@ -159,11 +187,14 @@ HASH_DB_CHUNK_SIZE = 10000
 HASH_DEDUPE_HAMMING_THRESHOLD = 16
 """Max Hamming distance to be considered duplicate"""
 
-HASH_DEDUPE_TOTAL_SHARDS = 1
-"""Total number of shards to split dataset into when grouping"""
+HASH_DEDUPE_LSH_NUM_TABLES = 15
+"""Number of LSH hash tables (more = better recall, slower)"""
 
-HASH_DEDUPE_MAX_HASHES_PER_SHARD = 1000000
-"""Maximum hashes per shard (auto-shard if exceeded)"""
+HASH_DEDUPE_LSH_KEY_SIZE = 8
+"""Number of bits per LSH key (smaller = more candidates, slower)"""
+
+HASH_DEDUPE_CACHE_DIR = "./hash_cache"
+"""Directory to cache hash data files"""
 
 
 #
@@ -207,6 +238,13 @@ BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 
 
 #
+# Analysis
+#
+ANALYSIS_OUTPUT_DIR = "analysis_output"
+"""Output directory for analysis files"""
+
+
+#
 # Misc
 #
 NODE_NAME = os.getenv("NODE_NAME")
@@ -244,3 +282,6 @@ DEFAULT_DB_BATCH_SIZE = 1000
 
 MAX_S3_REQUESTS_PER_SECOND = 25
 """Maximum upload requests to S3 per second (for step05_store)"""
+
+PEEK_OUTPUT_DIR = "./peek_output"
+"Output directory for visualization"

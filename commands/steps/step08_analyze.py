@@ -7,7 +7,7 @@ from multiprocessing import Pool
 import click
 from loguru import logger
 
-from const import CPUS_LIMIT
+from const import CPUS_LIMIT, ANALYSIS_OUTPUT_DIR
 from utils import get_db
 from models import (
     PipelineRun,
@@ -161,7 +161,7 @@ def process_detection(args):
 @click.option(
     "--output-dir",
     type=click.Path(),
-    default="analysis_output",
+    default=ANALYSIS_OUTPUT_DIR,
     help="Output directory for analysis files",
 )
 def step08_analyze(id_pipeline_run, output_dir):

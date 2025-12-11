@@ -10,7 +10,17 @@ import os
 import h5py
 from datetime import datetime
 
-from const import CPUS_LIMIT
+from const import (
+    CPUS_LIMIT,
+    DEDUPE_EMBEDDING_THRESHOLD,
+    DEDUPE_EMBEDDING_MAX_NEIGHBORS,
+    DEDUPE_EMBEDDING_MAX_CONNECTIONS,
+    DEDUPE_EMBEDDING_HNSW_EF_CONST,
+    DEDUPE_EMBEDDING_HNSW_EF_SEARCH,
+    DEDUPE_EMBEDDING_HNSW_INDEX_BATCH,
+    DEDUPE_EMBEDDING_SEARCH_BATCH,
+    DEDUPE_EMBEDDING_CACHE_DIR,
+)
 
 
 @click.command("step07-dedupe-embeddings")
@@ -18,35 +28,35 @@ from const import CPUS_LIMIT
 @click.option(
     "--threshold",
     type=float,
-    default=0.14,
+    default=DEDUPE_EMBEDDING_THRESHOLD,
     show_default=True,
     help="Cosine distance threshold for deduplication",
 )
 @click.option(
     "--max-neighbors",
     type=int,
-    default=100,
+    default=DEDUPE_EMBEDDING_MAX_NEIGHBORS,
     show_default=True,
     help="Maximum neighbors to find per embedding (k in HNSW search)",
 )
 @click.option(
     "--hnsw-m",
     type=int,
-    default=16,
+    default=DEDUPE_EMBEDDING_MAX_CONNECTIONS,
     show_default=True,
     help="HNSW index M parameter (number of connections per layer)",
 )
 @click.option(
     "--hnsw-ef-construction",
     type=int,
-    default=200,
+    default=DEDUPE_EMBEDDING_HNSW_EF_CONST,
     show_default=True,
     help="HNSW ef_construction parameter (index build time, higher=better recall)",
 )
 @click.option(
     "--hnsw-ef-search",
     type=int,
-    default=300,
+    default=DEDUPE_EMBEDDING_HNSW_EF_SEARCH,
     show_default=True,
     help="HNSW ef_search parameter (query time, higher=better recall)",
 )
@@ -60,27 +70,27 @@ from const import CPUS_LIMIT
 @click.option(
     "--batch-size",
     type=int,
-    default=100000,
+    default=DEDUPE_EMBEDDING_HNSW_INDEX_BATCH,
     show_default=True,
     help="Batch size for index building",
 )
 @click.option(
     "--search-batch-size",
     type=int,
-    default=10000,
+    default=DEDUPE_EMBEDDING_SEARCH_BATCH,
     show_default=True,
     help="Batch size for similarity search (smaller=less memory)",
 )
 @click.option(
     "--cache-dir",
     type=str,
-    default="./embedding_cache",
+    default=DEDUPE_EMBEDDING_CACHE_DIR,
     help="Directory to cache embedding data files",
 )
 @click.option(
     "--force-reload",
     is_flag=True,
-    default=False,
+    default=True,
     help="Force reload embeddings from database (ignore cache)",
 )
 @click.option(
