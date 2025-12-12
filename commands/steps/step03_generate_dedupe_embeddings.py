@@ -3,6 +3,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from pathlib import Path
 import gc
 import time
+import multiprocessing as mp  # <-- add this
 
 import click
 from loguru import logger
@@ -18,7 +19,6 @@ from models import PipelineBatchItem, Detection, Embedding, ImageHash
 from const import (
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
     DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
-    DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY,
     DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU,
     HASH_SIZE,
     CUDA_GPUS,
@@ -54,10 +54,6 @@ def step03_generate_dedupe_embeddings(
     """
     Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch,
     and saves them to the database, per GPU.
-
-    NOTE:
-    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
@@ -102,7 +98,14 @@ def step03_generate_dedupe_embeddings(
         logger.warning("No eligible items with detections found for this batch. Exiting.")
         click.get_current_context().exit(0)
 
-    with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
+    # --- changed block: use spawn context and remove delay ---
+    mp_ctx = mp.get_context("spawn")
+
+    with ProcessPoolExecutor(
+        max_workers=processes_total,
+        initializer=get_db,
+        mp_context=mp_ctx,  # <-- important
+    ) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
             cuda_gpus_i = i % cuda_gpus_total
@@ -114,9 +117,7 @@ def step03_generate_dedupe_embeddings(
                 cpus_limit=per_task_cpus_limit,
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
-            time.sleep(
-                DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY
-            )  # mimic detection/classification fork delay
+            # time.sleep(DEDUBE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY)  # <-- remove this
         for future in as_completed(futures):
             cuda_gpu: str = futures[future]
             try:

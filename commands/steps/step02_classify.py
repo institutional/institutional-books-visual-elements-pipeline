@@ -19,7 +19,6 @@ from const import (
     CLASSIFICATION_MODEL_FILEPATH,
     CLASSIFICATION_MODEL_IMGSZ,
     CLASSIFICATION_MODEL_CONF,
-    CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY,
     CUDA_GPUS,
     CPUS_LIMIT,
     CLASSIFICATION_MAX_BATCH,
@@ -113,7 +112,6 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
                 cpus_limit=per_task_cpus_limit,
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
-            time.sleep(CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY)
         for future in as_completed(futures):
             cuda_gpu: str = futures[future]
             try:

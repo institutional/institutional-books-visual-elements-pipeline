@@ -76,13 +76,6 @@ DETECTION_MODEL_IOU = 0.3
 DETECTION_MODEL_PROCESSES_PER_GPU = int(os.getenv("DETECTION_MODEL_PROCESSES_PER_GPU", 1))
 """ Determines how many detection processes can run on a given GPU. """
 
-DETECTION_MODEL_PROCESSES_FORK_DELAY = float(os.getenv("DETECTION_MODEL_PROCESSES_FORK_DELAY", 0.5))
-""" 
-Sets a delay before creating GPU processes. 
-Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
-"""
-
-
 #
 # Classification model params
 #
@@ -102,14 +95,6 @@ CLASSIFICATION_MODEL_IMGSZ = 640
 
 CLASSIFICATION_MODEL_CONF = 0.90
 """ `conf` value to pass to YOLO during inference. """
-
-CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY = float(
-    os.getenv("CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY", 0.5)
-)
-""" 
-Sets a delay before creating GPU processes. 
-Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
-"""
 
 CLASSIFICATION_MAX_BATCH = 16
 """ Maximum batch size to pass into the YOLO classification model """
@@ -139,12 +124,6 @@ DEDUPE_EMBEDDING_MODEL_FILEPATH = Path(
     f"{DEDUPE_EMBEDDING_MODEL_STORAGE_PATH}/{DEDUPE_EMBEDDING_MODEL_NAME}"
 )
 """ Local filepath to save downloaded embedding model. """
-
-DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 3
-""" 
-Sets a delay before creating GPU processes. 
-Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
-"""
 
 DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU = 4
 """Number of processes to run in parallel per GPU"""
