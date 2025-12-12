@@ -9,7 +9,7 @@ import numpy as np
 
 from utils import process_db_write_batch
 from models import IBVolume
-from const import DEFAULT_DB_BATCH_SIZE, CPUS_LIMIT, MAX_DB_CONCURRENCY, IB_10_METADATA_DATASET_REPO
+from const import DEFAULT_DB_BATCH_SIZE, CPUS_LIMIT, IB_10_METADATA_DATASET_REPO
 
 
 @click.command("build")
@@ -22,8 +22,8 @@ from const import DEFAULT_DB_BATCH_SIZE, CPUS_LIMIT, MAX_DB_CONCURRENCY, IB_10_M
 )
 @click.option(
     "--max-workers",
-    type=click.IntRange(1, min(MAX_DB_CONCURRENCY, CPUS_LIMIT)),
-    default=min(MAX_DB_CONCURRENCY, CPUS_LIMIT),
+    type=int,
+    default=CPUS_LIMIT,
     help="Determines how many items can be processed in parallel. Increases pressure on the database.",
 )
 def build(db_batch_size: int, max_workers: int):

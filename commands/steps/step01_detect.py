@@ -2,7 +2,8 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import gc
-import time
+import time  # <- you can keep or remove if unused elsewhere
+import multiprocessing as mp  # <-- add this
 
 import click
 from loguru import logger
@@ -21,7 +22,7 @@ from const import (
     DETECTION_MODEL_CONF,
     DETECTION_MODEL_IOU,
     DETECTION_MODEL_PROCESSES_PER_GPU,
-    DETECTION_MODEL_PROCESSES_FORK_DELAY,
+    # DETECTION_MODEL_PROCESSES_FORK_DELAY,  # <-- no longer needed
     CUDA_GPUS,
     CPUS_LIMIT,
 )
@@ -49,14 +50,6 @@ from const import (
 def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Runs the visual elements detection model against a batch of volumes.
-
-    NOTE:
-    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
-    - Runs X processes per GPU.
-      - Adjust `DETECTION_MODEL_PROCESSES_PER_GPU` env var based on available resources.
-      - Adjust `DETECTION_MODEL_PROCESSES_FORK_DELAY` env var to adjust pre-fork delay.
-        This may help prevent processes from blocking each each other (HACK).
     """
     model_filepath: Path | None = None
 
@@ -72,7 +65,7 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     # 1 batch of items per GPU process (processes_total)
     item_id_batches: list[list[int]] = [[] for i in range(0, processes_total)]
 
-    # Set CPU concurency for each process. Reduce if we're running more than 1 process per GPU.
+    # Set CPU concurrency for each process. Reduce if we're running more than 1 process per GPU.
     per_task_cpus_limit = int(round(cpus_limit / cuda_gpus_total))
 
     if processes_per_gpu > 1:
@@ -117,7 +110,14 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     #
     # Start parallel processing pool
     #
-    with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
+    # Use "spawn" to avoid CUDA / fork issues; this removes the need for per-process delays.
+    mp_ctx = mp.get_context("spawn")
+
+    with ProcessPoolExecutor(
+        max_workers=processes_total,
+        initializer=get_db,
+        mp_context=mp_ctx,  # <-- key change
+    ) as executor:
         futures = {}
 
         # Schedule tasks, assign each batch for a CUDA device
@@ -134,8 +134,8 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
 
             futures[future] = cuda_gpus[cuda_gpus_i]
 
-            # HACK: Helps prevent process collisions
-            time.sleep(DETECTION_MODEL_PROCESSES_FORK_DELAY)
+            # HACK REMOVED: no more fork delay needed
+            # time.sleep(DETECTION_MODEL_PROCESSES_FORK_DELAY)
 
         # Grab results
         for future in as_completed(futures):

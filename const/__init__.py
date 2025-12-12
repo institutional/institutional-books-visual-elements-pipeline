@@ -32,7 +32,6 @@ REQUIRED_ENV_VARS = [
     "POSTGRES_HOST",
     "POSTGRES_PORT",
     "MAX_S3_CONCURRENCY",
-    "MAX_DB_CONCURRENCY",
     "PIPELINE_BATCH_TIMEOUT_SECONDS",
     "HF_TOKEN",
 ]
@@ -141,11 +140,14 @@ DEDUPE_EMBEDDING_MODEL_FILEPATH = Path(
 )
 """ Local filepath to save downloaded embedding model. """
 
-DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 0.5
+DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY = 3
 """ 
 Sets a delay before creating GPU processes. 
 Helpful hack to manage multpiple processes on a single GPU while avoiding collisions.
 """
+
+DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU = 4
+"""Number of processes to run in parallel per GPU"""
 
 DEDUPE_EMBEDDING_BATCH_SIZE = 1024
 """Size of minibatches to pass to the embedding model"""
@@ -260,9 +262,6 @@ CUDA_GPUS = [device for device in get_torch_devices() if device.startswith("cuda
 
 MAX_S3_CONCURRENCY = int(os.getenv("MAX_S3_CONCURRENCY"))
 """ Determines how many operations can be run in parallel against S3-compatible storage. Loose limit. """
-
-MAX_DB_CONCURRENCY = int(os.getenv("MAX_DB_CONCURRENCY"))
-""" Determines how many operations can be run in parallel against the database. Loose limit. """
 
 PIPELINE_BATCH_TIMEOUT_SECONDS = int(os.getenv("PIPELINE_BATCH_TIMEOUT_SECONDS"))
 """ Maximum amount of time, in seconds, during which any given batch can run. """

@@ -19,6 +19,7 @@ from const import (
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
     DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
     DEDUPE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY,
+    DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU,
     HASH_SIZE,
     CUDA_GPUS,
     CPUS_LIMIT,
@@ -60,7 +61,7 @@ def step03_generate_dedupe_embeddings(
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
-    processes_total = cuda_gpus_total
+    processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU
 
     item_id_batches: list[list[int]] = [[] for _ in range(processes_total)]
 
