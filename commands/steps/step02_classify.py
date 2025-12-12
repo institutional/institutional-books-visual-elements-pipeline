@@ -4,6 +4,8 @@ from pathlib import Path
 import gc
 import time
 from datetime import datetime, timezone, timedelta
+import multiprocessing as mp  # <-- add this
+
 import click
 from loguru import logger
 from huggingface_hub import hf_hub_download
@@ -47,14 +49,6 @@ from const import (
 def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Runs the classification model on element crops from each volume containing detections.
-
-    NOTE:
-    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
-    - Runs X processes per GPU.
-      - Adjust `CLASSIFICATION_MODEL_PROCESSES_PER_GPU` env var based on available resources.
-      - Adjust `CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY` env var to adjust pre-fork delay.
-        This may help prevent processes from blocking each each other (HACK).
     """
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
@@ -100,7 +94,13 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         click.get_current_context().exit(0)
 
     # 3. Pool - Classifying batches
-    with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
+    mp_ctx = mp.get_context("spawn")  # <-- use spawn to avoid fork/CUDA issues
+
+    with ProcessPoolExecutor(
+        max_workers=processes_total,
+        initializer=get_db,
+        mp_context=mp_ctx,  # <-- key change
+    ) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
             cuda_gpus_i = i % cuda_gpus_total
@@ -112,6 +112,8 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
                 cpus_limit=per_task_cpus_limit,
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
+            # time.sleep(CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY)  # <-- no longer needed
+
         for future in as_completed(futures):
             cuda_gpu: str = futures[future]
             try:
