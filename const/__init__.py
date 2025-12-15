@@ -263,3 +263,5 @@ MAX_S3_REQUESTS_PER_SECOND = 25
 
 PEEK_OUTPUT_DIR = "./peek_output"
 "Output directory for visualization"
+
+OMP_NUM_THREADS = int(os.getenv("OMP_NUM_THREADS", 1))
