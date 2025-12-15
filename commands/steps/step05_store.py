@@ -7,7 +7,6 @@ from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 import click
 from loguru import logger
-from PIL import Image
 import numpy as np
 import cv2
 
@@ -17,7 +16,7 @@ from models import PipelineBatchItem, Detection
 from const import BUCKET_NAME, CPUS_LIMIT, MAX_S3_REQUESTS_PER_SECOND
 
 
-# Global rate limiter for S3 requests (1500/min = 25/sec)
+# Global rate limiter for S3 requests
 class RateLimiter:
     def __init__(self, max_requests_per_second):
         self.max_requests = max_requests_per_second
@@ -137,9 +136,6 @@ def store_batch_of_items(item_ids: list[int], cpus_limit: int):
         if item_id not in detections_by_item:
             detections_by_item[item_id] = []
         detections_by_item[item_id].append(det)
-
-    # Track totals
-    total_failed_crops = 0
 
     for item in items:
         id_pipeline_batch_item = item.id_pipeline_batch_item

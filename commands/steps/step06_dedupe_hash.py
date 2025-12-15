@@ -1,10 +1,9 @@
 import click
-from peewee import fn, SQL
+from peewee import SQL
 from playhouse.postgres_ext import *
 from loguru import logger
 from models import ImageHash, PipelineBatch, PipelineBatchItem, Detection
 from datetime import datetime
-import pickle
 import os
 import h5py
 import numpy as np
@@ -19,7 +18,6 @@ from const import (
 import time
 from collections import defaultdict
 import multiprocessing as mp
-from functools import partial
 import random
 
 

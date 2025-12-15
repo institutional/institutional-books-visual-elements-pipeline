@@ -2,9 +2,8 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import gc
-import time
 from datetime import datetime, timezone, timedelta
-import multiprocessing as mp  # <-- add this
+import multiprocessing as mp
 
 import click
 from loguru import logger
@@ -112,7 +111,6 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
                 cpus_limit=per_task_cpus_limit,
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
-            # time.sleep(CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY)  # <-- no longer needed
 
         for future in as_completed(futures):
             cuda_gpu: str = futures[future]

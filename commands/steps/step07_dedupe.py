@@ -1,6 +1,6 @@
 import click
 from loguru import logger
-from models import Embedding, PipelineBatch, PipelineBatchItem, Detection, DedupedEmbedding
+from models import Embedding, PipelineBatch, PipelineBatchItem, DedupedEmbedding
 import psutil
 import faiss
 import tqdm
@@ -8,7 +8,6 @@ import numpy as np
 import time
 import os
 import h5py
-from datetime import datetime
 
 from const import (
     CPUS_LIMIT,

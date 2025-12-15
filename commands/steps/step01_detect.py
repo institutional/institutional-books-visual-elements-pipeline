@@ -2,8 +2,7 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import gc
-import time  # <- you can keep or remove if unused elsewhere
-import multiprocessing as mp  # <-- add this
+import multiprocessing as mp
 
 import click
 from loguru import logger
@@ -13,7 +12,7 @@ import numpy as np
 from more_itertools import chunked
 
 from utils import get_db, process_db_write_batch
-from models import PipelineBatchItem, IBVolume, Detection, Classification
+from models import PipelineBatchItem, Detection, Classification
 
 from const import (
     DETECTION_MODEL_REPO,
@@ -132,9 +131,6 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
             )
 
             futures[future] = cuda_gpus[cuda_gpus_i]
-
-            # HACK REMOVED: no more fork delay needed
-            # time.sleep(DETECTION_MODEL_PROCESSES_FORK_DELAY)
 
         # Grab results
         for future in as_completed(futures):

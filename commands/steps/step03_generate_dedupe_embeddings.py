@@ -2,8 +2,7 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import gc
-import time
-import multiprocessing as mp  # <-- add this
+import multiprocessing as mp
 
 import click
 from loguru import logger
@@ -98,13 +97,12 @@ def step03_generate_dedupe_embeddings(
         logger.warning("No eligible items with detections found for this batch. Exiting.")
         click.get_current_context().exit(0)
 
-    # --- changed block: use spawn context and remove delay ---
     mp_ctx = mp.get_context("spawn")
 
     with ProcessPoolExecutor(
         max_workers=processes_total,
         initializer=get_db,
-        mp_context=mp_ctx,  # <-- important
+        mp_context=mp_ctx,
     ) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
@@ -117,7 +115,6 @@ def step03_generate_dedupe_embeddings(
                 cpus_limit=per_task_cpus_limit,
             )
             futures[future] = cuda_gpus[cuda_gpus_i]
-            # time.sleep(DEDUBE_EMBEDDING_MODEL_PROCESSES_FORK_DELAY)  # <-- remove this
         for future in as_completed(futures):
             cuda_gpu: str = futures[future]
             try:
