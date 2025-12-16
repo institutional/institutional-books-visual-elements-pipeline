@@ -93,12 +93,12 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         click.get_current_context().exit(0)
 
     # 3. Pool - Classifying batches
-    mp_ctx = mp.get_context("spawn")  # <-- use spawn to avoid fork/CUDA issues
-
+    mp_ctx = mp.get_context("spawn") 
+    
     with ProcessPoolExecutor(
         max_workers=processes_total,
         initializer=get_db,
-        mp_context=mp_ctx,  # <-- key change
+        mp_context=mp_ctx,  
     ) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
@@ -191,7 +191,7 @@ def classify_batch_of_items(
         time_infer = timedelta(0)
         time_clear_gpu = timedelta(0)
 
-        # Group crops in batches for GPU efficiency
+        # Group crops in batches
         crop_image_records = []  # tuples of (Detection, np.ndarray, filename)
 
         # Preprocessing: decode scan images, do crop according to bbox
