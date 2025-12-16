@@ -192,7 +192,7 @@ def step07_dedupe(
         f"Deduplication complete: {len(duplicate_groups):,} unique groups from {total_embeddings:,} embeddings"
     )
 
-    # Populate DedupedEmbedding table (NO embeddings stored)
+    # Populate DedupedEmbedding table
     _write_dedupe_assignments(embedding_metadata, duplicate_groups)
 
     # Log statistics
@@ -267,7 +267,7 @@ def _load_and_save_embeddings(pb_ids, cache_file):
         # Save embedding vectors (compressed)
         f.create_dataset("embeddings", data=emb_arr, compression="gzip", compression_opts=4)
 
-        # Save metadata as separate datasets (more efficient than nested groups)
+        # Save metadata as separate datasets 
         f.create_dataset(
             "embedding_ids",
             data=np.array([m["id_embedding"] for m in embedding_metadata], dtype=np.int64),
@@ -492,7 +492,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info("Preparing dedupe assignments...")
     t0 = time.time()
 
-    # Build all assignments (without embeddings)
+    # Build all assignments
     assignments = []
     for group_id, group_indices in enumerate(duplicate_groups):
         # Use minimum embedding ID as group representative for consistency
@@ -508,7 +508,6 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
                     "pipeline_batch_item": metadata["pipeline_batch_item"],
                     "detection": metadata["detection"],
                     "scan_filename": metadata["scan_filename"],
-                    # NO embedding field - saves tons of space and time!
                 }
             )
 
@@ -518,7 +517,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info("Clearing old assignments...")
     embedding_ids = [a["embedding_id"] for a in assignments]
 
-    delete_chunk_size = 10000  # Larger chunks for faster deletes
+    delete_chunk_size = 10000 
     total_deleted = 0
 
     for i in range(0, len(embedding_ids), delete_chunk_size):
@@ -530,9 +529,8 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
 
     logger.info(f"Deleted {total_deleted:,} existing assignments")
 
-    # Fast batch insert
     logger.info("Writing new assignments...")
-    insert_batch_size = 10000  # Can use larger batches without embeddings
+    insert_batch_size = 10000 
     total_written = 0
 
     with db.atomic():
@@ -546,7 +544,6 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     )
 
 
-# Add migration command
 @click.command("migrate-dedupe-embedding")
 def migrate_dedupe_embedding():
     """
