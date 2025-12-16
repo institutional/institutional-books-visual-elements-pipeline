@@ -47,7 +47,6 @@ class RateLimiter:
             time.sleep(0.05)
 
 
-# 1500 requests/min = 25 requests/sec
 S3_RATE_LIMITER = RateLimiter(max_requests_per_second=MAX_S3_REQUESTS_PER_SECOND)
 
 
@@ -175,7 +174,7 @@ def store_batch_of_items(
         # Get image bytes
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
 
-        # Decode scans (optionally parallel within this process)
+        # Decode scans 
         loaded_images: dict[str, np.ndarray] = {}
         used_filenames = set(det.scan_filename for det in dets)
 
@@ -237,7 +236,7 @@ def store_batch_of_items(
             logger.info(f"{barcode}: All crops failed.")
             continue
 
-        # Create tar.gz file with all crops (parallel PNG encoding with limited threads)
+        # Create tar.gz file with all crops 
         s3_key = f"crops/{id_pipeline_batch_item}/{barcode}.tar.gz"
 
         try:
