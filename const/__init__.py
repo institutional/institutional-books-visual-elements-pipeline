@@ -216,6 +216,10 @@ CAPTION_MAX_BATCH_SIZE = 8
 # Storage
 #
 BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
+"""Bucket name where we store output"""
+
+MAX_PROCESSES_STORE = 32
+"""Cap number of processes so we don't spawn hundreds"""
 
 
 #
