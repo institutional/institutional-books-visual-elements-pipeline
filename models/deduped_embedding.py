@@ -18,7 +18,6 @@ class DedupedEmbedding(Model):
         on_delete="CASCADE",
     )
     scan_filename = CharField()
-    embedding = ArrayField(FloatField, dimensions=1, null=True)
     created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
 
     class Meta:
