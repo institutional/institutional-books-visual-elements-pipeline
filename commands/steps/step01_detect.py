@@ -105,16 +105,14 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
         process_i = i % processes_total
         item_id_batches[process_i].append(item.id_pipeline_batch_item)
 
-    #
     # Start parallel processing pool
-    #
-    # Use "spawn" to avoid CUDA / fork issues; this removes the need for per-process delays.
+    # Use "spawn" to avoid CUDA / fork issues
     mp_ctx = mp.get_context("spawn")
 
     with ProcessPoolExecutor(
         max_workers=processes_total,
         initializer=get_db,
-        mp_context=mp_ctx,  # <-- key change
+        mp_context=mp_ctx, 
     ) as executor:
         futures = {}
 
