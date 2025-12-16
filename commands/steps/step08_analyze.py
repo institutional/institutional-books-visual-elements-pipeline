@@ -220,7 +220,7 @@ def step08_analyze(id_pipeline_run, output_dir):
         f"Found {len(embedding_groups)} embedding entries in {len(embedding_group_sizes)} groups"
     )
 
-    # Get all batches for this pipeline run - MATERIALIZE THE LIST
+    # Get all batches for this pipeline run
     batches = list(
         PipelineBatch.select()
         .where(PipelineBatch.pipeline_run == id_pipeline_run)
@@ -233,7 +233,7 @@ def step08_analyze(id_pipeline_run, output_dir):
 
     # Process each batch
     for batch_idx, batch in enumerate(batches, 1):
-        # Get all detection IDs for this batch - MATERIALIZE THE LIST
+        # Get all detection IDs for this batch 
         detection_ids = [
             d.id_detection
             for d in Detection.select(Detection.id_detection)
