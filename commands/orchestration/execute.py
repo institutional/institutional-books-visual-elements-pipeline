@@ -123,7 +123,7 @@ def execute(
             )
 
             # Step 0: Cache batch data
-            # NOTE: Bandwidth is the bottleneck here. Will be much faster on cloud Node.
+            # NOTE: Bandwidth is the bottleneck here.
             has_crashed = not execute_batch_level_step(
                 step_fn=pipeline_batch.cache_data,
                 step_fn_kwargs={"max_workers": min(MAX_S3_CONCURRENCY, CPUS_LIMIT)},
@@ -140,6 +140,7 @@ def execute(
                     pipeline_batch=pipeline_batch,
                 )
             start = time.perf_counter()
+            
             # Step 2: Classification
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -150,6 +151,7 @@ def execute(
                 )
             logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
             start = time.perf_counter()
+            
             # Step 3: Embeddings
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -162,6 +164,7 @@ def execute(
                 f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
             )
             start = time.perf_counter()
+            
             # Step 4: Send caption requests to OpenAI
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -172,6 +175,7 @@ def execute(
                 )
             logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
             start = time.perf_counter()
+            
             # Step 5: Store crops
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -216,19 +220,22 @@ def execute(
         logger.warning("Dataset-wide steps were skipped (--batch-processing-only)")
     else:
         try:
+            # Run hash dedupe:
             if not has_crashed:
-                # Run dedupe:
                 has_crashed = not execute_run_level_step(
                     step_fn=commands.steps.step06_dedupe_hash,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )
+
+            # Run embedding dedupe:
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
                     step_fn=commands.steps.step07_dedupe,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )
+                
             # Run analyze
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
