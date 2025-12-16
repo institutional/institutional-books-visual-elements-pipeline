@@ -23,7 +23,6 @@ from const import (
     CAPTION_MODEL_TEMPERATURE,
     CAPTION_MAX_TOKENS,
     CAPTION_TOP_LOGPROBS,
-    CAPTION_MAX_REQUESTS,
     OPENAI_REQUEST_TIMEOUT,
     CAPTION_REQUEST_RETRY_ATTEMPTS,
     CPUS_LIMIT,
@@ -75,9 +74,6 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
         .distinct()
     )
     eligible_items = list(eligible_query)
-
-    # TODO: REMOVE WHEN ACTUALLY RUNNING PIPELINE - HERE FOR BUDGET REASONS
-    eligible_items = eligible_items[:CAPTION_MAX_REQUESTS]
 
     if not eligible_items:
         logger.warning("No items with detections found. Exiting.")
@@ -142,7 +138,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
     total_decode_time = 0
 
     for item in items:
-        # Access pre-fetched detections (no duplicate query needed)
+        # Access pre-fetched detections 
         dets = detections_by_item.get(item.id_pipeline_batch_item, [])
         if not dets:
             continue
