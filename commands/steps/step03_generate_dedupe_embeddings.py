@@ -64,7 +64,7 @@ def step03_generate_dedupe_embeddings(
     if processes_total > 1:
         per_task_cpus_limit = max(2, per_task_cpus_limit // 2)
 
-    # Download model BEFORE spawning processes to avoid race conditions
+    # Download model before spawning processes to avoid race conditions
     local_model_path = DEDUPE_EMBEDDING_MODEL_FILEPATH
     if not local_model_path.exists():
         logger.info(f"Downloading TorchScript model from S3 Storage...")
