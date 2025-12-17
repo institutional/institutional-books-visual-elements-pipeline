@@ -13,7 +13,6 @@ load_dotenv()
 # Required env vars
 #
 REQUIRED_ENV_VARS = [
-    "DATA_DIR_PATH",
     "CACHE_MAX_SIZE_IN_GB",
     "NODE_NAME",
     "GRIN_DATA_RUN_NAME",
@@ -99,7 +98,7 @@ CLASSIFICATION_MODEL_CONF = 0.90
 CLASSIFICATION_MAX_BATCH = 16
 """ Maximum batch size to pass into the YOLO classification model """
 
-CLASS_DICT = {
+CLASSIFICATION_CLASS_DICT = {
     "0": "Other",
     "1": "Image/Illustration",
     "2": "Ex Libris/Decorative",
@@ -152,14 +151,14 @@ DEDUPE_EMBEDDING_HNSW_INDEX_BATCH = 100000
 DEDUPE_EMBEDDING_SEARCH_BATCH = 10000
 """Batch size for similarity search (smaller=less memory)"""
 
-DEDUPE_EMBEDDING_CACHE_DIR = "./embedding_cache"
+DEDUPE_EMBEDDING_CACHE_DIR = Path(CACHE_DIR_PATH, "temp_image_embeddings")
 """Directory to cache embedding data files"""
 
 
 #
 # Dedupe Hashes
 #
-HASH_SIZE = 12  # NOTE: change the max_length of the ImageHash model accordingly
+HASH_DEDUPE_LENGTH_BYTES = 12  # NOTE: change the max_length of the ImageHash model accordingly
 """Size of phash. The hash will be of size HASH_SIZE*HASH_SIZE bytes"""
 
 HASH_DB_CHUNK_SIZE = 10000
@@ -174,7 +173,7 @@ HASH_DEDUPE_LSH_NUM_TABLES = 15
 HASH_DEDUPE_LSH_KEY_SIZE = 8
 """Number of bits per LSH key (smaller = more candidates, slower)"""
 
-HASH_DEDUPE_CACHE_DIR = "./hash_cache"
+HASH_DEDUPE_CACHE_DIR = Path(CACHE_DIR_PATH, "temp_image_hashes")
 """Directory to cache hash data files"""
 
 
@@ -215,17 +214,14 @@ CAPTION_MAX_BATCH_SIZE = 8
 #
 # Storage
 #
-BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
+OUTPUT_STORAGE_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 """Bucket name where we store output"""
-
-MAX_PROCESSES_STORE = 32
-"""Cap number of processes so we don't spawn hundreds"""
 
 
 #
 # Analysis
 #
-ANALYSIS_OUTPUT_DIR = "analysis_output"
+ANALYSIS_OUTPUT_DIR = PEEK_OUTPUT_DIR = Path(CACHE_DIR_PATH, "temp_analysis")
 """Output directory for analysis files"""
 
 
@@ -238,9 +234,7 @@ NODE_NAME = os.getenv("NODE_NAME")
 CPUS_LIMIT = int(os.getenv("CPUS_LIMIT", multiprocessing.cpu_count()))
 """ Determines how many CPU cores should be used. Loose limit. """
 
-CUDA_GPUS = [device for device in get_torch_devices() if device.startswith("cuda:")][
-    :4
-]  # change later
+CUDA_GPUS = [device for device in get_torch_devices() if device.startswith("cuda:")]
 """ List of currently available CUDA-capable GPUs. """
 
 MAX_S3_CONCURRENCY = int(os.getenv("MAX_S3_CONCURRENCY"))
@@ -265,7 +259,7 @@ DEFAULT_DB_BATCH_SIZE = 1000
 MAX_S3_REQUESTS_PER_SECOND = 25
 """Maximum upload requests to S3 per second (for step05_store)"""
 
-PEEK_OUTPUT_DIR = "./peek_output"
+PEEK_OUTPUT_DIR = Path(CACHE_DIR_PATH, "temp_peek")
 "Output directory for visualization"
 
 OMP_NUM_THREADS = int(os.getenv("OMP_NUM_THREADS", 1))

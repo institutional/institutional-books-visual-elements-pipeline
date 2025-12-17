@@ -33,7 +33,6 @@ class Classification(peewee.Model):
         on_delete="CASCADE",
     )
 
-    scan_filename = peewee.CharField(index=True)
     pred_idx = peewee.IntegerField()
     pred_class = peewee.CharField()
     pred_conf = peewee.FloatField()  # Confidence value for predicted class

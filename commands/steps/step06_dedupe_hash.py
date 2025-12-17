@@ -2,11 +2,15 @@ import click
 from peewee import SQL
 from playhouse.postgres_ext import *
 from loguru import logger
-from models import ImageHash, PipelineBatch, PipelineBatchItem, Detection
-from datetime import datetime
 import os
 import h5py
 import numpy as np
+import time
+from collections import defaultdict
+import multiprocessing as mp
+import random
+
+from models import ImageHash, PipelineBatch, PipelineBatchItem, DedupedHash
 from const import (
     CPUS_LIMIT,
     HASH_DB_CHUNK_SIZE,
@@ -15,27 +19,7 @@ from const import (
     HASH_DEDUPE_LSH_KEY_SIZE,
     HASH_DEDUPE_LSH_NUM_TABLES,
 )
-import time
-from collections import defaultdict
-import multiprocessing as mp
-import random
-
-
-class DedupedHash(Model):
-    id = AutoField()
-    hash_id = IntegerField(index=True)  # original ImageHash pk
-    group_id = IntegerField(index=True)  # dedupe group
-    pipeline_batch_item = ForeignKeyField(
-        PipelineBatchItem, field="id_pipeline_batch_item", index=True
-    )
-    detection = ForeignKeyField(Detection, field="id_detection", index=True)
-    scan_filename = CharField()
-    image_hash = CharField(index=True)
-    created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
-
-    class Meta:
-        table_name = "deduped_hash"
-        database = ImageHash._meta.database
+from utils import get_time
 
 
 @click.command("step06-dedupe-hashes")
@@ -107,10 +91,6 @@ def step06_dedupe_hash(
 
     if hamming_threshold > 0:
         logger.info(f"LSH configuration: {lsh_num_tables} tables, {lsh_key_size} bits per key")
-
-    # Ensure DedupedHash table exists
-    db = ImageHash._meta.database
-    db.create_tables([DedupedHash], safe=True)
 
     # Create cache directory
     os.makedirs(cache_dir, exist_ok=True)
@@ -201,7 +181,6 @@ def _load_and_save_hashes(pb_ids, cache_file):
             ImageHash.id_imagehash,
             ImageHash.pipeline_batch_item,
             ImageHash.detection,
-            ImageHash.scan_filename,
             ImageHash.image_hash,
         )
         .join(
@@ -598,7 +577,7 @@ def _write_hash_assignments_batched(hashes_meta, dedupe_assignments):
         logger.info(f"Deleted {total_deleted} existing assignments")
 
     logger.info("Writing new assignments...")
-    now = datetime.utcnow()
+    now = get_time()
 
     chunk_size = HASH_DB_CHUNK_SIZE
     hash_ids = list(dedupe_assignments.keys())

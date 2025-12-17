@@ -1,5 +1,6 @@
 import peewee
 from playhouse.postgres_ext import *
+
 from utils import get_db
 from models import PipelineBatchItem, Detection
 
@@ -10,7 +11,7 @@ class ImageHash(peewee.Model):
     """
 
     class Meta:
-        table_name = "imagehash"
+        table_name = "image_hash"
         database = get_db()
 
     id_imagehash = peewee.PrimaryKeyField()
@@ -28,8 +29,6 @@ class ImageHash(peewee.Model):
         backref="imagehashes",
         on_delete="CASCADE",
     )
-
-    scan_filename = peewee.CharField(index=True)
 
     image_hash = peewee.CharField(max_length=100, index=True)  # Hex string
 

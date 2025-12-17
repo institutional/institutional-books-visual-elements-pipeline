@@ -4,8 +4,8 @@ from .pipeline_batch import PipelineBatch
 from .pipeline_batch_item import PipelineBatchItem
 from .detection import Detection
 from .classification import Classification
-from .embedding import Embedding
-from .imagehash import ImageHash
+from .image_embedding import ImageEmbedding
+from .image_hash import ImageHash
 from .caption import Caption
 from .deduped_hash import DedupedHash
 from .deduped_embedding import DedupedEmbedding

@@ -1,10 +1,7 @@
 import io
 import traceback
 import tarfile
-import time
-import threading
 import multiprocessing
-from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 
 import click
@@ -12,42 +9,10 @@ from loguru import logger
 import numpy as np
 import cv2
 
-from utils import get_db, get_s3_client
+from utils import get_db, get_s3_client, get_time, decode_image_bytes
 from models import PipelineBatchItem, Detection
 
-from const import BUCKET_NAME, CPUS_LIMIT, MAX_S3_REQUESTS_PER_SECOND, MAX_PROCESSES_STORE
-
-
-# Global rate limiter for S3 requests
-class RateLimiter:
-    def __init__(self, max_requests_per_second: int):
-        self.max_requests = max_requests_per_second
-        self.tokens = max_requests_per_second
-        self.lock = threading.Lock()
-        self.last_update = time.monotonic()
-
-    def acquire(self):
-        while True:
-            with self.lock:
-                now = time.monotonic()
-                elapsed = now - self.last_update
-
-                # Add tokens based on elapsed time
-                self.tokens = min(
-                    self.max_requests,
-                    self.tokens + elapsed * self.max_requests,
-                )
-                self.last_update = now
-
-                if self.tokens >= 1:
-                    self.tokens -= 1
-                    return
-
-            # Wait a bit before trying again
-            time.sleep(0.05)
-
-
-S3_RATE_LIMITER = RateLimiter(max_requests_per_second=MAX_S3_REQUESTS_PER_SECOND)
+from const import OUTPUT_STORAGE_BUCKET_NAME, CPUS_LIMIT, MAX_S3_CONCURRENCY
 
 
 @click.command("step05_store")
@@ -71,7 +36,7 @@ def step05_store(
     """
     logical_cpus = multiprocessing.cpu_count()
     target_workers = min(cpus_limit, logical_cpus)
-    processes_total = min(target_workers, MAX_PROCESSES_STORE) if target_workers > 0 else 1
+    processes_total = min(target_workers, MAX_S3_CONCURRENCY) if target_workers > 0 else 1
 
     threads_per_process = max(1, target_workers // processes_total) if processes_total > 0 else 1
 
@@ -96,7 +61,7 @@ def step05_store(
         .distinct()
     )
     eligible_items = list(eligible_query)
-
+    # TODO: Add Peewee iterator instead of grabbing elibible items
     if not eligible_items:
         logger.warning("No items with detections found. Exiting.")
         return
@@ -174,11 +139,11 @@ def store_batch_of_items(
         # Get image bytes
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
 
-        # Decode scans 
+        # Decode scans
         loaded_images: dict[str, np.ndarray] = {}
         used_filenames = set(det.scan_filename for det in dets)
 
-        start_decode = datetime.now()
+        start_decode = get_time()
 
         if decode_threads > 1:
             # Parallel decode with a small thread pool
@@ -205,10 +170,10 @@ def store_batch_of_items(
                 except Exception:
                     logger.warning(f"{barcode}: Failed to decode {fn}")
 
-        time_decode = (datetime.now() - start_decode).total_seconds()
+        time_decode = (get_time() - start_decode).total_seconds()
 
         # Create crops (numpy arrays only, no encoding yet)
-        start_crop = datetime.now()
+        start_crop = get_time()
         crops_data: list[tuple[str, np.ndarray]] = []  # List of (filename_in_tar, crop_array)
         failed_crops = 0
 
@@ -230,26 +195,26 @@ def store_batch_of_items(
                 logger.warning(f"{barcode}: Failed to crop detection {det.id_detection}: {e}")
                 failed_crops += 1
 
-        time_crop = (datetime.now() - start_crop).total_seconds()
+        time_crop = (get_time() - start_crop).total_seconds()
 
         if not crops_data:
             logger.info(f"{barcode}: All crops failed.")
             continue
 
-        # Create tar.gz file with all crops 
+        # Create tar.gz file with all crops
         s3_key = f"crops/{id_pipeline_batch_item}/{barcode}.tar.gz"
 
         try:
-            start_tar = datetime.now()
+            start_tar = get_time()
             tar_bytes, time_encode = create_tarball_parallel(
                 crops_data=crops_data,
                 encode_threads=encode_threads,
             )
-            time_tar = (datetime.now() - start_tar).total_seconds()
+            time_tar = (get_time() - start_tar).total_seconds()
 
-            start_upload = datetime.now()
-            success = upload_to_s3_with_ratelimit(s3_client, tar_bytes, s3_key, BUCKET_NAME)
-            time_upload = (datetime.now() - start_upload).total_seconds()
+            start_upload = get_time()
+            success = upload_to_s3(s3_client, tar_bytes, s3_key, OUTPUT_STORAGE_BUCKET_NAME)
+            time_upload = (get_time() - start_upload).total_seconds()
 
             if success:
                 logger.info(
@@ -265,12 +230,6 @@ def store_batch_of_items(
             traceback.print_exc()
 
     return True
-
-
-def decode_image_bytes(image_bytes: bytes) -> np.ndarray:
-    """Decode image bytes to numpy array."""
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, cv2.IMREAD_COLOR)
 
 
 def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, bytes]:
@@ -306,7 +265,7 @@ def create_tarball_parallel(
     Returns:
         Tuple of (tar_bytes, encoding_time_seconds)
     """
-    start_encode = datetime.now()
+    start_encode = get_time()
 
     encoded_crops: list[tuple[str, bytes]] = []
 
@@ -331,12 +290,12 @@ def create_tarball_parallel(
             except Exception as e:
                 logger.error(f"Failed to encode crop: {e}")
 
-    time_encode = (datetime.now() - start_encode).total_seconds()
+    time_encode = (get_time() - start_encode).total_seconds()
 
     # Create tar.gz file
     tar_buffer = io.BytesIO()
     with tarfile.open(fileobj=tar_buffer, mode="w:gz", compresslevel=6) as tar:
-        now_ts = datetime.now().timestamp()
+        now_ts = get_time().timestamp()
         for filename, png_bytes in encoded_crops:
             tarinfo = tarfile.TarInfo(name=filename)
             tarinfo.size = len(png_bytes)
@@ -347,9 +306,9 @@ def create_tarball_parallel(
     return tar_buffer.getvalue(), time_encode
 
 
-def upload_to_s3_with_ratelimit(s3_client, tar_bytes: bytes, s3_key: str, bucket_name: str) -> bool:
+def upload_to_s3(s3_client, tar_bytes: bytes, s3_key: str, bucket_name: str) -> bool:
     """
-    Upload to S3 with rate limiting.
+    Upload to S3.
 
     Args:
         s3_client: boto3 S3 client
@@ -361,9 +320,6 @@ def upload_to_s3_with_ratelimit(s3_client, tar_bytes: bytes, s3_key: str, bucket
         bool: True if successful, False otherwise
     """
     try:
-        # Acquire rate limit token before making request
-        S3_RATE_LIMITER.acquire()
-
         s3_client.put_object(
             Bucket=bucket_name, Key=s3_key, Body=tar_bytes, ContentType="application/gzip"
         )

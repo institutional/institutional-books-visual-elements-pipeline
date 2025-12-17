@@ -4,7 +4,6 @@ import gzip
 import tarfile
 from pathlib import Path
 from dataclasses import dataclass, field
-
 import peewee
 from playhouse.postgres_ext import *
 from loguru import logger

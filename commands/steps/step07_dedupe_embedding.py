@@ -1,6 +1,6 @@
 import click
 from loguru import logger
-from models import Embedding, PipelineBatch, PipelineBatchItem, DedupedEmbedding
+from models import ImageEmbedding, PipelineBatch, PipelineBatchItem, DedupedEmbedding
 import psutil
 import faiss
 import tqdm
@@ -98,7 +98,7 @@ from const import (
     default=False,
     help="Save FAISS index to disk for reuse",
 )
-def step07_dedupe(
+def step07_dedupe_embedding(
     id_pipeline_run,
     threshold,
     max_neighbors,
@@ -138,10 +138,10 @@ def step07_dedupe(
 
     # Count total embeddings
     total_embeddings = (
-        Embedding.select()
+        ImageEmbedding.select()
         .join(
             PipelineBatchItem,
-            on=(Embedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+            on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
         )
         .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
         .count()
@@ -221,19 +221,19 @@ def _load_and_save_embeddings(pb_ids, cache_file):
 
     # Query embeddings
     query = (
-        Embedding.select(
-            Embedding.id_embedding,
-            Embedding.pipeline_batch_item,
-            Embedding.detection,
-            Embedding.scan_filename,
-            Embedding.embedding,
+        ImageEmbedding.select(
+            ImageEmbedding.id_embedding,
+            ImageEmbedding.pipeline_batch_item,
+            ImageEmbedding.detection,
+            ImageEmbedding.scan_filename,
+            ImageEmbedding.embedding,
         )
         .join(
             PipelineBatchItem,
-            on=(Embedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+            on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
         )
         .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
-        .order_by(Embedding.id_embedding)
+        .order_by(ImageEmbedding.id_embedding)
     )
 
     total = query.count()
@@ -267,7 +267,7 @@ def _load_and_save_embeddings(pb_ids, cache_file):
         # Save embedding vectors (compressed)
         f.create_dataset("embeddings", data=emb_arr, compression="gzip", compression_opts=4)
 
-        # Save metadata as separate datasets 
+        # Save metadata as separate datasets
         f.create_dataset(
             "embedding_ids",
             data=np.array([m["id_embedding"] for m in embedding_metadata], dtype=np.int64),
@@ -517,7 +517,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info("Clearing old assignments...")
     embedding_ids = [a["embedding_id"] for a in assignments]
 
-    delete_chunk_size = 10000 
+    delete_chunk_size = 10000
     total_deleted = 0
 
     for i in range(0, len(embedding_ids), delete_chunk_size):
@@ -530,7 +530,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info(f"Deleted {total_deleted:,} existing assignments")
 
     logger.info("Writing new assignments...")
-    insert_batch_size = 10000 
+    insert_batch_size = 10000
     total_written = 0
 
     with db.atomic():

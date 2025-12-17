@@ -33,10 +33,8 @@ class Caption(Model):
         on_delete="CASCADE",
     )
 
-    scan_filename = CharField(index=True)
-
     # The generated caption text
-    caption = TextField()
+    text = TextField()
 
     lang = CharField(max_length=50)
 

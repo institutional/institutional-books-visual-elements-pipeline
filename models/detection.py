@@ -1,8 +1,9 @@
 import peewee
 from playhouse.postgres_ext import *
+import numpy as np
 
 from utils import get_db
-from models import IBVolume, PipelineBatchItem
+from models import PipelineBatchItem
 
 
 class Detection(peewee.Model):
@@ -31,7 +32,7 @@ class Detection(peewee.Model):
 
     bbox_conf = FloatField(null=True)
 
-    def crop(self, scan_image):
+    def crop(self, scan_image: np.ndarray):
         """
         Returns the crop defined by bbox_xyxy from the given scan image (an np.ndarray).
         """

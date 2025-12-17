@@ -1,5 +1,4 @@
 import os
-
 import peewee
 from playhouse.postgres_ext import *
 

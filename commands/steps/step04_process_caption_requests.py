@@ -3,7 +3,7 @@ import io
 import base64
 import traceback
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 import click
 from loguru import logger
@@ -14,7 +14,7 @@ import cv2
 from more_itertools import chunked
 from iso639 import Lang
 
-from utils import get_db, process_db_write_batch
+from utils import get_db, process_db_write_batch, get_time, decode_image_bytes
 from models import PipelineBatchItem, Detection, Caption, Classification
 
 from const import (
@@ -34,6 +34,7 @@ from openai import APITimeoutError
 
 
 client = openai.OpenAI()
+# TODO: I would move that at function level. Otherwise you initialize a module-level OpenAI client every time you run anything in this codebase, given that all the commands are imported.
 
 
 @click.command("step04-process-caption-requests")
@@ -74,7 +75,7 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
         .distinct()
     )
     eligible_items = list(eligible_query)
-
+    # TODO: Add Peewee iterator instead of grabbing elibible items
     if not eligible_items:
         logger.warning("No items with detections found. Exiting.")
         return
@@ -104,7 +105,7 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
 
 
 def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
-
+    # TODO: This function needs a description
     # Fetch all items
     items = list(
         PipelineBatchItem.select().where(PipelineBatchItem.id_pipeline_batch_item.in_(item_ids))
@@ -138,7 +139,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
     total_decode_time = 0
 
     for item in items:
-        # Access pre-fetched detections 
+        # Access pre-fetched detections
         dets = detections_by_item.get(item.id_pipeline_batch_item, [])
         if not dets:
             continue
@@ -228,6 +229,8 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                     fut = api_pool.submit(send_to_openai, input_blocks, det.id_detection)
                     future_to_det[fut] = det
 
+                    # TODO: I would let send_to_openai() raise exceptions, and handle errors here. This would simplify the code for send_to_openai() quite a bit and prevent you from having to check if things went ok twice.
+
                 # Process results with logprobs
                 for fut in as_completed(future_to_det):
                     det = future_to_det[fut]
@@ -244,12 +247,11 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                     captioned_entries.append(
                         Caption(
                             detection=det.id_detection,
-                            caption=caption_text,
+                            text=caption_text,
                             lang=lang,
                             logprobs=logprobs_data,
                             pipeline_batch_item=id_pipeline_batch_item,
-                            scan_filename=det.scan_filename,
-                            created=datetime.now(timezone.utc),
+                            created=get_time(),
                         )
                     )
 
@@ -273,6 +275,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
 
 
 def get_language(volume):
+    # TODO: Missing: Description, type hints for input and output.
     try:
         metadata = volume.metadata
         if isinstance(metadata, str):
@@ -284,11 +287,6 @@ def get_language(volume):
     except:
         lang = "English"
     return lang
-
-
-def decode_image_bytes(image_bytes):
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, cv2.IMREAD_COLOR)
 
 
 def resize_image(img: Image.Image, max_dim: int):

@@ -7,12 +7,43 @@ from datetime import datetime
 import random
 
 from models import PipelineBatch, Detection
-from utils import get_db
-from const import CLASS_DICT, PEEK_OUTPUT_DIR
+from const import CLASSIFICATION_CLASS_DICT, PEEK_OUTPUT_DIR, DATETIME_SLUG
+
+# General
+JPEG_QUALITY = 95
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+
+# Bounding Box
+BBOX_NUMBER_COLOR = (0, 0, 0)
+BBOX_COLOR_CAPTION = (0, 255, 0)
+BBOX_COLOR_NO_CAPTION = (0, 0, 255)
+
+# Heading
+HEADING_HEIGHT = 100
+HEADING_BG_COLOR = (0, 0, 0)
+HEADING_FONT_SCALE = 1.2
+HEADING_FONT_COLOR = (255, 255, 255)
+HEADING_WEIGHT = 3
+
+# Subheading
+SUBHEADING_FONT_SCALE = 0.8
+SUBHEADING_FONT_COLOR = (200, 200, 200)
+SUBHEADING_WEIGHT = 2
+
+# Legend
+LEGEND_BG_COLOR = (255, 255, 255)
+LEGEND_PADDING = 20
+LEGEND_FONT_SCALE = 0.7
+LEGEND_LINE_SPACING = 35
+DETECTION_NUMBER_FONT_COLOR = (0, 0, 0)
+DETECTION_CAPTION_FONT_COLOR = (50, 50, 50)
+DETECTION_NUMBER_WEIGHT = 3
+DETECTION_CAPTION_WEIGHT = 1
+MAX_CAPTION_WIDTH = 100
 
 
 @click.command("peek")
-@click.option("--step", type=click.Choice(["batch", "run"]), required=True)
+@click.option("--scope", type=click.Choice(["detection", "deduplication"]), required=True)
 @click.option("--id-pipeline-batch", type=int, required=True, help="Pipeline batch ID to inspect")
 @click.option("--n", help="Number of random volumes to select (integer or 'all')")
 @click.option(
@@ -21,35 +52,31 @@ from const import CLASS_DICT, PEEK_OUTPUT_DIR
     default=PEEK_OUTPUT_DIR,
     help="Output directory for visualization",
 )
-def peek(step, id_pipeline_batch, n, output_dir):
+def peek(scope, id_pipeline_batch, n, output_dir):
     """
     Visualize pipeline outputs for debugging and validation.
 
     Examples:
-        peek --step batch --id-pipeline-batch 123 --n 5
-        peek --step run --id-pipeline-batch 123 --n all
+        peek --scope detection --id-pipeline-batch 123 --n 5
+        peek --scope deduplication --id-pipeline-batch 123 --n all
     """
-    get_db()
 
     # Validate pipeline batch exists
     try:
         batch = PipelineBatch.get_by_id(id_pipeline_batch)
     except Exception as e:
         logger.error(f"Pipeline batch {id_pipeline_batch} not found")
-        return
+        click.get_current_context().exit(1)
 
-    output_path = (
-        Path(output_dir)
-        / f"batch_{id_pipeline_batch}_{step}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
+    output_path = Path(output_dir) / f"batch_{id_pipeline_batch}_{scope}_{DATETIME_SLUG}"
     output_path.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"Peeking at batch {id_pipeline_batch}, step: {step}")
+    logger.info(f"Peeking at batch {id_pipeline_batch}, scope: {scope}")
     logger.info(f"Output directory: {output_path}")
 
-    if step == "batch":
+    if scope == "detection":
         peek_detect(batch, n, output_path)
-    if step == "run":
+    if scope == "deduplication":
         peek_dedupe(batch, n, output_path)
 
     logger.info(f"✓ Peek complete! Results saved to: {output_path}")
@@ -83,7 +110,7 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
         f.write("=" * 80 + "\n\n")
 
     # Sample volumes
-    all_items = batch.items[:100]
+    all_items = batch.items
     if n == "all":
         selected_items = all_items
     else:
@@ -134,9 +161,7 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
         failed_captions = sum(
             1
             for det in detections
-            if not det.caption_obj
-            or not det.caption_obj.caption
-            or not det.caption_obj.caption.strip()
+            if not det.caption_obj or not det.caption_obj.text or not det.caption_obj.text.strip()
         )
         failed_classifications = sum(
             1
@@ -191,7 +216,9 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                     # Classification
                     if det.classification_obj and det.classification_obj.pred_class:
                         class_num = str(det.classification_obj.pred_class)
-                        class_name = CLASS_DICT.get(class_num, f"Unknown ({class_num})")
+                        class_name = CLASSIFICATION_CLASS_DICT.get(
+                            class_num, f"Unknown ({class_num})"
+                        )
                         f.write(f"    Class: {class_name} ")
                         f.write(f"(conf: {det.classification_obj.pred_conf:.3f})\n")
                     else:
@@ -199,8 +226,8 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
 
                     # Caption
                     caption_text = (
-                        det.caption_obj.caption
-                        if det.caption_obj and det.caption_obj.caption
+                        det.caption_obj.text
+                        if det.caption_obj and det.caption_obj.text
                         else "(FAILED)"
                     )
                     f.write(f"    Caption: {caption_text}\n")
@@ -227,8 +254,8 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                     x1, y1, x2, y2 = map(int, bbox)
 
                     # Draw rectangle (green if caption exists, red if failed)
-                    has_caption = det.caption_obj and det.caption_obj.caption
-                    color = (0, 255, 0) if has_caption else (0, 0, 255)
+                    has_caption = det.caption_obj and det.caption_obj.text
+                    color = BBOX_COLOR_CAPTION if has_caption else BBOX_COLOR_NO_CAPTION
                     cv2.rectangle(image_with_boxes, (x1, y1), (x2, y2), color, 4)
 
                     # Draw number in circle at top-left of bbox
@@ -238,18 +265,18 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                         image_with_boxes,
                         str(idx),
                         (x1 + 15, y1 + 40),
-                        cv2.FONT_HERSHEY_SIMPLEX,
+                        FONT,
                         1.0,
-                        (0, 0, 0),
+                        BBOX_NUMBER_COLOR,
                         3,
                     )
 
                 # Create legend panel
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                font_scale = 0.7
-                line_spacing = 35
-                padding = 20
-                max_caption_width = 100
+                font = FONT
+                font_scale = LEGEND_FONT_SCALE
+                line_spacing = LEGEND_LINE_SPACING
+                padding = LEGEND_PADDING
+                max_caption_width = MAX_CAPTION_WIDTH
 
                 # Build legend lines
                 legend_lines = []
@@ -260,15 +287,17 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                         det_conf = det.bbox_conf
                         detection_info = f" - Detection Confidence: {det_conf}"
                         class_num = str(det.classification_obj.pred_class)
-                        class_name = CLASS_DICT.get(class_num, f"Unknown ({class_num})")
+                        class_name = CLASSIFICATION_CLASS_DICT.get(
+                            class_num, f"Unknown ({class_num})"
+                        )
                         class_conf = str(det.classification_obj.pred_conf)
                         class_info = f" - {class_name} - Class Confidence: {class_conf}"
                     legend_lines.append(f"[{idx}]{detection_info}{class_info}")
 
                     # Caption
                     caption_text = (
-                        det.caption_obj.caption
-                        if det.caption_obj and det.caption_obj.caption
+                        det.caption_obj.text
+                        if det.caption_obj and det.caption_obj.text
                         else "(NO CAPTION)"
                     )
                     wrapped = wrap(caption_text, width=max_caption_width)
@@ -279,17 +308,19 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                 legend_width = image_with_boxes.shape[1]
 
                 # Create white legend panel
-                legend_panel = np.ones((legend_height, legend_width, 3), dtype=np.uint8) * 255
+                legend_panel = np.full(
+                    (legend_height, legend_width, 3), LEGEND_BG_COLOR, dtype=np.uint8
+                )
 
                 # Draw legend text
                 y_offset = padding + 25
                 for line in legend_lines:
                     if line.startswith("["):  # Detection header
-                        color = (0, 0, 0)
-                        weight = 3
+                        color = DETECTION_NUMBER_FONT_COLOR
+                        weight = DETECTION_NUMBER_WEIGHT
                     else:  # Caption text
-                        color = (50, 50, 50)
-                        weight = 1
+                        color = DETECTION_CAPTION_FONT_COLOR
+                        weight = DETECTION_CAPTION_WEIGHT
 
                     cv2.putText(
                         legend_panel,
@@ -303,12 +334,18 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                     y_offset += line_spacing
 
                 # Create header
-                header_height = 100
-                header = np.zeros((header_height, legend_width, 3), dtype=np.uint8)
+                header_height = HEADING_HEIGHT
+                header = np.full((header_height, legend_width, 3), HEADING_BG_COLOR, dtype=np.uint8)
 
                 header_text = f"{volume_barcode} | {scan_filename}"
                 cv2.putText(
-                    header, header_text, (20, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 3
+                    header,
+                    header_text,
+                    (20, 35),
+                    FONT,
+                    HEADING_FONT_SCALE,
+                    HEADING_FONT_COLOR,
+                    HEADING_WEIGHT,
                 )
 
                 # Classification stats
@@ -322,17 +359,29 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
                 cls_failed = len(scan_detections) - cls_success
                 cls_text = f"Classifications: {cls_success} | Failed: {cls_failed}"
                 cv2.putText(
-                    header, cls_text, (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2
+                    header,
+                    cls_text,
+                    (20, 65),
+                    FONT,
+                    SUBHEADING_FONT_SCALE,
+                    SUBHEADING_FONT_COLOR,
+                    SUBHEADING_WEIGHT,
                 )
 
                 # Caption stats
                 cap_success = len(
-                    [det for det in scan_detections if det.caption_obj and det.caption_obj.caption]
+                    [det for det in scan_detections if det.caption_obj and det.caption_obj.text]
                 )
                 cap_failed = len(scan_detections) - cap_success
                 cap_text = f"Captions: {cap_success} | Failed: {cap_failed}"
                 cv2.putText(
-                    header, cap_text, (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (200, 200, 200), 2
+                    header,
+                    cap_text,
+                    (20, 90),
+                    FONT,
+                    SUBHEADING_FONT_SCALE,
+                    SUBHEADING_FONT_COLOR,
+                    SUBHEADING_WEIGHT,
                 )
 
                 # Combine all parts
@@ -340,7 +389,9 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
 
                 # Save
                 output_filename = volume_output / f"{scan_filename.replace('.jp2', '')}_all.jpg"
-                cv2.imwrite(str(output_filename), output_image, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                cv2.imwrite(
+                    str(output_filename), output_image, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+                )
 
                 logger.info(f"  Saved: {output_filename.name} ({len(scan_detections)} detections)")
 
@@ -377,7 +428,7 @@ def peek_dedupe(batch: PipelineBatch, n: int | str, output_path: Path):
     logger.info("Fetching deduplication results...")
 
     # Sample volumes first
-    all_items = batch.items[:100]
+    all_items = batch.items
     if n == "all":
         selected_items = all_items
     else:
@@ -567,7 +618,7 @@ def _process_dedupe_groups(
 
                 # Save
                 output_file = group_folder / filename
-                cv2.imwrite(str(output_file), cropped, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                cv2.imwrite(str(output_file), cropped, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY])
 
             except Exception as e:
                 logger.error(f"Error processing detection {record.detection.id_detection}: {e}")

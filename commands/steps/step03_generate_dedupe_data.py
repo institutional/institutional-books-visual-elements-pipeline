@@ -12,23 +12,23 @@ import numpy as np
 from more_itertools import chunked
 import imagehash
 
-from utils import get_db, process_db_write_batch, get_s3_client
-from models import PipelineBatchItem, Detection, Embedding, ImageHash
+from utils import get_db, process_db_write_batch, get_s3_client, get_time, decode_image_bytes
+from models import PipelineBatchItem, Detection, ImageEmbedding, ImageHash
 
 from const import (
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
     DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
     DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU,
-    HASH_SIZE,
+    HASH_DEDUPE_LENGTH_BYTES,
     CUDA_GPUS,
     CPUS_LIMIT,
-    BUCKET_NAME,
+    OUTPUT_STORAGE_BUCKET_NAME,
     DEDUPE_EMBEDDING_BATCH_SIZE,
     DEDUPE_EMBEDDING_MODEL_NAME,
 )
 
 
-@click.command("step03-embed")
+@click.command("step03-generate-dedupe-data")
 @click.option(
     "--id-pipeline-batch",
     type=int,
@@ -47,9 +47,7 @@ from const import (
     default=CUDA_GPUS if CUDA_GPUS else ["cuda:0"],
     help="Determines on which specific CUDA device(s) this command should use.",
 )
-def step03_generate_dedupe_embeddings(
-    id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]
-):
+def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch,
     and saves them to the database, per GPU.
@@ -64,7 +62,7 @@ def step03_generate_dedupe_embeddings(
     if processes_total > 1:
         per_task_cpus_limit = max(2, per_task_cpus_limit // 2)
 
-    # Download model before spawning processes to avoid race conditions
+    # Download model before spawning processes to avoid race conditions # TODO: Either here or in const: specify the origin of the model and where to pull it from. Imagine that somebody outside of IDI will want / need to run this.
     local_model_path = DEDUPE_EMBEDDING_MODEL_FILEPATH
     if not local_model_path.exists():
         logger.info(f"Downloading TorchScript model from S3 Storage...")
@@ -88,6 +86,7 @@ def step03_generate_dedupe_embeddings(
         .order_by(PipelineBatchItem.id_pipeline_batch_item)
         .distinct()
     )
+    # TODO: Add Peewee iterator instead of grabbing elibible items
     eligible_items = list(eligible_items_query)
     for i, item in enumerate(eligible_items):
         process_i = i % processes_total
@@ -139,6 +138,7 @@ def embed_batch_of_items(
 ):
     import os
 
+    # TODO: Add function description
     # set CUDA_VISIBLE_DEVICES before importing torch/ultralytics - avoids defaulting to cuda:0
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device.replace("cuda:", "")
     import torch
@@ -160,10 +160,10 @@ def embed_batch_of_items(
         img = img.transpose(2, 0, 1)  # HWC -> CHW
         return torch.from_numpy(img)  # [C, H, W]
 
-    from datetime import datetime, timezone
-
     # Collect all embeddings and hashes from all items
-    all_embedding_entries = []
+    all_embedding_entries = (
+        []
+    )  # TODO: Would be neat to provide a type hint for this (list[ImageEmbedding] and list[ImageHash]?)
     all_imagehash_entries = []
 
     # Track statistics
@@ -213,7 +213,7 @@ def embed_batch_of_items(
         imagehash_entries = []
         n_embeds, failed_embeds = 0, 0
 
-        # Compute embedding and hash for each crop (per detection)
+        # Compute embedding and hash for each crop (per detection) TODO: I think this comment doesn't describe what is happening here, but what is happening later (which is prepended by another comment)
         crops_and_meta = []
         for det in item_detections:
             scan_img = loaded_images.get(str(det.scan_filename))
@@ -248,25 +248,23 @@ def embed_batch_of_items(
 
             for idx, det in enumerate(detections_batch):
                 embedding_entries.append(
-                    Embedding(
+                    ImageEmbedding(
                         detection_id=det.id_detection,
                         pipeline_batch_item=id_pipeline_batch_item,
-                        scan_filename=filenames_batch[idx],
                         embedding=embeds[idx].tolist(),
-                        created=datetime.now(timezone.utc),
+                        created=get_time(),
                     )
                 )
                 # Hash (pHash)
                 crop_img_pil = Image.fromarray(crops_batch[idx].astype(np.uint8))
-                h = imagehash.phash(crop_img_pil, hash_size=HASH_SIZE)
+                h = imagehash.phash(crop_img_pil, hash_size=HASH_DEDUPE_LENGTH_BYTES)
                 imagehash_val = str(h)  # hex string (e.g. 'feaf3452aaa21344')
                 imagehash_entries.append(
                     ImageHash(
                         detection_id=det.id_detection,
                         pipeline_batch_item=id_pipeline_batch_item,
-                        scan_filename=filenames_batch[idx],
                         image_hash=imagehash_val,
-                        created=datetime.now(timezone.utc),
+                        created=get_time(),
                     )
                 )
 
@@ -281,6 +279,7 @@ def embed_batch_of_items(
         logger.info(
             f"{volume_barcode} | n_crops: {n_embeds} - failed crops: {failed_embeds} - embeddings: {len(embedding_entries)} - hashes: {len(imagehash_entries)}"
         )
+        # TODO: Should we try to enforce consistency across steps for logging format? This differs from the way step01 and step02 do it, which can make it harder to look for info in a large log file.
 
         # GC/CUDA clear
         torch.cuda.empty_cache()
@@ -289,15 +288,14 @@ def embed_batch_of_items(
     #
     # Store all embeddings and hashes in DB (batch operation for all items)
     #
-    from datetime import datetime
 
     # Delete previous entries for all items in this batch
-    Embedding.delete().where(Embedding.pipeline_batch_item.in_(item_ids)).execute()
+    ImageEmbedding.delete().where(ImageEmbedding.pipeline_batch_item.in_(item_ids)).execute()
     ImageHash.delete().where(ImageHash.pipeline_batch_item.in_(item_ids)).execute()
 
     # Batch write all embeddings and hashes
     process_db_write_batch(
-        model=Embedding,
+        model=ImageEmbedding,
         entries_to_create=all_embedding_entries,
     )
     process_db_write_batch(
@@ -306,12 +304,6 @@ def embed_batch_of_items(
     )
 
     return True
-
-
-# Use the detection/decode code as in detection pipeline
-def decode_image_bytes(image_bytes) -> np.ndarray:
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)
 
 
 def download_model():
@@ -338,7 +330,8 @@ def download_model():
         # First, check if the object exists and get its metadata
         click.echo(f"  Checking S3 object: {s3_key}")
         try:
-            head_response = s3.head_object(Bucket=BUCKET_NAME, Key=s3_key)
+            # TODO: I am not sure this is needed, worth double checking: I think boto3 yells at you if it pull a file < expected size.
+            head_response = s3.head_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
             expected_size = head_response["ContentLength"]
             click.echo(f"  Expected file size: {expected_size:,} bytes")
 
@@ -347,15 +340,15 @@ def download_model():
                     f"S3 object is too small ({expected_size} bytes), likely not a valid model"
                 )
         except s3.exceptions.NoSuchKey:
-            logger.error(f"S3 object not found: s3://{BUCKET_NAME}/{s3_key}")
+            logger.error(f"S3 object not found: s3://{OUTPUT_STORAGE_BUCKET_NAME}/{s3_key}")
             raise
         except Exception as e:
             logger.error(f"Error checking S3 object: {e}")
             raise
 
         # Download the file
-        click.echo(f"  Downloading {s3_key} from bucket {BUCKET_NAME}...")
-        s3.download_file(BUCKET_NAME, s3_key, str(temp_filepath))
+        click.echo(f"  Downloading {s3_key} from bucket {OUTPUT_STORAGE_BUCKET_NAME}...")
+        s3.download_file(OUTPUT_STORAGE_BUCKET_NAME, s3_key, str(temp_filepath))
 
         # Verify file size matches
         actual_size = temp_filepath.stat().st_size
