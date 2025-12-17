@@ -9,7 +9,6 @@ import click
 from loguru import logger
 from PIL import Image
 
-import numpy as np
 import cv2
 from more_itertools import chunked
 from iso639 import Lang
@@ -343,6 +342,7 @@ def send_to_openai(input_blocks, id):
             return None
 
         except APITimeoutError as e:
+            # TODO: The OpenAI Python SDK has a built-in mechanism that we could use - https://github.com/openai/openai-python?tab=readme-ov-file#retries
             last_exception = e
             logger.warning(
                 f"OpenAI API request timed out for {id} (attempt {attempt + 1}/{CAPTION_REQUEST_RETRY_ATTEMPTS})."
@@ -370,6 +370,7 @@ def serialize_logprobs(logprobs_list):
     """
     Serialize logprobs from OpenAI response to a JSON-compatible format.
     """
+    # TODO: This could be a dataclass, which would also let you check its format in and out of the database.
     if not logprobs_list:
         return None
 
