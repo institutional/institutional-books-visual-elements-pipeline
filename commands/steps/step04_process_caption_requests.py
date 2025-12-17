@@ -199,6 +199,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         max_batch = CAPTION_MAX_BATCH_SIZE
 
         lang = get_language(volume)
+        # TODO: specify the format of language either via a comment or by making it explicit in the variable name.
 
         for batch in chunked(crop_records, max_batch):
 

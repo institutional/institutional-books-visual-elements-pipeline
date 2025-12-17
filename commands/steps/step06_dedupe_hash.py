@@ -22,7 +22,8 @@ from const import (
 from utils import get_time
 
 
-@click.command("step06-dedupe-hashes")
+@click.command("step06-dedupe-by-image-hash")
+# TODO: Match filename
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to deduplicate")
 @click.option(
     "--hamming-threshold",
@@ -92,9 +93,6 @@ def step06_dedupe_hash(
     if hamming_threshold > 0:
         logger.info(f"LSH configuration: {lsh_num_tables} tables, {lsh_key_size} bits per key")
 
-    # Create cache directory
-    os.makedirs(cache_dir, exist_ok=True)
-
     # Get pipeline batches for this run
     pipeline_batches = list(
         PipelineBatch.select().where(PipelineBatch.pipeline_run == id_pipeline_run)
@@ -134,7 +132,7 @@ def step06_dedupe_hash(
         hashes_meta, hash_ids, hash_values_array = _load_hashes_from_file(cache_file)
     else:
         logger.info(f"Loading hashes from database and saving to: {cache_file}")
-        hashes_meta, hash_ids, hash_values_array = _load_and_save_hashes(pb_ids, cache_file)
+        hashes_meta, hash_ids, hash_values_array = load_and_save_hashes(pb_ids, cache_file)
 
     logger.info(f"Loaded {len(hash_ids):,} hashes")
 
@@ -165,7 +163,8 @@ def step06_dedupe_hash(
     )
 
 
-def _load_and_save_hashes(pb_ids, cache_file):
+def load_and_save_hashes(pb_ids, cache_file):
+    # TODO: Check codebase for functions starting with _ and also add type hints
     """Load hashes from database and save to HDF5 file"""
     t0 = time.time()
     logger.info("Loading hash metadata from database...")
@@ -461,6 +460,7 @@ def _verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, th
     verified_pairs = []
 
     with mp.Pool(processes=workers) as pool:
+        # TODO: Does this need to be a process pool? Overhead might be significant here.
         for i, chunk_pairs in enumerate(pool.imap_unordered(_verify_chunk, chunks), 1):
             verified_pairs.extend(chunk_pairs)
 

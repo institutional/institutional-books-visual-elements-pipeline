@@ -28,11 +28,13 @@ def step05_store(
     cpus_limit: int,
 ):
     """
-    Stores cropped detection regions to S3/R2 storage in full resolution PNG format.
+        Stores cropped detection regions to S3/R2 storage in full resolution PNG format.
 
-    This version tries to:
-      - Keep total CPU-bound workers <= cpus_limit
-      - Avoid massive oversubscription (too many processes * threads)
+        This version tries to:
+          - Keep total CPU-bound workers <= cpus_limit
+          - Avoid massive oversubscription (too many processes * threads)
+          TODO: Does this oversubcription problem come from the fact that we're creating a lot of futures that remain unresolved for a long time?
+    If so a simple solution to this could be to create and run batches of CPUS_LIMIT or MAX_S3_CONCURRENCY length.
     """
     logical_cpus = multiprocessing.cpu_count()
     target_workers = min(cpus_limit, logical_cpus)
@@ -81,6 +83,7 @@ def step05_store(
                 item_ids=item_ids,
                 decode_threads=threads_per_process,
                 encode_threads=threads_per_process,
+                # TODO: Do they need to be separate args?
             )
             futures[future] = idx
 
@@ -90,6 +93,7 @@ def step05_store(
             except Exception:
                 logger.error("Error in a worker process:\n" + traceback.format_exc())
                 executor.shutdown(wait=False, cancel_futures=True)
+                # TODO: I'd use logger.debug(traceback.format_exc()) and a separate logger.error() call for the main message. That way the debug trace is muted by default, and made visible with the pipeline-wide --verbose flag.
                 return
 
     logger.info(f"Completed storing crops for pipeline batch {id_pipeline_batch}")

@@ -22,7 +22,8 @@ from const import (
 )
 
 
-@click.command("step07-dedupe-embeddings")
+@click.command("step07-dedupe-by-image-embeddings")
+# TODO: match filename
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to deduplicate")
 @click.option(
     "--threshold",
