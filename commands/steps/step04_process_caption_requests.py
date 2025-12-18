@@ -51,25 +51,25 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
     Runs caption-generation on the cropped regions of each volume that contains detections.
 
     NOTE:
-    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
     - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
-    - Adjust `CAPTION_MAX_REQUESTS` env var based on your OpenAI API tier and usage.
+    - Adjust CAPTION_MAX_REQUESTS env var based on your OpenAI API tier and usage.
     """
 
     # Concurrency model:
-    # - We use a ProcessPoolExecutor with `processes_total` worker processes, each
+    # - We use a ProcessPoolExecutor with processes_total worker processes, each
     #   responsible for a disjoint subset of PipelineBatchItem IDs (round‑robin
-    #   assignment via `item_batches`).
+    #   assignment via item_batches).
     # - Each worker process:
     #     * Initializes its own DB connection (initializer=get_db).
-    #     * Calls `caption_batch_of_items` to handle decoding, cropping, and
+    #     * Calls caption_batch_of_items to handle decoding, cropping, and
     #       OpenAI API calls for its assigned items.
     # - Within each worker, we create small ThreadPoolExecutors for:
     #     * Decoding scans (CPU‑bound but easily parallelizable).
     #     * Sending caption requests to OpenAI (I/O‑bound, lots of waiting).
-    # - The global `cpus_limit` controls how many *processes* we launch; inside
-    #   each process we cap the number of threads via `per_task_cpus_limit` so
-    #   that `processes_total * per_task_cpus_limit` stays roughly bounded and we
+    # - The global cpus_limit controls how many *processes* we launch; inside
+    #   each process we cap the number of threads via per_task_cpus_limit so
+    #   that processes_total * per_task_cpus_limit stays roughly bounded and we
     #   avoid excessive oversubscription of CPU threads across the machine.
 
     processes_total = cpus_limit
@@ -204,7 +204,7 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
         max_batch = CAPTION_MAX_BATCH_SIZE
 
         lang = get_language(volume)
-        # `lang` is a human-readable language name derived via iso639 (e.g., "English").
+        # lang is a human-readable language name derived via iso639 (e.g., "English").
 
         failed_captions = 0
 
@@ -295,11 +295,11 @@ def get_language(volume) -> str:
     Infer the language for a volume from its metadata.
 
     Input:
-        volume: A Volume-like object with a `metadata` field that may contain
+        volume: A Volume-like object with a metadata field that may contain
                 a JSON string or dict, and an optional "language_src" key.
 
     Output:
-        A human-readable language name (e.g., "English"), derived via `iso639`.
+        A human-readable language name (e.g., "English"), derived via iso639.
         Defaults to "English" if language metadata is missing or invalid.
     """
     try:

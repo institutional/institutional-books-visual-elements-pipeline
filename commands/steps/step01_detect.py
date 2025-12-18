@@ -56,7 +56,7 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     model_filepath: Path | None = None
 
     # Concurrency model:
-    # - We run a separate process for each GPU "slot": processes_per_gpu processes per CUDA device.
+    # - We run a separate process for each GPU "slot": processes_per_gpu processes per each CUDA device.
     # - processes_total = cuda_gpus_total * processes_per_gpu is therefore the total number of
     #   worker processes in the ProcessPoolExecutor.
     # - Each worker process:
@@ -184,7 +184,7 @@ def process_batch_of_items(
     # Total VRAM of CUDA device
     vram_total_nbytes = torch.cuda.get_device_properties(cuda_device).total_memory
 
-    # Estimated optimal `batch` value for `model.predict()`
+    # Estimated optimal batch value for model.predict()
     yolo_batch_size = max(4, int(vram_total_nbytes / approx_image_nbytes / 100 / 2))
 
     #
@@ -222,7 +222,7 @@ def process_batch_of_items(
         clear_gpu_time = timedelta(seconds=0)  # Cumulative
 
         #
-        # Process `yolo_batch_size` images from current volume at a time
+        # Process yolo_batch_size images from current volume at a time
         #
         for encoded_images_batch in chunked(item.data.images.items(), yolo_batch_size):
 
@@ -330,7 +330,7 @@ def preprocess_images_batch(
     cpus_limit: int = 1,
 ) -> tuple[list[str], list[np.ndarray]]:
     """
-    Pre-processes a batch of image data from `PipelineBatchItem.data.images`
+    Pre-processes a batch of image data from PipelineBatchItem.data.images
 
     Returns a tuple containing:
     - A list of filenames

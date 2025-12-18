@@ -66,10 +66,10 @@ DETECTION_MODEL_FILEPATH = "weights/best.pt"
 DETECTION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-DETECTION_MODEL_CONF = 0.7
+DETECTION_MODEL_CONF = 0.2
 """ `conf` value to pass to YOLO during inference. """
 
-DETECTION_MODEL_IOU = 0.3
+DETECTION_MODEL_IOU = 0.2
 """ `iou` value to pass to YOLO during inference. """
 
 DETECTION_MODEL_PROCESSES_PER_GPU = int(os.getenv("DETECTION_MODEL_PROCESSES_PER_GPU", 1))

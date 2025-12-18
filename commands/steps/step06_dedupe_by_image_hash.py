@@ -457,7 +457,7 @@ def verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, thr
     #   - The per-element work is non-trivial compared to the cost of IPC.
     #   - We avoid the GIL when doing the CPU-heavy loop in separate processes.
     # However, for small workloads, process startup/IPC overhead can dominate, so we
-    # fall back to a simple in-process loop when either `workers <= 1` or we have
+    # fall back to a simple in-process loop when either workers <= 1 or we have
     # very few chunks.
 
     if workers <= 1 or len(chunks) == 1:

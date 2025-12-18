@@ -61,21 +61,21 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
     model_filepath: Path | None = None
 
     # Concurrency model:
-    # - We launch `processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU`
-    #   worker *processes* via ProcessPoolExecutor.
+    # - We launch processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU
+    #   worker processes via ProcessPoolExecutor.
     # - Each worker process:
     #     * Initializes its own DB connection (initializer=get_db).
     #     * Loads the TorchScript embedding model once and pins it to one CUDA device.
     #     * Processes only the subset of PipelineBatchItem IDs assigned to it
-    #       in `item_id_batches`.
+    #       in item_id_batches.
     # - Items are assigned to workers round‑robin so the workload is roughly balanced.
-    #   The CUDA device for worker i is chosen with `cuda_gpus[i % cuda_gpus_total]`,
+    #   The CUDA device for worker i is chosen with cuda_gpus[i % cuda_gpus_total],
     #   so multiple workers can share the same GPU when
-    #   `DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU > 1`.
+    #   DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU > 1.
     # - Within each process, CPU‑bound work (image decode, crop, preprocessing)
-    #   uses a small ThreadPoolExecutor bounded by `cpus_limit` so that the total
+    #   uses a small ThreadPoolExecutor bounded by cpus_limit so that the total
     #   number of active CPU threads across all processes stays close to the
-    #   global `cpus_limit` and we avoid oversubscribing the host.
+    #   global cpus_limit and we avoid oversubscribing the host.
 
     cuda_gpus_total = len(cuda_gpus)
     processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU
@@ -89,7 +89,7 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
     # Download model before spawning processes.
     # This is a TorchScript version of the SSCD (Self-Supervised Copy Detection) model
     # released by Facebook/Meta AI. We store the file in an S3-compatible object store
-    # and pull it from there into local disk (`DEDUPE_EMBEDDING_MODEL_FILEPATH`) before
+    # and pull it from there into local disk (DEDUPE_EMBEDDING_MODEL_FILEPATH) before
     # starting worker processes so that each process can load it from the local filesystem.
 
     local_model_path = DEDUPE_EMBEDDING_MODEL_FILEPATH

@@ -55,19 +55,20 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
     """
     Runs the classification model on the visual elements detected for each volume.
     """
+
     # Concurrency model:
-    # - We create a pool of worker *processes* and assign them across the available CUDA devices.
-    # - `CLASSIFICATION_MODEL_PROCESSES_PER_GPU` controls how many processes share a single GPU.
-    #   `processes_total = cuda_gpus_total * processes_per_gpu` is the total number of workers.
+    # - We create a pool of worker processes and assign them across the available CUDA devices.
+    # - CLASSIFICATION_MODEL_PROCESSES_PER_GPU controls how many processes share a single GPU.
+    #   processes_total = cuda_gpus_total * processes_per_gpu is the total number of workers.
     # - Each worker process:
-    #     * Initializes its own DB connection (via `initializer=get_db`).
+    #     * Initializes its own DB connection (via initializer=get_db).
     #     * Loads the classification model once and pins it to a specific CUDA device.
-    #     * Processes only the subset of item IDs assigned to it in `item_id_batches`.
+    #     * Processes only the subset of item IDs assigned to it in item_id_batches.
     # - Item IDs are distributed round‑robin across all workers for simple, reasonably even
     #   load balancing.
     # - If multiple processes share a GPU, we reduce the CPU cores per process
-    #   (`per_task_cpus_limit`) to avoid oversubscribing the host CPU and causing contention.
-    # - We use a *process* pool (instead of threads) because:
+    #   (per_task_cpus_limit) to avoid oversubscribing the host CPU and causing contention.
+    # - We use a process pool (instead of threads) because:
     #     * PyTorch/Ultralytics workloads are CPU- and GPU-heavy and benefit from process-level
     #       isolation (no GIL issues, more predictable memory usage).
     #     * CUDA + fork can be problematic; we explicitly use the "spawn" start method below.
@@ -129,9 +130,9 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
             cuda_gpus_i = i % cuda_gpus_total
-            # We map worker index `i` to a specific CUDA device by taking
-            # `i % cuda_gpus_total`, so workers are evenly distributed across
-            # the available GPUs. When `CLASSIFICATION_MODEL_PROCESSES_PER_GPU > 1`,
+            # We map worker index i to a specific CUDA device by taking
+            # i % cuda_gpus_total, so workers are evenly distributed across
+            # the available GPUs. When CLASSIFICATION_MODEL_PROCESSES_PER_GPU > 1,
             # multiple workers will share the same GPU.
             future = executor.submit(
                 classify_batch_of_items,
@@ -221,7 +222,7 @@ def classify_batch_of_items(
         # Preprocessing: decode scan images, do crop according to bbox
         start = get_time()
 
-        # 1) Decode only the scans referenced by this item's detections
+        # Decode only the scans referenced by this item's detections
         loaded_images = load_scans_for_detections(
             volume_barcode=volume_barcode,
             detections=item_detections,
@@ -229,7 +230,7 @@ def classify_batch_of_items(
             max_workers=cpus_limit,
         )
 
-        # 2) Build (Detection, crop, filename) records for this item
+        # Build (Detection, crop, filename) records for this item
         crop_image_records, failed_crops = build_detection_crops(
             volume_barcode=volume_barcode,
             detections=item_detections,
