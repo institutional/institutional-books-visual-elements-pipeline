@@ -1,4 +1,3 @@
-import peewee
 from playhouse.postgres_ext import *
 import numpy as np
 

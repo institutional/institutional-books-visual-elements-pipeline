@@ -1,5 +1,4 @@
 import click
-from peewee import SQL
 from playhouse.postgres_ext import *
 from loguru import logger
 import os
