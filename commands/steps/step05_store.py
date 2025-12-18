@@ -1,8 +1,6 @@
 import io
 import traceback
 import tarfile
-import os
-
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import click
@@ -41,9 +39,7 @@ def step05_store(
     #     * I/O-bound scan decoding (load_scans_for_detections)
     #     * CPU-ish but relatively lightweight PNG encoding (create_tarball_parallel)
     #   The number of threads per process is capped and derived from worker_cpus so we
-    #   don't oversubscribe CPU cores.
-    # - Global BLAS/OpenMP-related env vars are pinned to 1 thread to prevent libraries
-    #   like NumPy/OpenBLAS from spawning additional threads and defeating our own limits.
+    #   don't oversubscribe CPU cores. # TODO: Figure out why CPUs are being oversubscibed
 
     # Number of worker processes
     processes_total = cpus_limit
