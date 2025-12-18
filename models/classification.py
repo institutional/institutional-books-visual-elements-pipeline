@@ -5,7 +5,7 @@ from utils import get_db
 from models import PipelineBatchItem, Detection
 
 
-class Classification(peewee.Model):
+class Classification(Model):
     """
     `classification` table: Stores image-level or crop-level class predictions made during the pipeline.
     Each record links to a Detection (i.e., a cropped region) belonging to a PipelineBatchItem.
@@ -15,17 +15,18 @@ class Classification(peewee.Model):
         table_name = "classification"
         database = get_db()
 
-    id_classification = peewee.PrimaryKeyField()
+    id_classification = PrimaryKeyField()
 
-    # Reference to the parent batch item (volume)
-    pipeline_batch_item = peewee.ForeignKeyField(
+    # backref: PipelineBatchItem.classifications
+    pipeline_batch_item = ForeignKeyField(
         model=PipelineBatchItem,
         field="id_pipeline_batch_item",
         index=True,
+        backref="classifications",
     )
 
-    # Reference to the specific Detection this classifies
-    detection = peewee.ForeignKeyField(
+    # backref: Detection.classifications
+    detection = ForeignKeyField(
         model=Detection,
         field="id_detection",
         index=True,
@@ -33,12 +34,11 @@ class Classification(peewee.Model):
         on_delete="CASCADE",
     )
 
-    scan_filename = peewee.CharField(index=True)
-    pred_idx = peewee.IntegerField()
-    pred_class = peewee.CharField()
-    pred_conf = peewee.FloatField()  # Confidence value for predicted class
+    pred_idx = IntegerField()
+    pred_class = CharField()
+    pred_conf = FloatField()  # Confidence value for predicted class
 
-    created = peewee.DateTimeField(constraints=[peewee.SQL("DEFAULT CURRENT_TIMESTAMP")])
+    created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
 
     # Store all class probabilities as an array
-    probs = ArrayField(field_class=peewee.FloatField, null=True)
+    probs = ArrayField(field_class=FloatField, null=True)

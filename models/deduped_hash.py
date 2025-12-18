@@ -1,26 +1,48 @@
 from peewee import *
 from playhouse.postgres_ext import *
-from utils import get_db
-from models import PipelineBatchItem, Detection
+
+from models import PipelineBatchItem, Detection, ImageHash
 
 
 class DedupedHash(Model):
+    """
+    Deduplication groups for image hashes.
+    """
+
+    class Meta:
+        table_name = "deduped_hash"
+        database = ImageHash._meta.database
+
     id = AutoField()
-    hash_id = IntegerField(index=True)  # original ImageHash pk
-    group_id = IntegerField(index=True)  # dedupe group
-    pipeline_batch_item = ForeignKeyField(
-        PipelineBatchItem, field="id_pipeline_batch_item", index=True
+
+    # backref: ImageHash.deduped_entries
+    hash_id = ForeignKeyField(
+        model=ImageHash,
+        field="id_imagehash",
+        index=True,
+        on_delete="CASCADE",
+        backref="deduped_entries",
     )
+
+    group_id = IntegerField(index=True)  # dedupe group
+
+    # backref: PipelineBatchItem.deduped_hashes
+    pipeline_batch_item = ForeignKeyField(
+        PipelineBatchItem,
+        field="id_pipeline_batch_item",
+        index=True,
+        backref="deduped_hashes",
+    )
+
+    # backref: Detection.deduped_hashes
     detection = ForeignKeyField(
         Detection,
         field="id_detection",
         index=True,
         on_delete="CASCADE",
+        backref="deduped_hashes",
     )
-    scan_filename = CharField()
-    image_hash = CharField(index=True)
-    created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
 
-    class Meta:
-        table_name = "deduped_hash"
-        database = get_db()
+    image_hash = CharField(index=True)
+
+    created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])

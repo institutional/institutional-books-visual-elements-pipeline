@@ -1,3 +1,4 @@
+# TODO: Let's maybe move this to /commands/export? Ultimately, this is an "export to CSV" feature
 import csv
 import json
 from pathlib import Path
@@ -113,7 +114,7 @@ def process_detection(args):
         if captions:
             # Get primary caption (first one)
             primary_caption = captions[0]
-            caption_text = primary_caption.caption
+            caption_text = primary_caption.text
             row["caption"] = caption_text
             row["caption_length"] = len(caption_text)
             row["caption_word_count"] = len(caption_text.split())
@@ -233,7 +234,7 @@ def step08_analyze(id_pipeline_run, output_dir):
 
     # Process each batch
     for batch_idx, batch in enumerate(batches, 1):
-        # Get all detection IDs for this batch 
+        # Get all detection IDs for this batch
         detection_ids = [
             d.id_detection
             for d in Detection.select(Detection.id_detection)

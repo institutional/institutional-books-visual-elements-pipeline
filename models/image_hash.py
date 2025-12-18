@@ -1,27 +1,31 @@
 import peewee
 from playhouse.postgres_ext import *
+
 from utils import get_db
 from models import PipelineBatchItem, Detection
 
 
-class ImageHash(peewee.Model):
+class ImageHash(Model):
     """
     Stores an integer image hash per crop (for deduplication).
     """
 
     class Meta:
-        table_name = "imagehash"
+        table_name = "image_hash"
         database = get_db()
 
-    id_imagehash = peewee.PrimaryKeyField()
+    id_imagehash = PrimaryKeyField()
 
-    pipeline_batch_item = peewee.ForeignKeyField(
+    # backref: PipelineBatchItem.imagehashes
+    pipeline_batch_item = ForeignKeyField(
         model=PipelineBatchItem,
         field="id_pipeline_batch_item",
         index=True,
+        backref="imagehashes",
     )
 
-    detection = peewee.ForeignKeyField(
+    # backref: Detection.imagehashes
+    detection = ForeignKeyField(
         model=Detection,
         field="id_detection",
         index=True,
@@ -29,8 +33,6 @@ class ImageHash(peewee.Model):
         on_delete="CASCADE",
     )
 
-    scan_filename = peewee.CharField(index=True)
+    image_hash = CharField(max_length=100, index=True)  # Hex string
 
-    image_hash = peewee.CharField(max_length=100, index=True)  # Hex string
-
-    created = peewee.DateTimeField(constraints=[peewee.SQL("DEFAULT CURRENT_TIMESTAMP")])
+    created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])

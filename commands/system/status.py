@@ -8,7 +8,6 @@ from humanize import naturalsize, intcomma
 
 import utils
 import models
-from models import PipelineRun
 
 
 @click.command("status")

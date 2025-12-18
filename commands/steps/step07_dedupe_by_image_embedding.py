@@ -1,6 +1,6 @@
 import click
 from loguru import logger
-from models import Embedding, PipelineBatch, PipelineBatchItem, DedupedEmbedding
+from models import ImageEmbedding, PipelineBatch, PipelineBatchItem, DedupedEmbedding
 import psutil
 import faiss
 import tqdm
@@ -22,7 +22,7 @@ from const import (
 )
 
 
-@click.command("step07-dedupe-embeddings")
+@click.command("step07-dedupe-by-image-embedding")
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to deduplicate")
 @click.option(
     "--threshold",
@@ -98,7 +98,7 @@ from const import (
     default=False,
     help="Save FAISS index to disk for reuse",
 )
-def step07_dedupe(
+def step07_dedupe_by_image_embedding(
     id_pipeline_run,
     threshold,
     max_neighbors,
@@ -138,10 +138,10 @@ def step07_dedupe(
 
     # Count total embeddings
     total_embeddings = (
-        Embedding.select()
+        ImageEmbedding.select()
         .join(
             PipelineBatchItem,
-            on=(Embedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+            on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
         )
         .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
         .count()
@@ -160,10 +160,10 @@ def step07_dedupe(
     # Load or create embedding data file
     if os.path.exists(cache_file) and not force_reload:
         logger.info(f"Loading embeddings from cache: {cache_file}")
-        embedding_metadata, emb_arr = _load_embeddings_from_file(cache_file)
+        embedding_metadata, emb_arr = load_embeddings_from_file(cache_file)
     else:
         logger.info(f"Loading embeddings from database and saving to: {cache_file}")
-        embedding_metadata, emb_arr = _load_and_save_embeddings(pb_ids, cache_file)
+        embedding_metadata, emb_arr = load_and_save_embeddings(pb_ids, cache_file)
 
     logger.info(f"Loaded {len(embedding_metadata):,} embeddings with shape {emb_arr.shape}")
 
@@ -193,7 +193,7 @@ def step07_dedupe(
     )
 
     # Populate DedupedEmbedding table
-    _write_dedupe_assignments(embedding_metadata, duplicate_groups)
+    write_dedupe_assignments(embedding_metadata, duplicate_groups)
 
     # Log statistics
     group_sizes = [len(group) for group in duplicate_groups]
@@ -214,26 +214,25 @@ def step07_dedupe(
     logger.info("✓ Deduplication complete!")
 
 
-def _load_and_save_embeddings(pb_ids, cache_file):
+def load_and_save_embeddings(pb_ids, cache_file):
     """Load embeddings from database and save to HDF5 file"""
     t0 = time.time()
     logger.info("Loading embeddings from database...")
 
     # Query embeddings
     query = (
-        Embedding.select(
-            Embedding.id_embedding,
-            Embedding.pipeline_batch_item,
-            Embedding.detection,
-            Embedding.scan_filename,
-            Embedding.embedding,
+        ImageEmbedding.select(
+            ImageEmbedding.id_embedding,
+            ImageEmbedding.pipeline_batch_item,
+            ImageEmbedding.detection,
+            ImageEmbedding.embedding,
         )
         .join(
             PipelineBatchItem,
-            on=(Embedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+            on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
         )
         .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
-        .order_by(Embedding.id_embedding)
+        .order_by(ImageEmbedding.id_embedding)
     )
 
     total = query.count()
@@ -248,7 +247,6 @@ def _load_and_save_embeddings(pb_ids, cache_file):
                 "id_embedding": emb.id_embedding,
                 "pipeline_batch_item": emb.pipeline_batch_item_id,
                 "detection": emb.detection_id,
-                "scan_filename": emb.scan_filename,
             }
         )
         embedding_vectors.append(emb.embedding)
@@ -267,7 +265,7 @@ def _load_and_save_embeddings(pb_ids, cache_file):
         # Save embedding vectors (compressed)
         f.create_dataset("embeddings", data=emb_arr, compression="gzip", compression_opts=4)
 
-        # Save metadata as separate datasets 
+        # Save metadata as separate datasets
         f.create_dataset(
             "embedding_ids",
             data=np.array([m["id_embedding"] for m in embedding_metadata], dtype=np.int64),
@@ -280,13 +278,6 @@ def _load_and_save_embeddings(pb_ids, cache_file):
             "detections",
             data=np.array([m["detection"] for m in embedding_metadata], dtype=np.int64),
         )
-        f.create_dataset(
-            "scan_filenames",
-            data=np.array(
-                [m["scan_filename"] for m in embedding_metadata],
-                dtype=h5py.string_dtype(encoding="utf-8"),
-            ),
-        )
 
     file_size_mb = os.path.getsize(cache_file) / 1e6
     logger.info(f"Saved embedding data to {cache_file} ({file_size_mb:.1f} MB)")
@@ -294,7 +285,7 @@ def _load_and_save_embeddings(pb_ids, cache_file):
     return embedding_metadata, emb_arr
 
 
-def _load_embeddings_from_file(cache_file):
+def load_embeddings_from_file(cache_file):
     """Load embeddings from HDF5 file"""
     t0 = time.time()
 
@@ -303,7 +294,6 @@ def _load_embeddings_from_file(cache_file):
         embedding_ids = f["embedding_ids"][:].tolist()
         pipeline_batch_items = f["pipeline_batch_items"][:].tolist()
         detections = f["detections"][:].tolist()
-        scan_filenames = f["scan_filenames"][:].astype(str).tolist()
 
     # Reconstruct metadata
     embedding_metadata = []
@@ -313,7 +303,6 @@ def _load_embeddings_from_file(cache_file):
                 "id_embedding": embedding_ids[i],
                 "pipeline_batch_item": pipeline_batch_items[i],
                 "detection": detections[i],
-                "scan_filename": scan_filenames[i],
             }
         )
 
@@ -478,7 +467,7 @@ def deduplicate_embeddings_hnsw(
     return groups
 
 
-def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
+def write_dedupe_assignments(embedding_metadata, duplicate_groups):
     """
     Write deduplication assignments to database WITHOUT storing embeddings.
 
@@ -507,7 +496,6 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
                     "group_id": representative_id,  # Use representative's ID as group ID
                     "pipeline_batch_item": metadata["pipeline_batch_item"],
                     "detection": metadata["detection"],
-                    "scan_filename": metadata["scan_filename"],
                 }
             )
 
@@ -517,7 +505,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info("Clearing old assignments...")
     embedding_ids = [a["embedding_id"] for a in assignments]
 
-    delete_chunk_size = 10000 
+    delete_chunk_size = 10000
     total_deleted = 0
 
     for i in range(0, len(embedding_ids), delete_chunk_size):
@@ -530,7 +518,7 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info(f"Deleted {total_deleted:,} existing assignments")
 
     logger.info("Writing new assignments...")
-    insert_batch_size = 10000 
+    insert_batch_size = 10000
     total_written = 0
 
     with db.atomic():
@@ -542,26 +530,3 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info(
         f"✓ Successfully wrote {total_written:,} deduplicated embeddings in {time.time() - t0:.1f}s"
     )
-
-
-@click.command("migrate-dedupe-embedding")
-def migrate_dedupe_embedding():
-    """
-    Make embedding column nullable in deduped_embedding table.
-    Run this once before using the optimized deduplication.
-    """
-    db = DedupedEmbedding._meta.database
-
-    logger.info("Running migration: making embedding column nullable...")
-
-    try:
-        with db.atomic():
-            db.execute_sql("ALTER TABLE deduped_embedding ALTER COLUMN embedding DROP NOT NULL")
-
-        logger.info("✓ Migration complete: embedding column is now nullable")
-        logger.info("  You can now use step07-dedupe-embeddings without storing embeddings")
-        logger.info("  This saves disk space and improves performance significantly!")
-
-    except Exception as e:
-        logger.error(f"Migration failed: {e}")
-        logger.info("If column is already nullable or doesn't exist, this is safe to ignore")

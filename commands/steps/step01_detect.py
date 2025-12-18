@@ -7,11 +7,15 @@ import multiprocessing as mp
 import click
 from loguru import logger
 from huggingface_hub import hf_hub_download
-import cv2
 import numpy as np
 from more_itertools import chunked
 
-from utils import get_db, process_db_write_batch
+from utils import (
+    get_db,
+    process_db_write_batch,
+    get_time,
+    decode_image_bytes,
+)
 from models import PipelineBatchItem, Detection, Classification
 
 from const import (
@@ -51,14 +55,25 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     """
     model_filepath: Path | None = None
 
+    # Concurrency model:
+    # - We run a separate process for each GPU "slot": processes_per_gpu processes per CUDA device.
+    # - processes_total = cuda_gpus_total * processes_per_gpu is therefore the total number of
+    #   worker processes in the ProcessPoolExecutor.
+    # - Each worker process:
+    #     * Initializes its own DB connection (via initializer=get_db).
+    #     * Loads the YOLO model once and pins it to a specific CUDA device.
+    #     * Processes only the subset of item IDs assigned to it in item_id_batches.
+    # - Item IDs are distributed round‑robin across all processes_total workers so that the
+    #   workload is balanced. We then map each worker index i to a CUDA device using
+    #   cuda_gpus[i % cuda_gpus_total], effectively sharing a single GPU among multiple
+    #   processes when processes_per_gpu > 1.
+    # - CPU usage per process is limited via per_task_cpus_limit, derived from the global
+    #   cpus_limit and adjusted down when multiple processes share the same GPU to avoid
+    #   oversubscribing CPU cores.
+
     cuda_gpus_total = len(cuda_gpus)
     processes_per_gpu = DETECTION_MODEL_PROCESSES_PER_GPU
     processes_total = cuda_gpus_total * processes_per_gpu
-
-    logger.info(f"Number of GPUs: {cuda_gpus_total}")
-    logger.info(f"Number of processes: {processes_per_gpu}")
-    logger.info(f"Total processes: {processes_total}")
-    logger.info(f"Total cpus: {cpus_limit}")
 
     # 1 batch of items per GPU process (processes_total)
     item_id_batches: list[list[int]] = [[] for i in range(0, processes_total)]
@@ -112,7 +127,7 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     with ProcessPoolExecutor(
         max_workers=processes_total,
         initializer=get_db,
-        mp_context=mp_ctx, 
+        mp_context=mp_ctx,
     ) as executor:
         futures = {}
 
@@ -159,7 +174,7 @@ def process_batch_of_items(
     """
     import torch
     from ultralytics import YOLO, settings
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
     settings.update({"sync": False})
 
@@ -214,7 +229,7 @@ def process_batch_of_items(
             #
             # Pre-process batch of images
             #
-            start = datetime.now()
+            start = get_time()
 
             images_filenames, images_ndarrays = preprocess_images_batch(
                 volume_barcode=volume_barcode,
@@ -227,13 +242,13 @@ def process_batch_of_items(
 
             scans_total += len(images_filenames)
 
-            end = datetime.now()
+            end = get_time()
             pre_processing_time += end - start
 
             #
             # Run inference on batch
             #
-            start = datetime.now()
+            start = get_time()
 
             try:
                 detections += run_detection_on_images_batch(
@@ -252,20 +267,20 @@ def process_batch_of_items(
                 del images_ndarrays
                 del images_filenames
 
-            end = datetime.now()
+            end = get_time()
             inference_time += end - start
 
         #
         # Clear GPU cache and run GC
         #
-        start = datetime.now()
+        start = get_time()
 
         with torch.cuda.device(int(cuda_device.replace("cuda:", ""))):
             torch.cuda.empty_cache()
 
         gc.collect()
 
-        end = datetime.now()
+        end = get_time()
         clear_gpu_time = end - start
 
         # Add to totals
@@ -346,14 +361,6 @@ def preprocess_images_batch(
                 logger.warning(f"Could not decode {volume_barcode}.{filename}. Skipping.")
 
     return (images_filenames, images_ndarrays)
-
-
-def decode_image_bytes(image_bytes) -> np.ndarray:
-    """
-    Decodes image bytes and returns an ndarray
-    """
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)
 
 
 def run_detection_on_images_batch(

@@ -7,7 +7,7 @@ from models import PipelineBatchItem, Detection
 
 class Caption(Model):
     """
-    caption table: Stores generated captions for an image or a detection crop.
+    `caption` table: Stores generated captions for an image or a detection crop.
     Each record links to a Detection (a cropped region) belonging to a PipelineBatchItem.
     """
 
@@ -17,14 +17,15 @@ class Caption(Model):
 
     id_caption = PrimaryKeyField()
 
-    # Reference to the parent batch item (volume)
+    # backref: PipelineBatchItem.captions
     pipeline_batch_item = ForeignKeyField(
         model=PipelineBatchItem,
         field="id_pipeline_batch_item",
         index=True,
+        backref="captions",
     )
 
-    # Reference to the specific Detection this caption describes
+    # backref: Detection.captions
     detection = ForeignKeyField(
         model=Detection,
         field="id_detection",
@@ -33,11 +34,7 @@ class Caption(Model):
         on_delete="CASCADE",
     )
 
-    scan_filename = CharField(index=True)
-
-    # The generated caption text
-    caption = TextField()
-
+    text = TextField()
     lang = CharField(max_length=50)
 
     # Store the logprobs from the model response as JSON

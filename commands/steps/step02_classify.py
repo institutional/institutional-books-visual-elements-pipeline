@@ -1,17 +1,23 @@
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 import gc
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 import multiprocessing as mp
 
 import click
 from loguru import logger
 from huggingface_hub import hf_hub_download
-import cv2
 import numpy as np
 from more_itertools import chunked
-from utils import get_db, process_db_write_batch
+
+from utils import (
+    get_db,
+    process_db_write_batch,
+    get_time,
+    load_scans_for_detections,
+    build_detection_crops,
+)
 from models import PipelineBatchItem, Detection, Classification
 
 from const import (
@@ -47,8 +53,25 @@ from const import (
 )
 def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
-    Runs the classification model on element crops from each volume containing detections.
+    Runs the classification model on the visual elements detected for each volume.
     """
+    # Concurrency model:
+    # - We create a pool of worker *processes* and assign them across the available CUDA devices.
+    # - `CLASSIFICATION_MODEL_PROCESSES_PER_GPU` controls how many processes share a single GPU.
+    #   `processes_total = cuda_gpus_total * processes_per_gpu` is the total number of workers.
+    # - Each worker process:
+    #     * Initializes its own DB connection (via `initializer=get_db`).
+    #     * Loads the classification model once and pins it to a specific CUDA device.
+    #     * Processes only the subset of item IDs assigned to it in `item_id_batches`.
+    # - Item IDs are distributed round‑robin across all workers for simple, reasonably even
+    #   load balancing.
+    # - If multiple processes share a GPU, we reduce the CPU cores per process
+    #   (`per_task_cpus_limit`) to avoid oversubscribing the host CPU and causing contention.
+    # - We use a *process* pool (instead of threads) because:
+    #     * PyTorch/Ultralytics workloads are CPU- and GPU-heavy and benefit from process-level
+    #       isolation (no GIL issues, more predictable memory usage).
+    #     * CUDA + fork can be problematic; we explicitly use the "spawn" start method below.
+
     model_filepath: Path | None = None
     cuda_gpus_total = len(cuda_gpus)
     processes_per_gpu = CLASSIFICATION_MODEL_PROCESSES_PER_GPU
@@ -56,10 +79,11 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
     item_id_batches: list[list[int]] = [[] for _ in range(processes_total)]
 
     per_task_cpus_limit = int(round(cpus_limit / cuda_gpus_total))
+
     if processes_total > 1:
         per_task_cpus_limit = max(2, per_task_cpus_limit // 2)
 
-    # 1. Download model if needed
+    # Download model if needed
     logger.info(f"Pulling {CLASSIFICATION_MODEL_REPO} from HuggingFace or cache ...")
     model_filepath = Path(
         hf_hub_download(
@@ -68,7 +92,7 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         ),
     )
 
-    # 2. Populate batches ONLY for pipeline batch items that actually had detections:
+    # Populate batches ONLY for pipeline batch items that actually had detections:
     eligible_items_query = (
         PipelineBatchItem.select(PipelineBatchItem)
         .where(
@@ -83,8 +107,9 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         .distinct()
     )
 
-    eligible_items = list(eligible_items_query)
-    for i, item in enumerate(eligible_items):
+    # Using Peewee's iterator() to avoid materializing the entire result set
+    # in memory at once. We assign items round-robin to workers.
+    for i, item in enumerate(eligible_items_query.iterator()):
         process_i = i % processes_total
         item_id_batches[process_i].append(item.id_pipeline_batch_item)
 
@@ -92,17 +117,22 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
         logger.warning("No eligible items with detections found for this batch. Exiting.")
         click.get_current_context().exit(0)
 
-    # 3. Pool - Classifying batches
-    mp_ctx = mp.get_context("spawn") 
-    
+    # Pool - Classifying batches
+    # Use "spawn" to avoid CUDA / fork issues when starting worker processes.
+    mp_ctx = mp.get_context("spawn")
+
     with ProcessPoolExecutor(
         max_workers=processes_total,
         initializer=get_db,
-        mp_context=mp_ctx,  
+        mp_context=mp_ctx,
     ) as executor:
         futures = {}
         for i, item_ids in enumerate(item_id_batches):
             cuda_gpus_i = i % cuda_gpus_total
+            # We map worker index `i` to a specific CUDA device by taking
+            # `i % cuda_gpus_total`, so workers are evenly distributed across
+            # the available GPUs. When `CLASSIFICATION_MODEL_PROCESSES_PER_GPU > 1`,
+            # multiple workers will share the same GPU.
             future = executor.submit(
                 classify_batch_of_items,
                 item_ids=item_ids,
@@ -116,8 +146,8 @@ def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str
             cuda_gpu: str = futures[future]
             try:
                 future.result()
-            except Exception as err:
-                logger.debug(traceback.print_exc())
+            except Exception:
+                logger.debug(traceback.format_exc())
                 logger.error(
                     f"A blocking error occured while processing batch on {cuda_gpu}. Exiting."
                 )
@@ -134,7 +164,9 @@ def classify_batch_of_items(
     cuda_device: str,
     cpus_limit: int,
 ):
-
+    """
+    Classify all detections for a batch of PipelineBatchItem IDs on a single worker process.
+    """
     import os
 
     # set CUDA_VISIBLE_DEVICES before importing torch/ultralytics - avoids defaulting to cuda:0
@@ -172,67 +204,46 @@ def classify_batch_of_items(
             .order_by(Detection.id_detection)
         )
 
-        if item_detections.count() == 0:
-            logger.info(f"{volume_barcode}: No detections - skipping classification for this item.")
+        if not item_detections.exists():
+            logger.warning(f"Volume {volume_barcode} has no detection. Skipping.")
             continue
 
         # images = dict: filename -> bytes
-        image_bytes_by_filename = dict(list(item.data.images.items()))
-
-        # Force change to string
-        image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
+        image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
 
         # Aggregators for recording stats
         classified_entries: list[Classification] = []
-        n_crops = 0
-        failed_crops = 0
 
         time_preproc = timedelta(0)
         time_infer = timedelta(0)
         time_clear_gpu = timedelta(0)
 
-        # Group crops in batches
-        crop_image_records = []  # tuples of (Detection, np.ndarray, filename)
-
         # Preprocessing: decode scan images, do crop according to bbox
-        start = datetime.now()
-        with ThreadPoolExecutor(max_workers=cpus_limit) as decode_executor:
-            futures = {}
-            # First, decode all scans in parallel (only scans used by this item's detections)
-            used_filenames = set(det.scan_filename for det in item_detections)
-            loaded_images: dict[str, np.ndarray] = {}
-            for fn in used_filenames:
-                futures[decode_executor.submit(decode_image_bytes, image_bytes_by_filename[fn])] = (
-                    fn
-                )
-            done, _ = wait(futures)
-            for future in done:
-                fn = futures[future]
-                try:
-                    loaded_images[fn] = future.result()
-                except Exception:
-                    logger.warning(f"Could not decode scan {volume_barcode}.{fn}")
-        # Now, for each detection, get the crop
-        for det in item_detections:
-            scan_img = loaded_images.get(det.scan_filename)
-            if scan_img is None:
-                failed_crops += 1
-                continue
-            try:
-                crop = det.crop(scan_img)
-                crop_image_records.append((det, crop, det.scan_filename))
-                n_crops += 1
-            except Exception:
-                logger.warning(
-                    f"Could not crop detection in {volume_barcode}.{det.scan_filename}; skipping"
-                )
-                failed_crops += 1
+        start = get_time()
 
-        end = datetime.now()
+        # 1) Decode only the scans referenced by this item's detections
+        loaded_images = load_scans_for_detections(
+            volume_barcode=volume_barcode,
+            detections=item_detections,
+            image_bytes_by_filename=image_bytes_by_filename,
+            max_workers=cpus_limit,
+        )
+
+        # 2) Build (Detection, crop, filename) records for this item
+        crop_image_records, failed_crops = build_detection_crops(
+            volume_barcode=volume_barcode,
+            detections=item_detections,
+            loaded_images=loaded_images,
+            with_filename=True,
+        )
+        n_crops = len(crop_image_records)
+
+        end = get_time()
         time_preproc += end - start
 
         if n_crops == 0:
             logger.info(f"{volume_barcode}: All crops failed, skipping.")
+            total_failed_crops += failed_crops
             continue
 
         crop_batches = list(chunked(crop_image_records, CLASSIFICATION_MAX_BATCH))
@@ -241,14 +252,14 @@ def classify_batch_of_items(
             detections_batch, images_batch, filenames_batch = zip(*batch)
 
             # Inference!
-            start_inf = datetime.now()
+            start_inf = get_time()
             results = model(
                 list(images_batch),
                 imgsz=CLASSIFICATION_MODEL_IMGSZ,
                 device=device,
                 verbose=False,
             )
-            end_inf = datetime.now()
+            end_inf = get_time()
             time_infer += end_inf - start_inf
 
             for idx, result in enumerate(results):
@@ -283,7 +294,7 @@ def classify_batch_of_items(
                     pred_class = "0"
                     pred_idx = 0
 
-                now = datetime.now(timezone.utc)
+                now = get_time()
 
                 classified_entries.append(
                     Classification(
@@ -299,11 +310,11 @@ def classify_batch_of_items(
                 )
 
         # Clear GPU cache and run GC
-        start_gpu = datetime.now()
+        start_gpu = get_time()
         with torch.cuda.device(0):
             torch.cuda.empty_cache()
         gc.collect()
-        end_gpu = datetime.now()
+        end_gpu = get_time()
         time_clear_gpu += end_gpu - start_gpu
 
         # Add to totals
@@ -340,9 +351,3 @@ def classify_batch_of_items(
     )
 
     return True
-
-
-# Use the detection/decode code as in detection pipeline
-def decode_image_bytes(image_bytes) -> np.ndarray:
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)

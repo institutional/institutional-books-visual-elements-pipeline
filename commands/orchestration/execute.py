@@ -1,12 +1,11 @@
 import traceback
-import os
 from datetime import datetime, timezone, timedelta
 
 import click
 from loguru import logger
 
 from utils import get_torch_devices
-from models import PipelineRun, PipelineBatch, PipelineBatchItem
+from models import PipelineRun, PipelineBatch
 import commands.steps
 from const import (
     CPUS_LIMIT,
@@ -140,7 +139,7 @@ def execute(
                     pipeline_batch=pipeline_batch,
                 )
             start = time.perf_counter()
-            
+
             # Step 2: Classification
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -151,11 +150,11 @@ def execute(
                 )
             logger.info(f"step02_classify took {time.perf_counter() - start:.2f}s")
             start = time.perf_counter()
-            
+
             # Step 3: Embeddings
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step03_generate_dedupe_embeddings,
+                    step_fn=commands.steps.step03_generate_dedupe_data,
                     step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
                     pipeline_run=pipeline_run,
                     pipeline_batch=pipeline_batch,
@@ -164,7 +163,7 @@ def execute(
                 f"step03_generate_dedupe_embeddings took {time.perf_counter() - start:.2f}s"
             )
             start = time.perf_counter()
-            
+
             # Step 4: Send caption requests to OpenAI
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -175,7 +174,7 @@ def execute(
                 )
             logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
             start = time.perf_counter()
-            
+
             # Step 5: Store crops
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
@@ -223,7 +222,7 @@ def execute(
             # Run hash dedupe:
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step06_dedupe_hash,
+                    step_fn=commands.steps.step06_dedupe_by_image_hash,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )
@@ -231,15 +230,7 @@ def execute(
             # Run embedding dedupe:
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step07_dedupe,
-                    step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
-                    pipeline_run=pipeline_run,
-                )
-                
-            # Run analyze
-            if not has_crashed:
-                has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step08_analyze,
+                    step_fn=commands.steps.step07_dedupe_by_image_embedding,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )
@@ -298,10 +289,6 @@ def execute_batch_level_step(
 ) -> bool:
     """
     Executes a batch-level step.
-    Returns False if step exited with non-zero code.
-
-    NOTE:
-    - Runs GPU cache flushes and GC calls after each step
     """
     start = datetime.now(timezone.utc)
     end = None
