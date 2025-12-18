@@ -14,11 +14,9 @@ The Institutional Data Initiative's pipeline for extracting, analyzing, and publ
 - [Concept](#concept)
 - [Sequencing of a pipeline run](#sequencing-of-a-pipeline-run)
 - [Available utilities](#available-utilities)
-- [Custom exclusion List](#custom-exclusion-list)
 - [CLI: `system`](#cli-system)
 - [CLI: `orchestration`](#cli-system)
 - [CLI: `steps`](#cli-steps)
-- [CLI: `export`](#cli-export)
 - [About IDI](#about-idi)
 - [Cite](#cite)
 
