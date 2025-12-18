@@ -184,8 +184,7 @@ Data Analysis:
 For collecting analysis data from a pipeline run and export to CSV for further analysis, use `analyze`.
 Gathers crop-level metrics including metadata, dimensions, confidence scores, duplication information, and caption statistics.
 
-NOTE:
-- This is a run-level step, which expects a `pipeline_run`.
+NOTE: This is a run-level step, which expects a `pipeline_run`.
 
 ```bash
 uv run pipeline.py export analyze --id-pipeline-run=1
