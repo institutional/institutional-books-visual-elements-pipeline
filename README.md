@@ -179,6 +179,21 @@ Full dataset:
 uv run pipeline.py export to-hf ...
 ```
 
+Data Analysis:
+
+For collecting analysis data from a pipeline run and export to CSV for further analysis, use `analyze`.
+Gathers crop-level metrics including metadata, dimensions, confidence scores, duplication information, and caption statistics.
+
+NOTE:
+- This is a run-level step, which expects a `pipeline_run`.
+
+```bash
+uv run pipeline.py export analyze --id-pipeline-run=1
+```
+
+</details>
+
+
 [👆 Back to the summary](#summary)
 
 ---
@@ -249,7 +264,6 @@ Stores the barcode and metadata of each volume in the database.
 uv run pipeline.py system build
 uv run pipeline.py system build --max-workers=32 # Increases pressure on the database
 ```
-
 </details>
 
 <details>
@@ -452,8 +466,6 @@ uv run pipeline.py steps step06-dedupe-hashes --id-pipeline-run=1
 </details>
 
 
-</details>
-
 <details>
 <summary><h3>steps step07-dedupe-embeddings</h3></summary>
 
@@ -471,25 +483,6 @@ uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
 
 </details>
 
-
-</details>
-
-<details>
-<summary><h3>steps step08-analyze</h3></summary>
-
-Collect analysis data from a pipeline run and export to CSV for further analysis.
-
-Gathers crop-level metrics including metadata, dimensions, confidence scores, duplication information, and caption statistics.
-
-NOTE:
-- This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-- This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
-
-```bash
-uv run pipeline.py steps step08-analyze --id-pipeline-run=1
-```
-
-</details>
 
 
 

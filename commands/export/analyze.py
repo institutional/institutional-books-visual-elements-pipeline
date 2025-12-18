@@ -1,4 +1,3 @@
-# TODO: Let's maybe move this to /commands/export? Ultimately, this is an "export to CSV" feature
 import csv
 import json
 from pathlib import Path
@@ -157,7 +156,7 @@ def process_detection(args):
         return None
 
 
-@click.command("step08-analyze")
+@click.command("analyze")
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to analyze")
 @click.option(
     "--output-dir",
@@ -165,7 +164,7 @@ def process_detection(args):
     default=ANALYSIS_OUTPUT_DIR,
     help="Output directory for analysis files",
 )
-def step08_analyze(id_pipeline_run, output_dir):
+def analyze(id_pipeline_run, output_dir):
     """
     Collect analysis data from a pipeline run and export to CSV for further analysis.
 
