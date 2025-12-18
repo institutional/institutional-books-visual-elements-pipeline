@@ -218,7 +218,6 @@ def load_and_save_hashes(pb_ids, cache_file):
         hashes_meta[hash_id] = {
             "pipeline_batch_item": h["pipeline_batch_item"],
             "detection": h["detection"],
-            "scan_filename": h["scan_filename"],
             "image_hash": hex_str,
         }
 
@@ -244,7 +243,6 @@ def load_and_save_hashes(pb_ids, cache_file):
             item_group = meta_group.create_group(str(hash_id))
             item_group.attrs["pipeline_batch_item"] = meta["pipeline_batch_item"]
             item_group.attrs["detection"] = meta["detection"]
-            item_group.attrs["scan_filename"] = meta["scan_filename"]
             item_group.attrs["image_hash"] = meta["image_hash"]
 
     logger.info(f"Saved hash data to {cache_file}")
@@ -272,7 +270,6 @@ def load_hashes_from_file(cache_file):
             hashes_meta[hash_id] = {
                 "pipeline_batch_item": item_group.attrs["pipeline_batch_item"],
                 "detection": item_group.attrs["detection"],
-                "scan_filename": item_group.attrs["scan_filename"],
                 "image_hash": item_group.attrs["image_hash"],
             }
 
@@ -619,7 +616,6 @@ def write_hash_assignments_batched(hashes_meta, dedupe_assignments):
                         "group_id": dedupe_assignments[hid],
                         "pipeline_batch_item": meta["pipeline_batch_item"],
                         "detection": meta["detection"],
-                        "scan_filename": meta["scan_filename"],
                         "image_hash": meta["image_hash"],
                         "created": now,
                     }

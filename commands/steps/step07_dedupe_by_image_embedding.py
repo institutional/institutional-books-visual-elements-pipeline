@@ -225,7 +225,6 @@ def load_and_save_embeddings(pb_ids, cache_file):
             ImageEmbedding.id_embedding,
             ImageEmbedding.pipeline_batch_item,
             ImageEmbedding.detection,
-            ImageEmbedding.scan_filename,
             ImageEmbedding.embedding,
         )
         .join(
@@ -248,7 +247,6 @@ def load_and_save_embeddings(pb_ids, cache_file):
                 "id_embedding": emb.id_embedding,
                 "pipeline_batch_item": emb.pipeline_batch_item_id,
                 "detection": emb.detection_id,
-                "scan_filename": emb.scan_filename,
             }
         )
         embedding_vectors.append(emb.embedding)
@@ -280,13 +278,6 @@ def load_and_save_embeddings(pb_ids, cache_file):
             "detections",
             data=np.array([m["detection"] for m in embedding_metadata], dtype=np.int64),
         )
-        f.create_dataset(
-            "scan_filenames",
-            data=np.array(
-                [m["scan_filename"] for m in embedding_metadata],
-                dtype=h5py.string_dtype(encoding="utf-8"),
-            ),
-        )
 
     file_size_mb = os.path.getsize(cache_file) / 1e6
     logger.info(f"Saved embedding data to {cache_file} ({file_size_mb:.1f} MB)")
@@ -303,7 +294,6 @@ def load_embeddings_from_file(cache_file):
         embedding_ids = f["embedding_ids"][:].tolist()
         pipeline_batch_items = f["pipeline_batch_items"][:].tolist()
         detections = f["detections"][:].tolist()
-        scan_filenames = f["scan_filenames"][:].astype(str).tolist()
 
     # Reconstruct metadata
     embedding_metadata = []
@@ -313,7 +303,6 @@ def load_embeddings_from_file(cache_file):
                 "id_embedding": embedding_ids[i],
                 "pipeline_batch_item": pipeline_batch_items[i],
                 "detection": detections[i],
-                "scan_filename": scan_filenames[i],
             }
         )
 
@@ -507,7 +496,6 @@ def write_dedupe_assignments(embedding_metadata, duplicate_groups):
                     "group_id": representative_id,  # Use representative's ID as group ID
                     "pipeline_batch_item": metadata["pipeline_batch_item"],
                     "detection": metadata["detection"],
-                    "scan_filename": metadata["scan_filename"],
                 }
             )
 
