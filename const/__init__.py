@@ -260,6 +260,7 @@ MAX_S3_REQUESTS_PER_SECOND = 25
 """Maximum upload requests to S3 per second (for step05_store)"""
 
 PEEK_OUTPUT_DIR = Path(CACHE_DIR_PATH, "temp_peek")
-"Output directory for visualization"
+"""Output directory for visualization"""
 
 OMP_NUM_THREADS = int(os.getenv("OMP_NUM_THREADS", 1))
+"""Make sure PyTorch doesn't use its own thread pool"""

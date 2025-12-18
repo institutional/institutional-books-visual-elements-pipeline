@@ -8,4 +8,5 @@ from .process_db_write_batch import process_db_write_batch
 from .get_s3_client import get_s3_client
 from .get_time import get_time
 from .decode_image_bytes import decode_image_bytes
-from .get_crops import get_crops
+from .load_scans_for_detections import load_scans_for_detections
+from .build_detection_crops import build_detection_crops

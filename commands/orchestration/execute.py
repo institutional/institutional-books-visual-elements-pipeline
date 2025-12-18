@@ -222,7 +222,7 @@ def execute(
             # Run hash dedupe:
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step06_dedupe_hash,
+                    step_fn=commands.steps.step06_dedupe_by_image_hash,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )
@@ -230,15 +230,7 @@ def execute(
             # Run embedding dedupe:
             if not has_crashed:
                 has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step07_dedupe_embedding,
-                    step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
-                    pipeline_run=pipeline_run,
-                )
-
-            # Run analyze
-            if not has_crashed:
-                has_crashed = not execute_run_level_step(
-                    step_fn=commands.steps.step08_analyze,
+                    step_fn=commands.steps.step07_dedupe_by_image_embedding,
                     step_fn_kwargs={"id_pipeline_run": id_pipeline_run},
                     pipeline_run=pipeline_run,
                 )

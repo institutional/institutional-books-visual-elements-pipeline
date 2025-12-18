@@ -1,18 +1,24 @@
 import traceback
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 import gc
 import multiprocessing as mp
 
 import click
 from loguru import logger
-import cv2
 import numpy as np
 
 from more_itertools import chunked
 import imagehash
 
-from utils import get_db, process_db_write_batch, get_s3_client, get_time, decode_image_bytes
+from utils import (
+    get_db,
+    process_db_write_batch,
+    get_s3_client,
+    get_time,
+    load_scans_for_detections,
+    build_detection_crops,
+)
 from models import PipelineBatchItem, Detection, ImageEmbedding, ImageHash
 
 from const import (
@@ -53,6 +59,24 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
     and saves them to the database, per GPU.
     """
     model_filepath: Path | None = None
+
+    # Concurrency model:
+    # - We launch `processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU`
+    #   worker *processes* via ProcessPoolExecutor.
+    # - Each worker process:
+    #     * Initializes its own DB connection (initializer=get_db).
+    #     * Loads the TorchScript embedding model once and pins it to one CUDA device.
+    #     * Processes only the subset of PipelineBatchItem IDs assigned to it
+    #       in `item_id_batches`.
+    # - Items are assigned to workers round‑robin so the workload is roughly balanced.
+    #   The CUDA device for worker i is chosen with `cuda_gpus[i % cuda_gpus_total]`,
+    #   so multiple workers can share the same GPU when
+    #   `DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU > 1`.
+    # - Within each process, CPU‑bound work (image decode, crop, preprocessing)
+    #   uses a small ThreadPoolExecutor bounded by `cpus_limit` so that the total
+    #   number of active CPU threads across all processes stays close to the
+    #   global `cpus_limit` and we avoid oversubscribing the host.
+
     cuda_gpus_total = len(cuda_gpus)
     processes_total = cuda_gpus_total * DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU
 
@@ -62,12 +86,17 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
     if processes_total > 1:
         per_task_cpus_limit = max(2, per_task_cpus_limit // 2)
 
-    # Download model before spawning processes to avoid race conditions # TODO: Either here or in const: specify the origin of the model and where to pull it from. Imagine that somebody outside of IDI will want / need to run this.
+    # Download model before spawning processes.
+    # This is a TorchScript version of the SSCD (Self-Supervised Copy Detection) model
+    # released by Facebook/Meta AI. We store the file in an S3-compatible object store
+    # and pull it from there into local disk (`DEDUPE_EMBEDDING_MODEL_FILEPATH`) before
+    # starting worker processes so that each process can load it from the local filesystem.
+
     local_model_path = DEDUPE_EMBEDDING_MODEL_FILEPATH
     if not local_model_path.exists():
-        logger.info(f"Downloading TorchScript model from S3 Storage...")
+        logger.info("Downloading TorchScript model from S3 Storage...")
         download_model()
-        logger.info(f"✓ Model downloaded and verified successfully")
+        logger.info("✓ Model downloaded and verified successfully")
     else:
         logger.info(f"Model file found at {local_model_path}, skipping download.")
     model_filepath = local_model_path
@@ -86,9 +115,10 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
         .order_by(PipelineBatchItem.id_pipeline_batch_item)
         .distinct()
     )
-    # TODO: Add Peewee iterator instead of grabbing elibible items
-    eligible_items = list(eligible_items_query)
-    for i, item in enumerate(eligible_items):
+
+    # Use Peewee's iterator() to avoid loading the entire result set in memory.
+    # We assign items round‑robin to the available worker processes.
+    for i, item in enumerate(eligible_items_query.iterator()):
         process_i = i % processes_total
         item_id_batches[process_i].append(item.id_pipeline_batch_item)
 
@@ -118,7 +148,7 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
             cuda_gpu: str = futures[future]
             try:
                 future.result()
-            except Exception as err:
+            except Exception:
                 logger.debug(traceback.print_exc())
                 logger.error(
                     f"A blocking error occured while embedding batch on {cuda_gpu}. Exiting."
@@ -136,10 +166,13 @@ def embed_batch_of_items(
     cuda_device: str,
     cpus_limit: int,
 ):
+    """
+    Generate embeddings and perceptual hashes for all detections belonging to a batch
+    of PipelineBatchItem IDs on a single worker process.
+    """
     import os
 
-    # TODO: Add function description
-    # set CUDA_VISIBLE_DEVICES before importing torch/ultralytics - avoids defaulting to cuda:0
+    # set CUDA_VISIBLE_DEVICES before importing torch - avoids defaulting to physical cuda:0
     os.environ["CUDA_VISIBLE_DEVICES"] = cuda_device.replace("cuda:", "")
     import torch
     from PIL import Image
@@ -161,10 +194,8 @@ def embed_batch_of_items(
         return torch.from_numpy(img)  # [C, H, W]
 
     # Collect all embeddings and hashes from all items
-    all_embedding_entries = (
-        []
-    )  # TODO: Would be neat to provide a type hint for this (list[ImageEmbedding] and list[ImageHash]?)
-    all_imagehash_entries = []
+    all_embedding_entries: list[ImageEmbedding] = []
+    all_imagehash_entries: list[ImageHash] = []
 
     # Track statistics
     total_n_embeds = 0
@@ -180,55 +211,36 @@ def embed_batch_of_items(
             .order_by(Detection.id_detection)
         )
 
-        if item_detections.count() == 0:
+        if not item_detections.exists():
             logger.info(f"{volume_barcode}: No detections - skipping embedding for this item.")
             continue
 
-        image_bytes_by_filename = dict(list(item.data.images.items()))
-        image_bytes_by_filename = {str(k): v for k, v in image_bytes_by_filename.items()}
+        image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
 
-        # 1. Decode all scans needed for this item in parallel
-        with ThreadPoolExecutor(max_workers=cpus_limit) as decode_executor:
-            futures = {}
-            used_filenames = set(str(det.scan_filename) for det in item_detections)
-            loaded_images: dict[str, np.ndarray] = {}
-            for fn in used_filenames:
-                if fn not in image_bytes_by_filename:
-                    logger.warning(
-                        f"Missing image bytes for scan {volume_barcode}.{fn} - skipping this scan in embedding"
-                    )
-                    continue
-                futures[decode_executor.submit(decode_image_bytes, image_bytes_by_filename[fn])] = (
-                    fn
-                )
-            done, _ = wait(futures)
-            for future in done:
-                fn = futures[future]
-                try:
-                    loaded_images[fn] = future.result()
-                except Exception:
-                    logger.warning(f"Could not decode scan {volume_barcode}.{fn}")
+        # 1) Decode all scans needed for this item (only those used by detections)
+        loaded_images = load_scans_for_detections(
+            volume_barcode=volume_barcode,
+            detections=item_detections,
+            image_bytes_by_filename=image_bytes_by_filename,
+            max_workers=cpus_limit,
+        )
 
-        embedding_entries = []
-        imagehash_entries = []
-        n_embeds, failed_embeds = 0, 0
+        # 2) Build a list of (Detection, crop, filename) tuples
+        crops_and_meta, failed_embeds = build_detection_crops(
+            volume_barcode=volume_barcode,
+            detections=item_detections,
+            loaded_images=loaded_images,
+            with_filename=True,
+        )
+        n_embeds = len(crops_and_meta)
 
-        # Compute embedding and hash for each crop (per detection) TODO: I think this comment doesn't describe what is happening here, but what is happening later (which is prepended by another comment)
-        crops_and_meta = []
-        for det in item_detections:
-            scan_img = loaded_images.get(str(det.scan_filename))
-            if scan_img is None:
-                failed_embeds += 1
-                continue
-            try:
-                crop = det.crop(scan_img)
-                crops_and_meta.append((det, crop, str(det.scan_filename)))
-                n_embeds += 1
-            except Exception:
-                logger.warning(
-                    f"Could not crop detection in {volume_barcode}.{det.scan_filename}; skipping"
-                )
-                failed_embeds += 1
+        embedding_entries: list[ImageEmbedding] = []
+        imagehash_entries: list[ImageHash] = []
+
+        if n_embeds == 0:
+            logger.info(f"{volume_barcode}: All crops failed; skipping embeddings.")
+            total_failed_embeds += failed_embeds
+            continue
 
         # Prepare model inputs in minibatches
         batch_size = DEDUPE_EMBEDDING_BATCH_SIZE
@@ -236,12 +248,12 @@ def embed_batch_of_items(
 
         for batch in crop_batches:
             detections_batch, crops_batch, filenames_batch = zip(*batch)
-            # Prep
+            # Preprocess crops for the model
             prepped = [preprocess_for_model(crop) for crop in crops_batch]
             batch_tensor = torch.stack(prepped, dim=0).to(device)
             # Embedding inference
             with torch.no_grad():
-                embeds = model(batch_tensor)  # [B, 512]
+                embeds = model(batch_tensor)  # [B, D]
             embeds = embeds.cpu().numpy()
             # Normalize
             embeds = embeds / np.linalg.norm(embeds, axis=1, keepdims=True)
@@ -276,10 +288,15 @@ def embed_batch_of_items(
         all_embedding_entries.extend(embedding_entries)
         all_imagehash_entries.extend(imagehash_entries)
 
+        # Logging
         logger.info(
-            f"{volume_barcode} | n_crops: {n_embeds} - failed crops: {failed_embeds} - embeddings: {len(embedding_entries)} - hashes: {len(imagehash_entries)}"
+            f"{volume_barcode} | "
+            f"n_crops: {n_embeds} - "
+            f"failed_crops: {failed_embeds} - "
+            f"Device: {cuda_device} - "
+            f"embeddings: {len(embedding_entries)} - "
+            f"hashes: {len(imagehash_entries)}"
         )
-        # TODO: Should we try to enforce consistency across steps for logging format? This differs from the way step01 and step02 do it, which can make it harder to look for info in a large log file.
 
         # GC/CUDA clear
         torch.cuda.empty_cache()
@@ -330,7 +347,10 @@ def download_model():
         # First, check if the object exists and get its metadata
         click.echo(f"  Checking S3 object: {s3_key}")
         try:
-            # TODO: I am not sure this is needed, worth double checking: I think boto3 yells at you if it pull a file < expected size.
+            # We proactively call head_object to:
+            # - Fail fast if the key does not exist.
+            # - Get the expected content length, so we can validate the download later.
+            # - Check for partial/corrupted downloads.
             head_response = s3.head_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
             expected_size = head_response["ContentLength"]
             click.echo(f"  Expected file size: {expected_size:,} bytes")

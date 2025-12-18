@@ -22,8 +22,7 @@ from const import (
 )
 
 
-@click.command("step07-dedupe-by-image-embeddings")
-# TODO: match filename
+@click.command("step07-dedupe-by-image-embedding")
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to deduplicate")
 @click.option(
     "--threshold",
@@ -99,7 +98,7 @@ from const import (
     default=False,
     help="Save FAISS index to disk for reuse",
 )
-def step07_dedupe_embedding(
+def step07_dedupe_by_image_embedding(
     id_pipeline_run,
     threshold,
     max_neighbors,
@@ -161,10 +160,10 @@ def step07_dedupe_embedding(
     # Load or create embedding data file
     if os.path.exists(cache_file) and not force_reload:
         logger.info(f"Loading embeddings from cache: {cache_file}")
-        embedding_metadata, emb_arr = _load_embeddings_from_file(cache_file)
+        embedding_metadata, emb_arr = load_embeddings_from_file(cache_file)
     else:
         logger.info(f"Loading embeddings from database and saving to: {cache_file}")
-        embedding_metadata, emb_arr = _load_and_save_embeddings(pb_ids, cache_file)
+        embedding_metadata, emb_arr = load_and_save_embeddings(pb_ids, cache_file)
 
     logger.info(f"Loaded {len(embedding_metadata):,} embeddings with shape {emb_arr.shape}")
 
@@ -194,7 +193,7 @@ def step07_dedupe_embedding(
     )
 
     # Populate DedupedEmbedding table
-    _write_dedupe_assignments(embedding_metadata, duplicate_groups)
+    write_dedupe_assignments(embedding_metadata, duplicate_groups)
 
     # Log statistics
     group_sizes = [len(group) for group in duplicate_groups]
@@ -215,7 +214,7 @@ def step07_dedupe_embedding(
     logger.info("✓ Deduplication complete!")
 
 
-def _load_and_save_embeddings(pb_ids, cache_file):
+def load_and_save_embeddings(pb_ids, cache_file):
     """Load embeddings from database and save to HDF5 file"""
     t0 = time.time()
     logger.info("Loading embeddings from database...")
@@ -295,7 +294,7 @@ def _load_and_save_embeddings(pb_ids, cache_file):
     return embedding_metadata, emb_arr
 
 
-def _load_embeddings_from_file(cache_file):
+def load_embeddings_from_file(cache_file):
     """Load embeddings from HDF5 file"""
     t0 = time.time()
 
@@ -479,7 +478,7 @@ def deduplicate_embeddings_hnsw(
     return groups
 
 
-def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
+def write_dedupe_assignments(embedding_metadata, duplicate_groups):
     """
     Write deduplication assignments to database WITHOUT storing embeddings.
 
@@ -543,26 +542,3 @@ def _write_dedupe_assignments(embedding_metadata, duplicate_groups):
     logger.info(
         f"✓ Successfully wrote {total_written:,} deduplicated embeddings in {time.time() - t0:.1f}s"
     )
-
-
-@click.command("migrate-dedupe-embedding")
-def migrate_dedupe_embedding():
-    """
-    Make embedding column nullable in deduped_embedding table.
-    Run this once before using the optimized deduplication.
-    """
-    db = DedupedEmbedding._meta.database
-
-    logger.info("Running migration: making embedding column nullable...")
-
-    try:
-        with db.atomic():
-            db.execute_sql("ALTER TABLE deduped_embedding ALTER COLUMN embedding DROP NOT NULL")
-
-        logger.info("✓ Migration complete: embedding column is now nullable")
-        logger.info("  You can now use step07-dedupe-embeddings without storing embeddings")
-        logger.info("  This saves disk space and improves performance significantly!")
-
-    except Exception as e:
-        logger.error(f"Migration failed: {e}")
-        logger.info("If column is already nullable or doesn't exist, this is safe to ignore")

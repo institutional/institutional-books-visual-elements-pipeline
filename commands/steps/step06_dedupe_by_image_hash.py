@@ -23,7 +23,6 @@ from utils import get_time
 
 
 @click.command("step06-dedupe-by-image-hash")
-# TODO: Match filename
 @click.option("--id-pipeline-run", type=int, required=True, help="Pipeline run to deduplicate")
 @click.option(
     "--hamming-threshold",
@@ -65,7 +64,7 @@ from utils import get_time
     show_default=True,
     help="Number of bits per LSH key (smaller = more candidates, slower)",
 )
-def step06_dedupe_hash(
+def step06_dedupe_by_image_hash(
     id_pipeline_run,
     hamming_threshold,
     workers,
@@ -129,7 +128,7 @@ def step06_dedupe_hash(
     # Load or create hash data file
     if os.path.exists(cache_file) and not force_reload:
         logger.info(f"Loading hashes from cache: {cache_file}")
-        hashes_meta, hash_ids, hash_values_array = _load_hashes_from_file(cache_file)
+        hashes_meta, hash_ids, hash_values_array = load_hashes_from_file(cache_file)
     else:
         logger.info(f"Loading hashes from database and saving to: {cache_file}")
         hashes_meta, hash_ids, hash_values_array = load_and_save_hashes(pb_ids, cache_file)
@@ -142,9 +141,9 @@ def step06_dedupe_hash(
 
     # Find similar pairs
     if hamming_threshold == 0:
-        similar_pairs = _find_exact_matches(hashes_meta)
+        similar_pairs = find_exact_matches(hashes_meta)
     else:
-        similar_pairs = _find_fuzzy_matches_lsh(
+        similar_pairs = find_fuzzy_matches_lsh(
             hash_ids, hash_values_array, hamming_threshold, lsh_num_tables, lsh_key_size, workers
         )
 
@@ -152,11 +151,11 @@ def step06_dedupe_hash(
 
     # Cluster using Union-Find
     logger.info("Clustering hashes using Union-Find...")
-    dedupe_assignments, num_groups = _cluster_hashes(hash_ids, similar_pairs)
+    dedupe_assignments, num_groups = cluster_hashes(hash_ids, similar_pairs)
     logger.info(f"Assigned {len(dedupe_assignments):,} hashes to {num_groups:,} dedupe groups.")
 
     # Write assignments
-    _write_hash_assignments_batched(hashes_meta, dedupe_assignments)
+    write_hash_assignments_batched(hashes_meta, dedupe_assignments)
 
     logger.info(
         f"✓ Hash deduplication complete: {len(dedupe_assignments):,} hashes in {num_groups:,} groups."
@@ -164,7 +163,6 @@ def step06_dedupe_hash(
 
 
 def load_and_save_hashes(pb_ids, cache_file):
-    # TODO: Check codebase for functions starting with _ and also add type hints
     """Load hashes from database and save to HDF5 file"""
     t0 = time.time()
     logger.info("Loading hash metadata from database...")
@@ -254,7 +252,7 @@ def load_and_save_hashes(pb_ids, cache_file):
     return hashes_meta, hash_ids, hash_values_array
 
 
-def _load_hashes_from_file(cache_file):
+def load_hashes_from_file(cache_file):
     """Load hashes from HDF5 file"""
     t0 = time.time()
 
@@ -283,7 +281,7 @@ def _load_hashes_from_file(cache_file):
     return hashes_meta, hash_ids, hash_values_array
 
 
-def _find_exact_matches(hashes_meta):
+def find_exact_matches(hashes_meta):
     """Find exact hash matches - very fast O(n)"""
     logger.info("Finding exact hash matches...")
 
@@ -312,7 +310,7 @@ def _find_exact_matches(hashes_meta):
     return similar_pairs
 
 
-def _find_fuzzy_matches_lsh(
+def find_fuzzy_matches_lsh(
     hash_ids, hash_values_array, hamming_threshold, num_tables, key_size, workers
 ):
     """
@@ -427,7 +425,7 @@ def _find_fuzzy_matches_lsh(
 
     # Verify candidates in parallel
     logger.info(f"Verifying candidates with {workers} workers...")
-    similar_pairs = _verify_candidates_parallel(
+    similar_pairs = verify_candidates_parallel(
         candidate_pairs, hash_ids, hash_values_array, hamming_threshold, workers
     )
 
@@ -438,30 +436,38 @@ def _find_fuzzy_matches_lsh(
     return similar_pairs
 
 
-def _verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, threshold, workers):
+def verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, threshold, workers):
     """Verify candidate pairs in parallel by computing exact Hamming distance"""
-
     candidate_list = list(candidate_pairs)
 
     if not candidate_list:
         return []
 
     # Split into chunks for parallel processing
-    chunk_size = max(1, len(candidate_list) // (workers * 4))
-    chunks = []
-
-    for i in range(0, len(candidate_list), chunk_size):
-        chunk = candidate_list[i : i + chunk_size]
-        chunks.append((chunk, hash_ids, hash_values_array, threshold))
+    chunk_size = max(1, len(candidate_list) // max(1, workers * 4))
+    chunks = [
+        (candidate_list[i : i + chunk_size], hash_ids, hash_values_array, threshold)
+        for i in range(0, len(candidate_list), chunk_size)
+    ]
 
     logger.info(f"Verifying {len(candidate_list):,} candidates in {len(chunks)} chunks...")
 
     t0 = time.time()
     verified_pairs = []
 
-    with mp.Pool(processes=workers) as pool:
-        # TODO: Does this need to be a process pool? Overhead might be significant here.
-        for i, chunk_pairs in enumerate(pool.imap_unordered(_verify_chunk, chunks), 1):
+    # For large candidate sets this is a CPU-bound operation (bitwise XOR + popcount)
+    # and benefits from true parallelism across cores. A process pool helps
+    # here because:
+    #   - The per-element work is non-trivial compared to the cost of IPC.
+    #   - We avoid the GIL when doing the CPU-heavy loop in separate processes.
+    # However, for small workloads, process startup/IPC overhead can dominate, so we
+    # fall back to a simple in-process loop when either `workers <= 1` or we have
+    # very few chunks.
+
+    if workers <= 1 or len(chunks) == 1:
+        logger.info("Using single-process verification (workers<=1 or small workload).")
+        for i, args in enumerate(chunks, 1):
+            chunk_pairs = verify_chunk(args)
             verified_pairs.extend(chunk_pairs)
 
             if i % max(1, len(chunks) // 20) == 0:
@@ -474,6 +480,21 @@ def _verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, th
                     f"Verified {len(verified_pairs):,} matches - "
                     f"ETA: {eta:.1f}s"
                 )
+    else:
+        with mp.Pool(processes=workers) as pool:
+            for i, chunk_pairs in enumerate(pool.imap_unordered(verify_chunk, chunks), 1):
+                verified_pairs.extend(chunk_pairs)
+
+                if i % max(1, len(chunks) // 20) == 0:
+                    progress = 100 * i / len(chunks)
+                    elapsed = time.time() - t0
+                    rate = i / elapsed if elapsed > 0 else 0
+                    eta = (len(chunks) - i) / rate if rate > 0 else 0
+                    logger.info(
+                        f"Progress: {i}/{len(chunks)} chunks ({progress:.1f}%) - "
+                        f"Verified {len(verified_pairs):,} matches - "
+                        f"ETA: {eta:.1f}s"
+                    )
 
     elapsed = time.time() - t0
     logger.info(f"Verification complete in {elapsed:.1f}s")
@@ -481,7 +502,7 @@ def _verify_candidates_parallel(candidate_pairs, hash_ids, hash_values_array, th
     return verified_pairs
 
 
-def _verify_chunk(args):
+def verify_chunk(args):
     """Worker function to verify a chunk of candidate pairs"""
     candidate_chunk, hash_ids, hash_values_array, threshold = args
 
@@ -503,7 +524,7 @@ def _verify_chunk(args):
     return verified
 
 
-def _cluster_hashes(hash_ids, similar_pairs):
+def cluster_hashes(hash_ids, similar_pairs):
     """Use Union-Find algorithm to cluster hashes into connected components"""
     # Initialize parent pointers
     parent = {hid: hid for hid in hash_ids}
@@ -558,7 +579,7 @@ def _cluster_hashes(hash_ids, similar_pairs):
     return dedupe_assignments, num_groups
 
 
-def _write_hash_assignments_batched(hashes_meta, dedupe_assignments):
+def write_hash_assignments_batched(hashes_meta, dedupe_assignments):
     """Write deduplication assignments to database in batches"""
     db = DedupedHash._meta.database
     db.create_tables([DedupedHash], safe=True)

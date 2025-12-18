@@ -2,9 +2,10 @@ import json
 import io
 import base64
 import traceback
-import time
 from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, asdict
+
 import click
 from loguru import logger
 from PIL import Image
@@ -13,7 +14,13 @@ import cv2
 from more_itertools import chunked
 from iso639 import Lang
 
-from utils import get_db, process_db_write_batch, get_time, decode_image_bytes
+from utils import (
+    get_db,
+    process_db_write_batch,
+    get_time,
+    load_scans_for_detections,
+    build_detection_crops,
+)
 from models import PipelineBatchItem, Detection, Caption, Classification
 
 from const import (
@@ -29,11 +36,6 @@ from const import (
     CAPTION_MAX_BATCH_SIZE,
 )
 import openai
-from openai import APITimeoutError
-
-
-client = openai.OpenAI()
-# TODO: I would move that at function level. Otherwise you initialize a module-level OpenAI client every time you run anything in this codebase, given that all the commands are imported.
 
 
 @click.command("step04-process-caption-requests")
@@ -54,11 +56,30 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
     - Adjust `CAPTION_MAX_REQUESTS` env var based on your OpenAI API tier and usage.
     """
 
+    # Concurrency model:
+    # - We use a ProcessPoolExecutor with `processes_total` worker processes, each
+    #   responsible for a disjoint subset of PipelineBatchItem IDs (round‑robin
+    #   assignment via `item_batches`).
+    # - Each worker process:
+    #     * Initializes its own DB connection (initializer=get_db).
+    #     * Calls `caption_batch_of_items` to handle decoding, cropping, and
+    #       OpenAI API calls for its assigned items.
+    # - Within each worker, we create small ThreadPoolExecutors for:
+    #     * Decoding scans (CPU‑bound but easily parallelizable).
+    #     * Sending caption requests to OpenAI (I/O‑bound, lots of waiting).
+    # - The global `cpus_limit` controls how many *processes* we launch; inside
+    #   each process we cap the number of threads via `per_task_cpus_limit` so
+    #   that `processes_total * per_task_cpus_limit` stays roughly bounded and we
+    #   avoid excessive oversubscription of CPU threads across the machine.
+
     processes_total = cpus_limit
     logger.info(f"Launching {processes_total} CPU processes ...")
 
     if processes_total > 1:
         per_task_cpus_limit = max(2, cpus_limit // 2)
+    else:
+        # Single-process mode: allow the worker to use the full CPU budget.
+        per_task_cpus_limit = cpus_limit
 
     # Select only items with detections that have classifications where pred_class is not in excluded classes
     eligible_query = (
@@ -73,15 +94,17 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
         )
         .distinct()
     )
-    eligible_items = list(eligible_query)
-    # TODO: Add Peewee iterator instead of grabbing elibible items
-    if not eligible_items:
-        logger.warning("No items with detections found. Exiting.")
-        return
 
+    # Use Peewee's iterator() to avoid materializing the entire result set in memory.
     item_batches = [[] for _ in range(processes_total)]
-    for i, item in enumerate(eligible_items):
+    got_any_items = False
+    for i, item in enumerate(eligible_query.iterator()):
+        got_any_items = True
         item_batches[i % processes_total].append(item.id_pipeline_batch_item)
+
+    if not got_any_items:
+        logger.warning("No items with eligible detections/classifications found. Exiting.")
+        return
 
     with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
         futures = {}
@@ -103,8 +126,10 @@ def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
                 return
 
 
-def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
-    # TODO: This function needs a description
+def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
+    """
+    Generate captions for all detections belonging to a batch of PipelineBatchItem IDs.
+    """
     # Fetch all items
     items = list(
         PipelineBatchItem.select().where(PipelineBatchItem.id_pipeline_batch_item.in_(item_ids))
@@ -123,19 +148,17 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
     )
 
     # Group detections by pipeline_batch_item
-    detections_by_item = {}
+    detections_by_item: dict[int, list[Detection]] = {}
     for det in detections_query:
         item_id = det.pipeline_batch_item_id
-        if item_id not in detections_by_item:
-            detections_by_item[item_id] = []
-        detections_by_item[item_id].append(det)
+        detections_by_item.setdefault(item_id, []).append(det)
 
     # Collect all captions and track statistics
-    all_captions = []
+    all_captions: list[Caption] = []
     total_n_crops = 0
     total_failed_crops = 0
     total_failed_captions = 0
-    total_decode_time = 0
+    total_decode_time = 0.0
 
     for item in items:
         # Access pre-fetched detections
@@ -151,54 +174,39 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
         texts_by_filename = {str(k): v for k, v in item.data.texts.items()}
 
-        # decode scans in parallel
-        loaded_images = {}
-        used_filenames = set(det.scan_filename for det in dets)
-
+        # Decode scans for this item (only those used by detections)
         start_decode = datetime.now()
-        with ThreadPoolExecutor(max_workers=cpus_limit) as pool:
-            futures = {
-                pool.submit(decode_image_bytes, image_bytes_by_filename[fn]): fn
-                for fn in used_filenames
-                if fn in image_bytes_by_filename
-            }
-            done, _ = wait(futures)
-            for fut in done:
-                fn = futures[fut]
-                try:
-                    loaded_images[fn] = fut.result()
-                except:
-                    logger.warning(f"{barcode}: Failed to decode {fn}")
+        loaded_images = load_scans_for_detections(
+            volume_barcode=barcode,
+            detections=dets,
+            image_bytes_by_filename=image_bytes_by_filename,
+            max_workers=cpus_limit,
+        )
         time_decode = (datetime.now() - start_decode).total_seconds()
         total_decode_time += time_decode
 
-        # crops
-        crop_records = []
-        failed_crops = 0
-        failed_captions = 0
-        n_crops = 0
-        for det in dets:
-            img = loaded_images.get(det.scan_filename)
-            if img is None:
-                failed_crops += 1
-                continue
-            try:
-                crop = det.crop(img)
-                crop_records.append((det, crop))
-                n_crops += 1
-            except:
-                failed_crops += 1
+        # Build detection→crop records
+        crop_records, failed_crops = build_detection_crops(
+            volume_barcode=barcode,
+            detections=dets,
+            loaded_images=loaded_images,
+            with_filename=False,
+        )
+        n_crops = len(crop_records)
 
         if not crop_records:
             logger.info(f"{barcode}: All crops failed.")
+            total_failed_crops += failed_crops
             continue
 
         # caption batches (OpenAI API calls)
-        captioned_entries = []
+        captioned_entries: list[Caption] = []
         max_batch = CAPTION_MAX_BATCH_SIZE
 
         lang = get_language(volume)
-        # TODO: specify the format of language either via a comment or by making it explicit in the variable name.
+        # `lang` is a human-readable language name derived via iso639 (e.g., "English").
+
+        failed_captions = 0
 
         for batch in chunked(crop_records, max_batch):
 
@@ -229,20 +237,27 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
                     fut = api_pool.submit(send_to_openai, input_blocks, det.id_detection)
                     future_to_det[fut] = det
 
-                    # TODO: I would let send_to_openai() raise exceptions, and handle errors here. This would simplify the code for send_to_openai() quite a bit and prevent you from having to check if things went ok twice.
-
                 # Process results with logprobs
                 for fut in as_completed(future_to_det):
                     det = future_to_det[fut]
-                    result = fut.result()
-
-                    if not result:
+                    try:
+                        result = fut.result()
+                    except Exception as e:
+                        # Any OpenAI / network error is treated as a failed caption for that crop.
                         failed_captions += 1
+                        logger.warning(
+                            f"{barcode}: Caption request failed for detection {det.id_detection}: {e}"
+                        )
                         caption_text = ""
                         logprobs_data = None
                     else:
-                        caption_text = result["text"]
-                        logprobs_data = result["logprobs"]
+                        if not result:
+                            failed_captions += 1
+                            caption_text = ""
+                            logprobs_data = None
+                        else:
+                            caption_text = result["text"]
+                            logprobs_data = result["logprobs"]
 
                     captioned_entries.append(
                         Caption(
@@ -262,7 +277,8 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
         total_failed_captions += failed_captions
 
         logger.info(
-            f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | Decode time: {time_decode:.2f}s | Failed Captions: {failed_captions}"
+            f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | "
+            f"Decode time: {time_decode:.2f}s | Failed Captions: {failed_captions}"
         )
 
     #
@@ -274,8 +290,18 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int):
     return True
 
 
-def get_language(volume):
-    # TODO: Missing: Description, type hints for input and output.
+def get_language(volume) -> str:
+    """
+    Infer the language for a volume from its metadata.
+
+    Input:
+        volume: A Volume-like object with a `metadata` field that may contain
+                a JSON string or dict, and an optional "language_src" key.
+
+    Output:
+        A human-readable language name (e.g., "English"), derived via `iso639`.
+        Defaults to "English" if language metadata is missing or invalid.
+    """
     try:
         metadata = volume.metadata
         if isinstance(metadata, str):
@@ -284,7 +310,7 @@ def get_language(volume):
             metadata = {}
         lang = metadata.get("language_src")
         lang = Lang(lang).name
-    except:
+    except Exception:
         lang = "English"
     return lang
 
@@ -315,76 +341,67 @@ def base64_jpg_bytes(arr) -> str:
 
 
 def send_to_openai(input_blocks, id):
-    """Send request to OpenAI with retry logic"""
-    last_exception = None
+    """
+    Send a single captioning request to OpenAI.
 
-    for attempt in range(CAPTION_REQUEST_RETRY_ATTEMPTS):
-        try:
-            response = client.responses.create(
-                model=CAPTION_MODEL_NAME,
-                input=input_blocks,
-                max_output_tokens=CAPTION_MAX_TOKENS,
-                temperature=CAPTION_MODEL_TEMPERATURE,
-                include=["message.output_text.logprobs"],
-                top_logprobs=CAPTION_TOP_LOGPROBS,
-                timeout=OPENAI_REQUEST_TIMEOUT,
-            )
-            for item in response.output:
-                for content in item.content:
-                    if getattr(content, "type", None) in ("output_text", "summary_text"):
-                        # Extract and serialize logprobs if available
-                        logprobs_data = None
-                        if hasattr(content, "logprobs") and content.logprobs:
-                            logprobs_data = serialize_logprobs(content.logprobs)
-
-                        return {"text": content.text.strip(), "logprobs": logprobs_data}
-
-            return None
-
-        except APITimeoutError as e:
-            # TODO: The OpenAI Python SDK has a built-in mechanism that we could use - https://github.com/openai/openai-python?tab=readme-ov-file#retries
-            last_exception = e
-            logger.warning(
-                f"OpenAI API request timed out for {id} (attempt {attempt + 1}/{CAPTION_REQUEST_RETRY_ATTEMPTS})."
-            )
-            if attempt < CAPTION_REQUEST_RETRY_ATTEMPTS - 1:
-                time.sleep(2**attempt)  # Exponential backoff
-                continue
-        except Exception as e:
-            last_exception = e
-            logger.warning(
-                f"An error occurred for {id} (attempt {attempt + 1}/{CAPTION_REQUEST_RETRY_ATTEMPTS}): {e}"
-            )
-            if attempt < CAPTION_REQUEST_RETRY_ATTEMPTS - 1:
-                time.sleep(2**attempt)  # Exponential backoff
-                continue
-
-    # All retries failed
-    logger.error(
-        f"All {CAPTION_REQUEST_RETRY_ATTEMPTS} attempts failed for {id}. Last error: {last_exception}"
+    - Uses the OpenAI Python SDK's built-in retry mechanism instead of manual retry loops.
+    - Raises exceptions on failure; callers are responsible for handling/logging them.
+    """
+    # Create a client scoped to this call, with built-in retries and timeout.
+    client = openai.OpenAI().with_options(
+        max_retries=CAPTION_REQUEST_RETRY_ATTEMPTS,
+        timeout=OPENAI_REQUEST_TIMEOUT,
     )
+
+    response = client.responses.create(
+        model=CAPTION_MODEL_NAME,
+        input=input_blocks,
+        max_output_tokens=CAPTION_MAX_TOKENS,
+        temperature=CAPTION_MODEL_TEMPERATURE,
+        include=["message.output_text.logprobs"],
+        top_logprobs=CAPTION_TOP_LOGPROBS,
+    )
+
+    for item in response.output:
+        for content in item.content:
+            if getattr(content, "type", None) in ("output_text", "summary_text"):
+                # Extract and serialize logprobs if available
+                logprobs_data = None
+                if hasattr(content, "logprobs") and content.logprobs:
+                    logprobs_data = serialize_logprobs(content.logprobs)
+
+                return {"text": content.text.strip(), "logprobs": logprobs_data}
+
+    # No suitable content found
     return None
+
+
+@dataclass
+class SerializedLogprob:
+    token: str
+    bytes: list[int] | None
+    logprob: float
+    top_logprobs: list[dict] | None = None
 
 
 def serialize_logprobs(logprobs_list):
     """
     Serialize logprobs from OpenAI response to a JSON-compatible format.
+
+    Returns:
+        A list of dicts (converted from SerializedLogprob dataclass instances), or
+        None if no logprobs are present.
     """
-    # TODO: This could be a dataclass, which would also let you check its format in and out of the database.
     if not logprobs_list:
         return None
 
-    serialized = []
+    serialized: list[dict] = []
     for logprob_item in logprobs_list:
-        item_dict = {
-            "token": logprob_item.token,
-            "bytes": logprob_item.bytes if hasattr(logprob_item, "bytes") else None,
-            "logprob": logprob_item.logprob,
-        }
+        top_logprobs_serialized = None
 
         # Serialize top_logprobs if present
         if hasattr(logprob_item, "top_logprobs") and logprob_item.top_logprobs:
-            item_dict["top_logprobs"] = [
+            top_logprobs_serialized = [
                 {
                     "token": top.token,
                     "bytes": top.bytes if hasattr(top, "bytes") else None,
@@ -393,7 +410,13 @@ def serialize_logprobs(logprobs_list):
                 for top in logprob_item.top_logprobs
             ]
 
-        serialized.append(item_dict)
+        entry = SerializedLogprob(
+            token=logprob_item.token,
+            bytes=getattr(logprob_item, "bytes", None),
+            logprob=logprob_item.logprob,
+            top_logprobs=top_logprobs_serialized,
+        )
+        serialized.append(asdict(entry))
 
     return serialized
 
