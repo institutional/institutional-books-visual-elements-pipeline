@@ -32,21 +32,20 @@ def step05_store(
     """
 
     # Concurrency model:
-    # - This command uses a ProcessPoolExecutor where each worker process handles a disjoint
-    #   subset of PipelineBatchItems. This avoids contention on the GIL for the CPU-bound
-    #   parts (PNG encoding, image ops) and isolates per-process memory usage.
-    # - Within each process we further use a ThreadPoolExecutor for:
-    #     * I/O-bound scan decoding (load_scans_for_detections)
-    #     * CPU-ish but relatively lightweight PNG encoding (create_tarball_parallel)
-    #   The number of threads per process is capped and derived from worker_cpus so we
-    #   don't oversubscribe CPU cores. # TODO: Figure out why CPUs are being oversubscibed
+    # - Use a small number of worker processes, each with multiple threads for
+    #   decode/encode. This is closer to the old script's behavior (high parallelism),
+    #   but avoids creating an excessive number of processes.
+    #
+    # - Each process:
+    #     * Uses more threads for I/O-bound decode (load_scans_for_detections)
+    #     * Uses multiple threads for PNG encoding (create_tarball_parallel)
 
-    # Number of worker processes
-    processes_total = cpus_limit
+    # Number of worker processes (cap at a small number)
+    processes_total = cpus_limit  # THIS line
     logger.info(f"Launching {processes_total} CPU processes ...")
 
     # Per-process CPU/thread "budget"
-    per_process_cpus = max(2, cpus_limit // processes_total) if processes_total > 1 else cpus_limit
+    worker_cpus = max(1, cpus_limit // processes_total)
 
     # Select only items with detections
     eligible_query = (
@@ -78,7 +77,7 @@ def step05_store(
             future = executor.submit(
                 store_batch_of_items,
                 item_ids=item_ids,
-                worker_cpus=per_process_cpus,
+                worker_cpus=worker_cpus,
             )
             futures[future] = idx
 
@@ -120,7 +119,7 @@ def store_batch_of_items(item_ids: list[int], worker_cpus: int):
 
         # Decode scans (using shared utility)
         start_decode = datetime.now()
-        # Use more threads for I/O-bound decoding, but cap it
+        # Use more threads for I/O-bound decoding, but cap it (similar to old script)
         decode_threads = min(worker_cpus * 2, 16)
         loaded_images = load_scans_for_detections(
             volume_barcode=barcode,
@@ -158,8 +157,9 @@ def store_batch_of_items(item_ids: list[int], worker_cpus: int):
 
         try:
             start_tar = datetime.now()
-            # IMPORTANT: use worker_cpus, not global cpus_limit
-            tar_bytes, time_encode = create_tarball_parallel(crops_data, worker_cpus)
+            # Use more threads for encode (similar in spirit to old script)
+            encode_threads = max(1, worker_cpus * 2)
+            tar_bytes, time_encode = create_tarball_parallel(crops_data, encode_threads)
             time_tar = (datetime.now() - start_tar).total_seconds()
 
             start_upload = datetime.now()
@@ -195,22 +195,21 @@ def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, byte
     img = Image.fromarray(crop_rgb)
     png_buffer = io.BytesIO()
 
-    # compress_level=1 is much faster than 6 with minimal size difference
     # compress_level=0 is fastest (no compression)
-    img.save(png_buffer, format="PNG", compress_level=1)
+    img.save(png_buffer, format="PNG", compress_level=0)
 
     return filename, png_buffer.getvalue()
 
 
 def create_tarball_parallel(
-    crops_data: list[tuple[str, np.ndarray]], worker_cpus: int
+    crops_data: list[tuple[str, np.ndarray]], max_workers: int
 ) -> tuple[bytes, float]:
     """
     Create a tar.gz file with parallel PNG encoding.
 
     Args:
         crops_data: List of (filename, crop_array) tuples
-        worker_cpus: Per-process CPU/thread limit to use for parallel encoding
+        max_workers: Number of threads to use for parallel encoding
 
     Returns:
         Tuple of (tar_bytes, encoding_time_seconds)
@@ -219,8 +218,7 @@ def create_tarball_parallel(
 
     # Encode all crops to PNG in parallel
     encoded_crops = []
-    # Use worker_cpus as the number of encoding threads in this process
-    with ThreadPoolExecutor(max_workers=worker_cpus) as pool:
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = [
             pool.submit(encode_crop_to_png, filename, crop_array)
             for filename, crop_array in crops_data
@@ -236,7 +234,7 @@ def create_tarball_parallel(
 
     # Create tar.gz file
     tar_buffer = io.BytesIO()
-    with tarfile.open(fileobj=tar_buffer, mode="w:gz", compresslevel=6) as tar:
+    with tarfile.open(fileobj=tar_buffer, mode="w:gz", compresslevel=1) as tar:
         for filename, png_bytes in encoded_crops:
             tarinfo = tarfile.TarInfo(name=filename)
             tarinfo.size = len(png_bytes)
