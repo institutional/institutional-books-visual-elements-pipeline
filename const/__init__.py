@@ -102,10 +102,8 @@ CLASSIFICATION_CLASS_DICT = {
     "0": "Other",
     "1": "Image/Illustration",
     "2": "Ex Libris/Decorative",
-    "3": "Advertisement",
     "5": "Music",
-    "6": "Handwritten",
-    "9": "Diagram/Graph",
+    "9": "Chart/Graph",
     "10": "Artifact",
 }
 """ Dictionary mapping class to class label """
@@ -167,7 +165,7 @@ HASH_DB_CHUNK_SIZE = 10000
 HASH_DEDUPE_HAMMING_THRESHOLD = 16
 """Max Hamming distance to be considered duplicate"""
 
-HASH_DEDUPE_LSH_NUM_TABLES = 15
+HASH_DEDUPE_LSH_NUM_TABLES = 5
 """Number of LSH hash tables (more = better recall, slower)"""
 
 HASH_DEDUPE_LSH_KEY_SIZE = 8
