@@ -37,6 +37,20 @@ from const import (
 )
 import openai
 
+# Module-level client for connection reuse within each worker process
+_openai_client = None
+
+
+def get_openai_client():
+    """Get or create a reusable OpenAI client for this worker process."""
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = openai.OpenAI().with_options(
+            max_retries=CAPTION_REQUEST_RETRY_ATTEMPTS,
+            timeout=OPENAI_REQUEST_TIMEOUT,
+        )
+    return _openai_client
+
 
 @click.command("step04-process-caption-requests")
 @click.option("--id-pipeline-batch", type=int, required=True)
@@ -347,11 +361,7 @@ def send_to_openai(input_blocks, id):
     - Uses the OpenAI Python SDK's built-in retry mechanism instead of manual retry loops.
     - Raises exceptions on failure; callers are responsible for handling/logging them.
     """
-    # Create a client scoped to this call, with built-in retries and timeout.
-    client = openai.OpenAI().with_options(
-        max_retries=CAPTION_REQUEST_RETRY_ATTEMPTS,
-        timeout=OPENAI_REQUEST_TIMEOUT,
-    )
+    client = get_openai_client()
 
     response = client.responses.create(
         model=CAPTION_MODEL_NAME,
