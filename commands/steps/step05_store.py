@@ -5,7 +5,6 @@ from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import click
 from loguru import logger
-from PIL import Image
 import numpy as np
 import cv2
 
@@ -188,17 +187,10 @@ def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, byte
     Returns:
         Tuple of (filename, png_bytes)
     """
-    # Convert BGR (OpenCV) to RGB (PIL)
-    crop_rgb = cv2.cvtColor(crop_array, cv2.COLOR_BGR2RGB)
-
-    # Convert to PIL Image and save as PNG
-    img = Image.fromarray(crop_rgb)
-    png_buffer = io.BytesIO()
-
-    # compress_level=0 is fastest (no compression)
-    img.save(png_buffer, format="PNG", compress_level=0)
-
-    return filename, png_buffer.getvalue()
+    success, png_bytes = cv2.imencode(".png", crop_array, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+    if not success:
+        raise ValueError(f"Failed to encode {filename}")
+    return filename, png_bytes.tobytes()
 
 
 def create_tarball_parallel(
