@@ -57,7 +57,7 @@ IB_10_METADATA_DATASET_REPO = "institutional/institutional-books-1.0-metadata"
 #
 # Detectiom model params
 #
-DETECTION_MODEL_REPO = "institutional/institutional-books-visual-elements-detection-yolov11n"
+DETECTION_MODEL_REPO = "institutional/institutional-books-visual-elements-detection-yolo26n"
 """ Name of the repo containing final weights for the detection model. """
 
 DETECTION_MODEL_FILEPATH = "weights/best.pt"
@@ -66,7 +66,7 @@ DETECTION_MODEL_FILEPATH = "weights/best.pt"
 DETECTION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-DETECTION_MODEL_CONF = 0.2
+DETECTION_MODEL_CONF = 0.3
 """ `conf` value to pass to YOLO during inference. """
 
 DETECTION_MODEL_IOU = 0.2
@@ -82,7 +82,7 @@ CLASSIFICATION_MODEL_PROCESSES_PER_GPU = int(os.getenv("CLASSIFICATION_MODEL_PRO
 """ Determines how many classification processes can run on a given GPU. """
 
 CLASSIFICATION_MODEL_REPO = (
-    "institutional/institutional-books-visual-elements-classification-yolo11s-cls"
+    "institutional/institutional-books-visual-elements-classification-yolo26s-cls"
 )
 """ Name of the repo containing final weights for the classification model. """
 
