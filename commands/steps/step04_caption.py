@@ -52,7 +52,7 @@ def get_openai_client():
     return _openai_client
 
 
-@click.command("step04-process-caption-requests")
+@click.command("step04-caption")
 @click.option("--id-pipeline-batch", type=int, required=True)
 @click.option(
     "--cpus-limit",
@@ -60,7 +60,7 @@ def get_openai_client():
     default=CPUS_LIMIT,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
-def step04_process_caption_requests(id_pipeline_batch: int, cpus_limit: int):
+def step04_caption(id_pipeline_batch: int, cpus_limit: int):
     """
     Runs caption-generation on the cropped regions of each volume that contains detections.
 

@@ -167,12 +167,12 @@ def execute(
             # Step 4: Send caption requests to OpenAI
             if not has_crashed:
                 has_crashed = not execute_batch_level_step(
-                    step_fn=commands.steps.step04_process_caption_requests,
+                    step_fn=commands.steps.step04_caption,
                     step_fn_kwargs={"id_pipeline_batch": id_pipeline_batch},
                     pipeline_run=pipeline_run,
                     pipeline_batch=pipeline_batch,
                 )
-            logger.info(f"step04_process_caption_requests took {time.perf_counter() - start:.2f}s")
+            logger.info(f"step04_caption took {time.perf_counter() - start:.2f}s")
             start = time.perf_counter()
 
             # Step 5: Store crops
