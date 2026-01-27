@@ -292,7 +292,7 @@ def classify_batch_of_items(
 
                 # Apply confidence threshold - if below threshold, set to class 0 <- "Other" class
                 if pred_conf < CLASSIFICATION_MODEL_CONF:
-                    pred_class = "0"
+                    pred_class = "Other"
                     pred_idx = 0
 
                 now = get_time()

@@ -66,7 +66,7 @@ DETECTION_MODEL_FILEPATH = "weights/best.pt"
 DETECTION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-DETECTION_MODEL_CONF = 0.3
+DETECTION_MODEL_CONF = 0.6
 """ `conf` value to pass to YOLO during inference. """
 
 DETECTION_MODEL_IOU = 0.2
@@ -92,19 +92,19 @@ CLASSIFICATION_MODEL_FILEPATH = "weights/best.pt"
 CLASSIFICATION_MODEL_IMGSZ = 640
 """ `imgsz` value to pass to YOLO during inference. """
 
-CLASSIFICATION_MODEL_CONF = 0.90
+CLASSIFICATION_MODEL_CONF = 0.70
 """ `conf` value to pass to YOLO during inference. """
 
 CLASSIFICATION_MAX_BATCH = 16
 """ Maximum batch size to pass into the YOLO classification model """
 
 CLASSIFICATION_CLASS_DICT = {
-    "0": "Other",
-    "1": "Image/Illustration",
-    "2": "Ex Libris/Decorative",
-    "5": "Music",
-    "9": "Chart/Graph",
-    "10": "Artifact",
+    "Other": "Other",
+    "Image or Illustration": "Image/Illustration",
+    "Ex Libris or Decorative": "Ex Libris/Decorative",
+    "Music": "Music",
+    "Chart or Graph": "Chart/Graph",
+    "Artifact": "Artifact",
 }
 """ Dictionary mapping class to class label """
 
