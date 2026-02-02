@@ -2,17 +2,21 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 import gc
-import time
+import multiprocessing as mp
 
 import click
 from loguru import logger
 from huggingface_hub import hf_hub_download
-import cv2
 import numpy as np
 from more_itertools import chunked
 
-from utils import get_db, process_db_write_batch
-from models import PipelineBatch, PipelineBatchItem, IBVolume, Detection
+from utils import (
+    get_db,
+    process_db_write_batch,
+    get_time,
+    decode_image_bytes,
+)
+from models import PipelineBatchItem, Detection, Classification
 
 from const import (
     DETECTION_MODEL_REPO,
@@ -21,7 +25,6 @@ from const import (
     DETECTION_MODEL_CONF,
     DETECTION_MODEL_IOU,
     DETECTION_MODEL_PROCESSES_PER_GPU,
-    DETECTION_MODEL_PROCESSES_FORK_DELAY,
     CUDA_GPUS,
     CPUS_LIMIT,
 )
@@ -49,16 +52,24 @@ from const import (
 def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Runs the visual elements detection model against a batch of volumes.
-
-    NOTE:
-    - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
-    - Runs X processes per GPU.
-      - Adjust `DETECTION_MODEL_PROCESSES_PER_GPU` env var based on available resources.
-      - Adjust `DETECTION_MODEL_PROCESSES_FORK_DELAY` env var to adjust pre-fork delay.
-        This may help prevent processes from blocking each each other (HACK).
     """
     model_filepath: Path | None = None
+
+    # Concurrency model:
+    # - We run a separate process for each GPU "slot": processes_per_gpu processes per each CUDA device.
+    # - processes_total = cuda_gpus_total * processes_per_gpu is therefore the total number of
+    #   worker processes in the ProcessPoolExecutor.
+    # - Each worker process:
+    #     * Initializes its own DB connection (via initializer=get_db).
+    #     * Loads the YOLO model once and pins it to a specific CUDA device.
+    #     * Processes only the subset of item IDs assigned to it in item_id_batches.
+    # - Item IDs are distributed round‑robin across all processes_total workers so that the
+    #   workload is balanced. We then map each worker index i to a CUDA device using
+    #   cuda_gpus[i % cuda_gpus_total], effectively sharing a single GPU among multiple
+    #   processes when processes_per_gpu > 1.
+    # - CPU usage per process is limited via per_task_cpus_limit, derived from the global
+    #   cpus_limit and adjusted down when multiple processes share the same GPU to avoid
+    #   oversubscribing CPU cores.
 
     cuda_gpus_total = len(cuda_gpus)
     processes_per_gpu = DETECTION_MODEL_PROCESSES_PER_GPU
@@ -67,7 +78,7 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
     # 1 batch of items per GPU process (processes_total)
     item_id_batches: list[list[int]] = [[] for i in range(0, processes_total)]
 
-    # Set CPU concurency for each process. Reduce if we're running more than 1 process per GPU.
+    # Set CPU concurrency for each process. Reduce if we're running more than 1 process per GPU.
     per_task_cpus_limit = int(round(cpus_limit / cuda_gpus_total))
 
     if processes_per_gpu > 1:
@@ -109,10 +120,15 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
         process_i = i % processes_total
         item_id_batches[process_i].append(item.id_pipeline_batch_item)
 
-    #
     # Start parallel processing pool
-    #
-    with ProcessPoolExecutor(max_workers=processes_total, initializer=get_db) as executor:
+    # Use "spawn" to avoid CUDA / fork issues
+    mp_ctx = mp.get_context("spawn")
+
+    with ProcessPoolExecutor(
+        max_workers=processes_total,
+        initializer=get_db,
+        mp_context=mp_ctx,
+    ) as executor:
         futures = {}
 
         # Schedule tasks, assign each batch for a CUDA device
@@ -128,9 +144,6 @@ def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str])
             )
 
             futures[future] = cuda_gpus[cuda_gpus_i]
-
-            # HACK: Helps prevent process collisions
-            time.sleep(DETECTION_MODEL_PROCESSES_FORK_DELAY)
 
         # Grab results
         for future in as_completed(futures):
@@ -161,7 +174,7 @@ def process_batch_of_items(
     """
     import torch
     from ultralytics import YOLO, settings
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
     settings.update({"sync": False})
 
@@ -171,7 +184,7 @@ def process_batch_of_items(
     # Total VRAM of CUDA device
     vram_total_nbytes = torch.cuda.get_device_properties(cuda_device).total_memory
 
-    # Estimated optimal `batch` value for `model.predict()`
+    # Estimated optimal batch value for model.predict()
     yolo_batch_size = max(4, int(vram_total_nbytes / approx_image_nbytes / 100 / 2))
 
     #
@@ -186,6 +199,14 @@ def process_batch_of_items(
     except Exception as err:
         raise Exception("Object detection model must be single-class.") from err
 
+    # Collect all detections from all items
+    all_detections: list[Detection] = []
+
+    # Track timing for all items
+    total_pre_processing_time = timedelta(seconds=0)
+    total_inference_time = timedelta(seconds=0)
+    total_clear_gpu_time = timedelta(seconds=0)
+
     #
     # Process 1 volume at a time
     #
@@ -198,18 +219,17 @@ def process_batch_of_items(
 
         pre_processing_time = timedelta(seconds=0)  # Cumulative
         inference_time = timedelta(seconds=0)  # Cumulative
-        db_write_time = timedelta(seconds=0)  # Cumulative
         clear_gpu_time = timedelta(seconds=0)  # Cumulative
 
         #
-        # Process `yolo_batch_size` images from current volume at a time
+        # Process yolo_batch_size images from current volume at a time
         #
         for encoded_images_batch in chunked(item.data.images.items(), yolo_batch_size):
 
             #
             # Pre-process batch of images
             #
-            start = datetime.now()
+            start = get_time()
 
             images_filenames, images_ndarrays = preprocess_images_batch(
                 volume_barcode=volume_barcode,
@@ -222,13 +242,13 @@ def process_batch_of_items(
 
             scans_total += len(images_filenames)
 
-            end = datetime.now()
+            end = get_time()
             pre_processing_time += end - start
 
             #
             # Run inference on batch
             #
-            start = datetime.now()
+            start = get_time()
 
             try:
                 detections += run_detection_on_images_batch(
@@ -247,38 +267,29 @@ def process_batch_of_items(
                 del images_ndarrays
                 del images_filenames
 
-            end = datetime.now()
+            end = get_time()
             inference_time += end - start
-
-        #
-        # Record detections in db. Replace existing records for pipeline batch item
-        #
-        start = datetime.now()
-
-        Detection.delete().where(
-            Detection.pipeline_batch_item == id_pipeline_batch_item,
-        ).execute()
-
-        process_db_write_batch(
-            model=Detection,
-            entries_to_create=detections,
-        )
-
-        end = datetime.now()
-        db_write_time = end - start
 
         #
         # Clear GPU cache and run GC
         #
-        start = datetime.now()
+        start = get_time()
 
         with torch.cuda.device(int(cuda_device.replace("cuda:", ""))):
             torch.cuda.empty_cache()
 
         gc.collect()
 
-        end = datetime.now()
+        end = get_time()
         clear_gpu_time = end - start
+
+        # Add to totals
+        total_pre_processing_time += pre_processing_time
+        total_inference_time += inference_time
+        total_clear_gpu_time += clear_gpu_time
+
+        # Add detections to batch
+        all_detections.extend(detections)
 
         #
         # Print stats for volume
@@ -289,10 +300,26 @@ def process_batch_of_items(
             + f"Device: {cuda_device} - "
             + f"Preprocessing: {pre_processing_time} - "
             + f"Inference: {inference_time} - "
-            + f"DB write: {db_write_time} - "
             + f"Clear GPU cache: {clear_gpu_time} - "
-            + f"Total: {pre_processing_time + inference_time + db_write_time + clear_gpu_time}"
+            + f"Total: {pre_processing_time + inference_time + clear_gpu_time}"
         )
+
+    #
+    # Record all detections in db. Replace existing records for all pipeline batch items
+    #
+    # Delete classifications first (batch delete for all items)
+    Classification.delete().where(Classification.pipeline_batch_item.in_(item_ids)).execute()
+
+    # Delete existing detections (batch delete for all items)
+    Detection.delete().where(
+        Detection.pipeline_batch_item.in_(item_ids),
+    ).execute()
+
+    # Batch write all detections
+    process_db_write_batch(
+        model=Detection,
+        entries_to_create=all_detections,
+    )
 
     return True
 
@@ -303,7 +330,7 @@ def preprocess_images_batch(
     cpus_limit: int = 1,
 ) -> tuple[list[str], list[np.ndarray]]:
     """
-    Pre-processes a batch of image data from `PipelineBatchItem.data.images`
+    Pre-processes a batch of image data from PipelineBatchItem.data.images
 
     Returns a tuple containing:
     - A list of filenames
@@ -334,14 +361,6 @@ def preprocess_images_batch(
                 logger.warning(f"Could not decode {volume_barcode}.{filename}. Skipping.")
 
     return (images_filenames, images_ndarrays)
-
-
-def decode_image_bytes(image_bytes) -> np.ndarray:
-    """
-    Decodes image bytes and returns an ndarray
-    """
-    buffer = np.frombuffer(image_bytes, dtype=np.uint8)
-    return cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR_RGB)
 
 
 def run_detection_on_images_batch(

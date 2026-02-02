@@ -4,7 +4,6 @@ import gzip
 import tarfile
 from pathlib import Path
 from dataclasses import dataclass, field
-
 import peewee
 from playhouse.postgres_ext import *
 from loguru import logger
@@ -102,14 +101,16 @@ class PipelineBatchItem(peewee.Model):
                         with tar.extractfile(member) as fh:
                             image_bytes = fh.read()
 
-                        images_by_filename[filename] = image_bytes
+                        # Normalize to string to prevent type mismatch
+                        images_by_filename[str(filename.name)] = image_bytes
 
                     # OCR-extracted text
                     if filename.suffix == ".txt":
                         with tar.extractfile(member) as fh:
                             text_bytes = fh.read()
 
-                        texts_by_filename[filename] = text_bytes.decode("utf-8")
+                        # Normalize to string to prevent type mismatch
+                        texts_by_filename[str(filename.name)] = text_bytes.decode("utf-8")
 
         # Sort by filename
         images_by_filename = {k: images_by_filename[k] for k in sorted(images_by_filename)}

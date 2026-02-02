@@ -6,3 +6,10 @@ test.py
 TODO.md
 logs/
 tmp/
+run.sh
+pretrained-models/
+peek_output/
+__pycache__/
+analysis_output/
+embedding_cache/
+hash_cache/
