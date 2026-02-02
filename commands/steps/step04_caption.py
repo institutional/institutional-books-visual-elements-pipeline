@@ -31,7 +31,7 @@ from const import (
     CAPTION_TOP_LOGPROBS,
     OPENAI_REQUEST_TIMEOUT,
     CAPTION_REQUEST_RETRY_ATTEMPTS,
-    CPUS_LIMIT,
+    CPUS_LIMIT_CAPTION,
     CAPTION_CLASSES_EXCLUDED,
     CAPTION_MAX_BATCH_SIZE,
 )
@@ -57,7 +57,7 @@ def get_openai_client():
 @click.option(
     "--cpus-limit",
     type=int,
-    default=CPUS_LIMIT,
+    default=CPUS_LIMIT_CAPTION,
     help="Allows for limiting the number of CPU cores this command can use.",
 )
 def step04_caption(id_pipeline_batch: int, cpus_limit: int):
@@ -67,7 +67,6 @@ def step04_caption(id_pipeline_batch: int, cpus_limit: int):
     NOTE:
     - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
     - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
-    - Adjust CAPTION_MAX_REQUESTS env var based on your OpenAI API tier and usage.
     """
 
     # Concurrency model:
