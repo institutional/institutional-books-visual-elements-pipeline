@@ -11,15 +11,14 @@ from loguru import logger
 from PIL import Image
 
 import cv2
-from more_itertools import chunked
+import numpy as np
 from iso639 import Lang
 
 from utils import (
     get_db,
     process_db_write_batch,
     get_time,
-    load_scans_for_detections,
-    build_detection_crops,
+    decode_image_bytes,
 )
 from models import PipelineBatchItem, Detection, Caption, Classification
 
@@ -187,111 +186,94 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
         texts_by_filename = {str(k): v for k, v in item.data.texts.items()}
 
-        # Decode scans for this item (only those used by detections)
-        start_decode = datetime.now()
-        loaded_images = load_scans_for_detections(
-            volume_barcode=barcode,
-            detections=dets,
-            image_bytes_by_filename=image_bytes_by_filename,
-            max_workers=cpus_limit,
-        )
-        time_decode = (datetime.now() - start_decode).total_seconds()
-        total_decode_time += time_decode
+        #
+        # Group detections by scan filename for this item.
+        # Decode and process one scan at a time to limit memory.
+        #
+        dets_by_scan: dict[str, list[Detection]] = {}
+        for det in dets:
+            fn = str(det.scan_filename)
+            dets_by_scan.setdefault(fn, []).append(det)
 
-        # Build detection→crop records
-        crop_records, failed_crops = build_detection_crops(
-            volume_barcode=barcode,
-            detections=dets,
-            loaded_images=loaded_images,
-            with_filename=False,
-        )
-        n_crops = len(crop_records)
-
-        if not crop_records:
-            logger.info(f"{barcode}: All crops failed.")
-            total_failed_crops += failed_crops
-            continue
-
-        # caption batches (OpenAI API calls)
-        captioned_entries: list[Caption] = []
         max_batch = CAPTION_MAX_BATCH_SIZE
 
         lang = get_language(volume)
         # lang is a human-readable language name derived via iso639 (e.g., "English").
 
+        n_crops = 0
+        failed_crops = 0
         failed_captions = 0
+        decode_time_for_item = 0.0
 
-        for batch in chunked(crop_records, max_batch):
+        # Small in-memory batch of (Detection, np.ndarray crop)
+        batch: list[tuple[Detection, np.ndarray]] = []
 
-            with ThreadPoolExecutor(max_workers=cpus_limit) as api_pool:
-                future_to_det = {}
-                for det, crop in batch:
-                    context_file = det.scan_filename.split(".")[0] + ".txt"
-                    context = texts_by_filename.get(context_file, "")
-                    b64 = base64_jpg_bytes(crop)
-                    instruction = build_instruction(lang)
+        for fn, det_list in dets_by_scan.items():
+            img_bytes = image_bytes_by_filename.get(fn)
+            if img_bytes is None:
+                # Missing image -> all detections on this scan fail as crops
+                failed_crops += len(det_list)
+                continue
 
-                    input_blocks = [
-                        {
-                            "role": "system",
-                            "content": [{"type": "input_text", "text": instruction}],
-                        },
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "input_text", "text": context},
-                                {
-                                    "type": "input_image",
-                                    "image_url": f"data:image/jpeg;base64,{b64}",
-                                },
-                            ],
-                        },
-                    ]
-                    fut = api_pool.submit(send_to_openai, input_blocks, det.id_detection)
-                    future_to_det[fut] = det
+            # Decode this scan only once
+            start_decode = datetime.now()
+            try:
+                scan_img = decode_image_bytes(img_bytes)
+            except Exception:
+                # If we can't decode this image, all detections on it fail
+                failed_crops += len(det_list)
+                logger.warning(f"{barcode}: Could not decode image for {fn}; skipping detections")
+                continue
+            decode_time_for_item += (datetime.now() - start_decode).total_seconds()
 
-                # Process results with logprobs
-                for fut in as_completed(future_to_det):
-                    det = future_to_det[fut]
-                    try:
-                        result = fut.result()
-                    except Exception as e:
-                        # Any OpenAI / network error is treated as a failed caption for that crop.
-                        failed_captions += 1
-                        logger.warning(
-                            f"{barcode}: Caption request failed for detection {det.id_detection}: {e}"
-                        )
-                        caption_text = ""
-                        logprobs_data = None
-                    else:
-                        if not result:
-                            failed_captions += 1
-                            caption_text = ""
-                            logprobs_data = None
-                        else:
-                            caption_text = result["text"]
-                            logprobs_data = result["logprobs"]
+            # Build crops for detections on this scan, but stream them into small batches
+            for det in det_list:
+                try:
+                    crop = det.crop(scan_img)
+                except Exception:
+                    logger.warning(f"Could not crop detection in {barcode}.{fn}; skipping")
+                    failed_crops += 1
+                    continue
 
-                    captioned_entries.append(
-                        Caption(
-                            detection=det.id_detection,
-                            text=caption_text,
-                            lang=lang,
-                            logprobs=logprobs_data,
-                            pipeline_batch_item=id_pipeline_batch_item,
-                            created=get_time(),
-                        )
+                batch.append((det, crop))
+                n_crops += 1
+
+                if len(batch) >= max_batch:
+                    failed_captions += _process_caption_batch(
+                        batch=batch,
+                        texts_by_filename=texts_by_filename,
+                        lang=lang,
+                        barcode=barcode,
+                        id_pipeline_batch_item=id_pipeline_batch_item,
+                        cpus_limit=cpus_limit,
+                        all_captions=all_captions,
                     )
+                    batch.clear()
 
-        # Add to batch totals
-        all_captions.extend(captioned_entries)
+            # Done with this scan; free decoded image
+            del scan_img
+
+        # Final partial batch (across all scans for this item)
+        if batch:
+            failed_captions += _process_caption_batch(
+                batch=batch,
+                texts_by_filename=texts_by_filename,
+                lang=lang,
+                barcode=barcode,
+                id_pipeline_batch_item=id_pipeline_batch_item,
+                cpus_limit=cpus_limit,
+                all_captions=all_captions,
+            )
+            batch.clear()
+
+        total_decode_time += decode_time_for_item
         total_n_crops += n_crops
         total_failed_crops += failed_crops
         total_failed_captions += failed_captions
 
         logger.info(
             f"{barcode} | Captions: {n_crops} | Failed crops: {failed_crops} | "
-            f"Decode time: {time_decode:.2f}s | Failed Captions: {failed_captions}"
+            f"Decode time: {decode_time_for_item:.2f}s | Failed Captions: {failed_captions}"
         )
 
     #
@@ -301,6 +283,93 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
     process_db_write_batch(Caption, all_captions)
 
     return True
+
+
+def _process_caption_batch(
+    batch: list[tuple[Detection, np.ndarray]],
+    texts_by_filename: dict[str, str],
+    lang: str,
+    barcode: str,
+    id_pipeline_batch_item: int,
+    cpus_limit: int,
+    all_captions: list[Caption],
+) -> int:
+    """
+    Caption a single batch of (Detection, crop) records.
+
+    Returns:
+        Number of failed captions in this batch.
+    """
+    failed_captions = 0
+
+    # caption batches (OpenAI API calls)
+    with ThreadPoolExecutor(max_workers=cpus_limit) as api_pool:
+        future_to_det: dict = {}
+
+        for det, crop in batch:
+            context_file = det.scan_filename.split(".")[0] + ".txt"
+            context = texts_by_filename.get(context_file, "")
+
+            # base64-encode and free crop ASAP to limit memory
+            b64 = base64_jpg_bytes(crop)
+            del crop
+
+            instruction = build_instruction(lang)
+
+            input_blocks = [
+                {
+                    "role": "system",
+                    "content": [{"type": "input_text", "text": instruction}],
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": context},
+                        {
+                            "type": "input_image",
+                            "image_url": f"data:image/jpeg;base64,{b64}",
+                        },
+                    ],
+                },
+            ]
+
+            fut = api_pool.submit(send_to_openai, input_blocks, det.id_detection)
+            future_to_det[fut] = det
+
+        # Process results with logprobs
+        for fut in as_completed(future_to_det):
+            det = future_to_det[fut]
+            try:
+                result = fut.result()
+            except Exception as e:
+                # Any OpenAI / network error is treated as a failed caption for that crop.
+                failed_captions += 1
+                logger.warning(
+                    f"{barcode}: Caption request failed for detection {det.id_detection}: {e}"
+                )
+                caption_text = ""
+                logprobs_data = None
+            else:
+                if not result:
+                    failed_captions += 1
+                    caption_text = ""
+                    logprobs_data = None
+                else:
+                    caption_text = result["text"]
+                    logprobs_data = result["logprobs"]
+
+            all_captions.append(
+                Caption(
+                    detection=det.id_detection,
+                    text=caption_text,
+                    lang=lang,
+                    logprobs=logprobs_data,
+                    pipeline_batch_item=id_pipeline_batch_item,
+                    created=get_time(),
+                )
+            )
+
+    return failed_captions
 
 
 def get_language(volume) -> str:
