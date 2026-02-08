@@ -88,7 +88,7 @@ def step05_store(
                 logger.error("Error in a worker process; shutting down remaining workers.")
                 logger.debug(traceback.format_exc())
                 executor.shutdown(wait=False, cancel_futures=True)
-                return
+                click.get_current_context().exit(1)
 
     logger.info(f"Completed storing crops for pipeline batch {id_pipeline_batch}")
 

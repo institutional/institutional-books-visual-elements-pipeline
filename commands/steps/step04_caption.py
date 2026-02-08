@@ -14,6 +14,7 @@ import cv2
 import numpy as np
 from iso639 import Lang
 
+from models.pipeline_batch_item import PipelineBatchItemData
 from utils import (
     get_db,
     process_db_write_batch,
@@ -135,7 +136,7 @@ def step04_caption(id_pipeline_batch: int, cpus_limit: int):
             except Exception:
                 logger.error("Error in a worker process:\n" + traceback.format_exc())
                 executor.shutdown(wait=False, cancel_futures=True)
-                return
+                click.get_current_context().exit(1)
 
 
 def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
@@ -182,9 +183,12 @@ def caption_batch_of_items(item_ids: list[int], cpus_limit: int) -> bool:
         volume = item.ib_volume
         barcode = volume.barcode
 
-        # images + text context
-        image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
-        texts_by_filename = {str(k): v for k, v in item.data.texts.items()}
+        item_data: PipelineBatchItemData = item.data
+
+        image_bytes_by_filename = {str(k): v for k, v in item_data.images.items()}
+        texts_by_filename = {str(k): v for k, v in item_data.texts.items()}
+
+        del item_data
 
         #
         # Group detections by scan filename for this item.
