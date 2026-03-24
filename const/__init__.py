@@ -122,10 +122,10 @@ DEDUPE_EMBEDDING_MODEL_FILEPATH = Path(
 )
 """ Local filepath to save downloaded embedding model. """
 
-DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU = 4
+DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU = 2
 """Number of processes to run in parallel per GPU"""
 
-DEDUPE_EMBEDDING_BATCH_SIZE = 1024
+DEDUPE_EMBEDDING_BATCH_SIZE = 256
 """Size of minibatches to pass to the embedding model"""
 
 DEDUPE_EMBEDDING_THRESHOLD = 0.14
