@@ -1,5 +1,7 @@
 import os
+import os
 import peewee
+from playhouse.shortcuts import ReconnectMixin
 
 database_proxy = peewee.DatabaseProxy()
 
@@ -7,23 +9,31 @@ _init_pid = None
 """ Keeps track of the pid from which the connection was initialized. """
 
 
+class ReconnectPostgresqlDatabase(ReconnectMixin, peewee.PostgresqlDatabase):
+    """
+    Postgres DB that transparently reconnects on common connection errors
+    (including EOF / server-closed connections).
+    """
+
+    pass
+
+
 def get_db() -> peewee.DatabaseProxy:
     """
-    Process-safe access to the datababse.
+    Process-safe access to the database.
 
     Returns an active database proxy.
 
-    Automatically recreates connection:
-    - Not available
-    - `get_db()` is called from a subprocess/fork.
+    Automatically (re)initializes the underlying DB object when:
+    - Not initialized yet
+    - `get_db()` is called from a different process (after fork)
     """
     global _init_pid
     current_pid = os.getpid()
 
-    # Check if we need to initialize or reinitialize due to process fork
-    if database_proxy.obj is None or _init_pid != current_pid or database_proxy.obj.is_closed():
-
-        db = peewee.PostgresqlDatabase(
+    # (Re)initialize for this PID
+    if database_proxy.obj is None or _init_pid != current_pid:
+        db = ReconnectPostgresqlDatabase(
             database=os.getenv("POSTGRES_DB"),
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
@@ -38,6 +48,8 @@ def get_db() -> peewee.DatabaseProxy:
             database_proxy.initialize(db)
             _init_pid = current_pid
         except Exception as err:
-            raise ConnectionError(f"Could not connect to PostgreSQL.") from err
+            raise ConnectionError("Could not connect to PostgreSQL.") from err
 
+    # We deliberately do *not* call db.is_closed() here; ReconnectMixin will
+    # reconnect on demand when a query is issued and a connection error occurs.
     return database_proxy

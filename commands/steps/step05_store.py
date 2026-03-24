@@ -8,7 +8,7 @@ from loguru import logger
 import numpy as np
 import cv2
 
-from utils import get_db, get_s3_client, load_scans_for_detections, build_detection_crops
+from utils import get_db, get_s3_client, decode_image_bytes
 from models import PipelineBatchItem, Detection
 
 from const import OUTPUT_STORAGE_BUCKET_NAME, CPUS_LIMIT
@@ -36,11 +36,11 @@ def step05_store(
     #   but avoids creating an excessive number of processes.
     #
     # - Each process:
-    #     * Uses more threads for I/O-bound decode (load_scans_for_detections)
-    #     * Uses multiple threads for PNG encoding (create_tarball_parallel)
+    #     * Uses threads for per-scan decode + crop + encode
+    #     * Creates a tarball per item in a memory-bounded way (no all-crops-in-RAM)
 
-    # Number of worker processes (cap at a small number)
-    processes_total = cpus_limit  # THIS line
+    # Number of worker processes
+    processes_total = cpus_limit
     logger.info(f"Launching {processes_total} CPU processes ...")
 
     # Per-process CPU/thread "budget"
@@ -88,7 +88,7 @@ def step05_store(
                 logger.error("Error in a worker process; shutting down remaining workers.")
                 logger.debug(traceback.format_exc())
                 executor.shutdown(wait=False, cancel_futures=True)
-                return
+                click.get_current_context().exit(1)
 
     logger.info(f"Completed storing crops for pipeline batch {id_pipeline_batch}")
 
@@ -116,60 +116,110 @@ def store_batch_of_items(item_ids: list[int], worker_cpus: int):
         # Get image bytes mapping (as before)
         image_bytes_by_filename = {str(k): v for k, v in item.data.images.items()}
 
-        # Decode scans (using shared utility)
-        start_decode = datetime.now()
-        # Use more threads for I/O-bound decoding, but cap it (similar to old script)
-        decode_threads = min(worker_cpus * 2, 16)
-        loaded_images = load_scans_for_detections(
-            volume_barcode=barcode,
-            detections=dets,
-            image_bytes_by_filename=image_bytes_by_filename,
-            max_workers=decode_threads,
-        )
-        time_decode = (datetime.now() - start_decode).total_seconds()
+        #
+        # Group detections by scan filename for this item.
+        # This lets us decode and process one scan at a time to limit memory.
+        #
+        dets_by_scan: dict[str, list[Detection]] = {}
+        for det in dets:
+            fn = str(det.scan_filename)
+            dets_by_scan.setdefault(fn, []).append(det)
 
-        # Create crops using shared utility
-        start_crop = datetime.now()
-        records, failed_crops = build_detection_crops(
-            volume_barcode=barcode,
-            detections=dets,
-            loaded_images=loaded_images,
-            with_filename=True,  # we want the original scan filename
-        )
-
-        # Convert records -> crops_data for tar creation
-        crops_data: list[tuple[str, np.ndarray]] = []
-        for det, crop, fn in records:
-            # Generate filename for inside the tar: {scan_base}_{detection_id}.png
-            scan_base = fn.rsplit(".", 1)[0]
-            filename_in_tar = f"{scan_base}_{det.id_detection}.png"
-            crops_data.append((filename_in_tar, crop))
-
-        time_crop = (datetime.now() - start_crop).total_seconds()
-
-        if not crops_data:
-            logger.info(f"{barcode}: All crops failed.")
-            continue
-
-        # Create tar.gz file with all crops (parallel PNG encoding)
+        # Create tar.gz file with all crops (parallel PNG encoding, but per-scan)
         s3_key = f"crops/{id_pipeline_batch_item}/{barcode}.tar.gz"
+
+        # Timing / statistics
+        total_decode_time = 0.0
+        total_crop_time = 0.0
+        total_encode_time = 0.0
+        total_crops = 0
+        total_failed_crops = 0
+
+        # Use more threads for encode (similar in spirit to old script)
+        encode_threads = max(1, worker_cpus * 2)
 
         try:
             start_tar = datetime.now()
-            # Use more threads for encode (similar in spirit to old script)
-            encode_threads = max(1, worker_cpus * 2)
-            tar_bytes, time_encode = create_tarball_parallel(crops_data, encode_threads)
+
+            # Create tar.gz in memory and stream files into it
+            tar_buffer = io.BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz", compresslevel=1) as tar:
+
+                for fn, det_list in dets_by_scan.items():
+                    img_bytes = image_bytes_by_filename.get(fn)
+                    if img_bytes is None:
+                        # Missing image -> all detections on this scan fail as crops
+                        total_failed_crops += len(det_list)
+                        logger.warning(
+                            f"{barcode}: Missing image bytes for {fn}; skipping detections"
+                        )
+                        continue
+
+                    # Decode this scan only once
+                    start_decode = datetime.now()
+                    try:
+                        scan_img = decode_image_bytes(img_bytes)
+                    except Exception:
+                        total_failed_crops += len(det_list)
+                        logger.warning(
+                            f"{barcode}: Could not decode image for {fn}; skipping detections"
+                        )
+                        continue
+                    decode_time = (datetime.now() - start_decode).total_seconds()
+                    total_decode_time += decode_time
+
+                    # Build crops for detections on this scan
+                    start_crop = datetime.now()
+                    crops_for_scan: list[tuple[str, np.ndarray]] = []
+                    for det in det_list:
+                        try:
+                            crop = det.crop(scan_img)
+                        except Exception:
+                            total_failed_crops += 1
+                            logger.warning(f"Could not crop detection in {barcode}.{fn}; skipping")
+                            continue
+
+                        scan_base = fn.rsplit(".", 1)[0]
+                        filename_in_tar = f"{scan_base}_{det.id_detection}.png"
+                        crops_for_scan.append((filename_in_tar, crop))
+
+                    crop_time = (datetime.now() - start_crop).total_seconds()
+                    total_crop_time += crop_time
+
+                    # Done with this scan; free decoded image
+                    del scan_img
+
+                    if not crops_for_scan:
+                        continue
+
+                    total_crops += len(crops_for_scan)
+
+                    # Encode crops for this scan in parallel and write directly into tar
+                    encode_time = _encode_and_write_crops_to_tar(
+                        crops_for_scan=crops_for_scan,
+                        tar=tar,
+                        encode_threads=encode_threads,
+                    )
+                    total_encode_time += encode_time
+
+                    # Free per-scan crops list
+                    del crops_for_scan
+
             time_tar = (datetime.now() - start_tar).total_seconds()
 
+            # Upload to S3
+            tar_buffer.seek(0)
+            tar_bytes = tar_buffer.getvalue()
             start_upload = datetime.now()
             success = upload_to_s3(s3_client, tar_bytes, s3_key, OUTPUT_STORAGE_BUCKET_NAME)
             time_upload = (datetime.now() - start_upload).total_seconds()
 
             if success:
                 logger.info(
-                    f"{barcode} | Crops: {len(crops_data)} | Failed: {failed_crops} | "
-                    f"Decode: {time_decode:.2f}s | Crop: {time_crop:.2f}s | "
-                    f"Tar (PNG encode: {time_encode:.2f}s): {time_tar:.2f}s | Upload: {time_upload:.2f}s"
+                    f"{barcode} | Crops: {total_crops} | Failed: {total_failed_crops} | "
+                    f"Decode: {total_decode_time:.2f}s | Crop: {total_crop_time:.2f}s | "
+                    f"Tar (PNG encode: {total_encode_time:.2f}s): {time_tar:.2f}s | "
+                    f"Upload: {time_upload:.2f}s"
                 )
             else:
                 logger.error(f"{barcode}: Failed to upload tar.gz")
@@ -193,27 +243,29 @@ def encode_crop_to_png(filename: str, crop_array: np.ndarray) -> tuple[str, byte
     return filename, png_bytes.tobytes()
 
 
-def create_tarball_parallel(
-    crops_data: list[tuple[str, np.ndarray]], max_workers: int
-) -> tuple[bytes, float]:
+def _encode_and_write_crops_to_tar(
+    crops_for_scan: list[tuple[str, np.ndarray]],
+    tar: tarfile.TarFile,
+    encode_threads: int,
+) -> float:
     """
-    Create a tar.gz file with parallel PNG encoding.
+    Encode a set of crops to PNG in parallel and write them directly into an open tarfile.
 
     Args:
-        crops_data: List of (filename, crop_array) tuples
-        max_workers: Number of threads to use for parallel encoding
+        crops_for_scan: list of (filename_in_tar, crop_array)
+        tar: open tarfile object in "w:gz" mode
+        encode_threads: number of threads to use for parallel encoding
 
     Returns:
-        Tuple of (tar_bytes, encoding_time_seconds)
+        encoding_time_seconds
     """
     start_encode = datetime.now()
 
-    # Encode all crops to PNG in parallel
-    encoded_crops = []
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    encoded_crops: list[tuple[str, bytes]] = []
+    with ThreadPoolExecutor(max_workers=encode_threads) as pool:
         futures = [
             pool.submit(encode_crop_to_png, filename, crop_array)
-            for filename, crop_array in crops_data
+            for filename, crop_array in crops_for_scan
         ]
 
         for fut in as_completed(futures):
@@ -222,19 +274,20 @@ def create_tarball_parallel(
             except Exception as e:
                 logger.error(f"Failed to encode crop: {e}")
 
-    time_encode = (datetime.now() - start_encode).total_seconds()
+    encode_time = (datetime.now() - start_encode).total_seconds()
 
-    # Create tar.gz file
-    tar_buffer = io.BytesIO()
-    with tarfile.open(fileobj=tar_buffer, mode="w:gz", compresslevel=1) as tar:
-        for filename, png_bytes in encoded_crops:
-            tarinfo = tarfile.TarInfo(name=filename)
-            tarinfo.size = len(png_bytes)
-            tarinfo.mtime = datetime.now().timestamp()
-            tar.addfile(tarinfo, io.BytesIO(png_bytes))
+    # Write encoded crops into tar immediately, then free them
+    now_ts = datetime.now().timestamp()
+    for filename, png_bytes in encoded_crops:
+        tarinfo = tarfile.TarInfo(name=filename)
+        tarinfo.size = len(png_bytes)
+        tarinfo.mtime = now_ts
+        tar.addfile(tarinfo, io.BytesIO(png_bytes))
 
-    tar_buffer.seek(0)
-    return tar_buffer.getvalue(), time_encode
+    # Help GC
+    del encoded_crops
+
+    return encode_time
 
 
 def upload_to_s3(s3_client, tar_bytes: bytes, s3_key: str, bucket_name: str) -> bool:

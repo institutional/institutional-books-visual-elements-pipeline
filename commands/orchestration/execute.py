@@ -271,7 +271,7 @@ def check_pipeline_batch_availability(pipeline_batch: PipelineBatch) -> bool:
         return True
 
     # Batch is running and hasn't timed out yet
-    if pipeline_batch.started_date:
+    if pipeline_batch.started_date and not pipeline_batch.ended_date:
         batch_lifetime_seconds = (datetime.now(timezone.utc) - pipeline_batch.started_date).seconds
 
         if batch_lifetime_seconds > PIPELINE_BATCH_TIMEOUT_SECONDS:
