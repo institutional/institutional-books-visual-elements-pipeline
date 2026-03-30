@@ -131,22 +131,22 @@ DEDUPE_EMBEDDING_BATCH_SIZE = 256
 DEDUPE_EMBEDDING_THRESHOLD = 0.14
 """Max cosine distance between embeddings to be considered a duplicate"""
 
-DEDUPE_EMBEDDING_MAX_NEIGHBORS = 100
+DEDUPE_EMBEDDING_MAX_NEIGHBORS = 30
 """Maximum neighbors to find per embedding (k in HNSW search)"""
 
-DEDUPE_EMBEDDING_MAX_CONNECTIONS = 16
+DEDUPE_EMBEDDING_MAX_CONNECTIONS = 12
 """HNSW index M parameter (number of connections per layer)"""
 
-DEDUPE_EMBEDDING_HNSW_EF_CONST = 200
+DEDUPE_EMBEDDING_HNSW_EF_CONST = 100
 """HNSW ef_construction parameter (index build time, higher=better recall)"""
 
-DEDUPE_EMBEDDING_HNSW_EF_SEARCH = 300
+DEDUPE_EMBEDDING_HNSW_EF_SEARCH = 30
 """HNSW ef_search parameter (query time, higher=better recall)"""
 
 DEDUPE_EMBEDDING_HNSW_INDEX_BATCH = 100000
 """Batch size for index building"""
 
-DEDUPE_EMBEDDING_SEARCH_BATCH = 10000
+DEDUPE_EMBEDDING_SEARCH_BATCH = 50000
 """Batch size for similarity search (smaller=less memory)"""
 
 DEDUPE_EMBEDDING_CACHE_DIR = Path(CACHE_DIR_PATH, "temp_image_embeddings")
