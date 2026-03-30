@@ -20,20 +20,15 @@ import numpy as np
 from models import ImageHash, PipelineBatch, PipelineBatchItem, DedupedHash
 from utils import get_time
 from const import (
-    CPUS_LIMIT,
+    HASH_DEDUPE_CPUS_LIMIT,
     HASH_DB_CHUNK_SIZE,
     HASH_DEDUPE_HAMMING_THRESHOLD,
     HASH_DEDUPE_CACHE_DIR,
+    HASH_DEDUPE_BANDS,
+    HASH_DEDUPE_BITS_PER_BAND,
+    HASH_DEDUPE_MASK_24,
 )
 
-#
-# CONSTANTS FOR NEW SYSTEM
-# 144-bit hash → 24 hex chars? No: user says 36 hex chars → 144 bits.
-#
-HASH_BITS = 144
-BANDS = 6
-BITS_PER_BAND = HASH_BITS // BANDS  # = 24
-MASK_24 = (1 << 24) - 1
 # Globals shared by workers after fork()
 _parent_mmap = None
 _parent_arr = None
@@ -42,7 +37,7 @@ _parent_arr = None
 @click.command("step06-dedupe-fast")
 @click.option("--id-pipeline-run", type=int, required=True)
 @click.option("--hamming-threshold", type=int, default=HASH_DEDUPE_HAMMING_THRESHOLD)
-@click.option("--workers", type=int, default=64)  # Make into const variable
+@click.option("--workers", type=int, default=HASH_DEDUPE_CPUS_LIMIT)
 def step06_dedupe_by_image_hash(id_pipeline_run, hamming_threshold, workers):
     """
     New fast dedupe using external-sort LSH + mmap bucket processing.
@@ -138,9 +133,9 @@ def step06_dedupe_by_image_hash(id_pipeline_run, hamming_threshold, workers):
 
     def bands_of(h_int):
         # 144 bits, 6 bands each 24 bits
-        for i in range(BANDS):
-            shift = i * BITS_PER_BAND
-            yield i, (h_int >> shift) & MASK_24
+        for i in range(HASH_DEDUPE_BANDS):
+            shift = i * HASH_DEDUPE_BITS_PER_BAND
+            yield i, (h_int >> shift) & HASH_DEDUPE_MASK_24
 
     with open(bands_unsorted, "w") as f:
         for idx in range(total):
