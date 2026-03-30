@@ -8,6 +8,7 @@ import numpy as np
 import time
 import os
 import h5py
+import peewee
 
 from const import (
     CPUS_LIMIT,
@@ -214,48 +215,93 @@ def step07_dedupe_by_image_embedding(
     logger.info("✓ Deduplication complete!")
 
 
-def load_and_save_embeddings(pb_ids, cache_file):
-    """Load embeddings from database and save to HDF5 file"""
+def load_and_save_embeddings(pb_ids, cache_file, batch_size=50000):
+    """Load embeddings from database and save to HDF5 file using batched loading"""
     t0 = time.time()
     logger.info("Loading embeddings from database...")
 
-    # Query embeddings
-    query = (
-        ImageEmbedding.select(
-            ImageEmbedding.id_embedding,
-            ImageEmbedding.pipeline_batch_item,
-            ImageEmbedding.detection,
-            ImageEmbedding.embedding,
-        )
+    # First, get count (faster query without embedding column)
+    total = (
+        ImageEmbedding.select(ImageEmbedding.id_embedding)
         .join(
             PipelineBatchItem,
             on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
         )
         .where(PipelineBatchItem.pipeline_batch.in_(pb_ids))
-        .order_by(ImageEmbedding.id_embedding)
+        .count()
     )
-
-    total = query.count()
     logger.info(f"Query will return {total:,} embeddings")
 
-    embedding_metadata = []
-    embedding_vectors = []
+    # Pre-allocate arrays for better memory efficiency
+    embedding_ids = np.zeros(total, dtype=np.int64)
+    pipeline_batch_items = np.zeros(total, dtype=np.int64)
+    detections = np.zeros(total, dtype=np.int64)
+    emb_arr = np.zeros((total, 512), dtype=np.float32)
 
-    for i, emb in enumerate(query.iterator(), 1):
-        embedding_metadata.append(
-            {
-                "id_embedding": emb.id_embedding,
-                "pipeline_batch_item": emb.pipeline_batch_item_id,
-                "detection": emb.detection_id,
-            }
+    # Load in batches using keyset pagination (more efficient than OFFSET)
+    last_id = 0
+    loaded = 0
+
+    while loaded < total:
+        batch_t0 = time.time()
+
+        # Query batch with keyset pagination
+        batch_query = (
+            ImageEmbedding.select(
+                ImageEmbedding.id_embedding,
+                ImageEmbedding.pipeline_batch_item,
+                ImageEmbedding.detection,
+                ImageEmbedding.embedding,
+            )
+            .join(
+                PipelineBatchItem,
+                on=(ImageEmbedding.pipeline_batch_item == PipelineBatchItem.id_pipeline_batch_item),
+            )
+            .where(
+                (PipelineBatchItem.pipeline_batch.in_(pb_ids))
+                & (ImageEmbedding.id_embedding > last_id)
+            )
+            .order_by(ImageEmbedding.id_embedding)
+            .limit(batch_size)
         )
-        embedding_vectors.append(emb.embedding)
 
-        if i % 10000 == 0:
-            logger.info(f"Loaded {i:,}/{total:,} embeddings ({100*i/total:.1f}%)")
+        batch_data = list(batch_query)
+        if not batch_data:
+            break
 
-    # Convert to numpy array
-    emb_arr = np.array(embedding_vectors, dtype=np.float32)
+        for emb in batch_data:
+            embedding_ids[loaded] = emb.id_embedding
+            pipeline_batch_items[loaded] = emb.pipeline_batch_item_id
+            detections[loaded] = emb.detection_id
+            emb_arr[loaded] = emb.embedding
+            loaded += 1
+
+        last_id = batch_data[-1].id_embedding
+        batch_elapsed = time.time() - batch_t0
+
+        logger.info(
+            f"Loaded {loaded:,}/{total:,} embeddings ({100*loaded/total:.1f}%) "
+            f"- batch took {batch_elapsed:.1f}s ({len(batch_data)/batch_elapsed:.0f} rows/s)"
+        )
+
+    # Trim arrays in case we got fewer than expected
+    if loaded < total:
+        logger.warning(f"Expected {total:,} but loaded {loaded:,} embeddings")
+        embedding_ids = embedding_ids[:loaded]
+        pipeline_batch_items = pipeline_batch_items[:loaded]
+        detections = detections[:loaded]
+        emb_arr = emb_arr[:loaded]
+
+    # Build metadata list
+    embedding_metadata = [
+        {
+            "id_embedding": int(embedding_ids[i]),
+            "pipeline_batch_item": int(pipeline_batch_items[i]),
+            "detection": int(detections[i]),
+        }
+        for i in range(loaded)
+    ]
+
     logger.info(f"Loaded {len(embedding_metadata):,} embeddings in {time.time() - t0:.1f}s")
     logger.info(f"Embedding shape: {emb_arr.shape}")
 
@@ -508,10 +554,29 @@ def write_dedupe_assignments(embedding_metadata, duplicate_groups):
     delete_chunk_size = 10000
     total_deleted = 0
 
+    def execute_with_retry(operation, max_retries=3):
+        """Execute a database operation with retry on connection errors."""
+        for attempt in range(max_retries):
+            try:
+                return operation()
+            except peewee.OperationalError as e:
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"DB connection error (attempt {attempt + 1}/{max_retries}): {e}"
+                    )
+                    if not db.is_closed():
+                        db.close()
+                    db.connect()
+                    time.sleep(1)
+                else:
+                    raise
+
     for i in range(0, len(embedding_ids), delete_chunk_size):
         chunk = embedding_ids[i : i + delete_chunk_size]
-        deleted = (
-            DedupedEmbedding.delete().where(DedupedEmbedding.embedding_id.in_(chunk)).execute()
+        deleted = execute_with_retry(
+            lambda c=chunk: DedupedEmbedding.delete()
+            .where(DedupedEmbedding.embedding_id.in_(c))
+            .execute()
         )
         total_deleted += deleted
 
@@ -521,11 +586,10 @@ def write_dedupe_assignments(embedding_metadata, duplicate_groups):
     insert_batch_size = 10000
     total_written = 0
 
-    with db.atomic():
-        for i in tqdm.tqdm(range(0, len(assignments), insert_batch_size), desc="Inserting"):
-            batch = assignments[i : i + insert_batch_size]
-            DedupedEmbedding.insert_many(batch).execute()
-            total_written += len(batch)
+    for i in tqdm.tqdm(range(0, len(assignments), insert_batch_size), desc="Inserting"):
+        batch = assignments[i : i + insert_batch_size]
+        execute_with_retry(lambda b=batch: DedupedEmbedding.insert_many(b).execute())
+        total_written += len(batch)
 
     logger.info(
         f"✓ Successfully wrote {total_written:,} deduplicated embeddings in {time.time() - t0:.1f}s"
