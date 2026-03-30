@@ -460,7 +460,7 @@ Hash-based Deduplication:
   Singleton groups: {hash_singletons:,}
   Duplicate groups: {hash_duplicates:,}
   Largest group: {max(hash_sizes) if hash_sizes else 0}
-  Avg group size: {np.mean(hash_sizes):.2f if hash_sizes else 0}
+  Avg group size: {(np.mean(hash_sizes) if hash_sizes else 0):.2f}
 
 Embedding-based Deduplication:
   Total groups: {len(emb_groups):,}
@@ -468,7 +468,7 @@ Embedding-based Deduplication:
   Singleton groups: {emb_singletons:,}
   Duplicate groups: {emb_duplicates:,}
   Largest group: {max(emb_sizes) if emb_sizes else 0}
-  Avg group size: {np.mean(emb_sizes):.2f if emb_sizes else 0}
+  Avg group size: {(np.mean(emb_sizes) if emb_sizes else 0):.2f}
 """
     axes[1, 1].text(
         0.1,
