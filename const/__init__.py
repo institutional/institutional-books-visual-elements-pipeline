@@ -177,12 +177,16 @@ HASH_DEDUPE_CACHE_DIR = Path(CACHE_DIR_PATH, "temp_image_hashes")
 HASH_DEDUPE_CPUS_LIMIT = 64
 """Limit the number of CPUs for hash deduping"""
 
-HASH_DEDUPE_HASH_BITS = 
 HASH_DEDUPE_BANDS = 6
+"""Bands for hash dedupe"""
+
 HASH_DEDUPE_BITS_PER_BAND = (
     HASH_DEDUPE_LENGTH_BYTES * HASH_DEDUPE_LENGTH_BYTES
-) // HASH_DEDUPE_BANDS 
+) // HASH_DEDUPE_BANDS
+"""calculate bits per band based on hash size"""
+
 HASH_DEDUPE_MASK_24 = (1 << 24) - 1
+"""Mask for hash dedupe"""
 
 #
 # Captioning
