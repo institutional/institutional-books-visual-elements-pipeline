@@ -10,3 +10,4 @@ from .get_time import get_time
 from .decode_image_bytes import decode_image_bytes
 from .load_scans_for_detections import load_scans_for_detections
 from .build_detection_crops import build_detection_crops
+from .unionfind import UnionFindInt
