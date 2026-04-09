@@ -6,6 +6,7 @@ import click
 import matplotlib.pyplot as plt
 import matplotlib
 import numpy as np
+import tiktoken
 from loguru import logger
 
 from utils import get_db
@@ -267,15 +268,20 @@ def plot_crop_dimensions(output_path: Path):
 
 
 def plot_caption_statistics(output_path: Path):
-    """Statistics about captions: length distribution, language distribution."""
+    """Statistics about captions: length distribution, token count, language distribution."""
     caption_lengths = []
     word_counts = []
+    token_counts = []
     languages = Counter()
+
+    # Use cl100k_base encoding (GPT-4 family)
+    encoding = tiktoken.get_encoding("cl100k_base")
 
     for cap in Caption.select(Caption.text, Caption.lang):
         if cap.text:
             caption_lengths.append(len(cap.text))
             word_counts.append(len(cap.text.split()))
+            token_counts.append(len(encoding.encode(cap.text)))
         if cap.lang:
             languages[cap.lang] += 1
 
@@ -283,7 +289,7 @@ def plot_caption_statistics(output_path: Path):
         logger.warning("No caption data found")
         return
 
-    fig, axes = plt.subplots(2, 2, figsize=FIGSIZE_LARGE)
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
     # Caption character length histogram
     axes[0, 0].hist(caption_lengths, bins=50, color=COLORS[0], edgecolor="white", alpha=0.8)
@@ -299,6 +305,14 @@ def plot_caption_statistics(output_path: Path):
     axes[0, 1].set_ylabel("Frequency")
     axes[0, 1].set_title(
         f"Caption Word Count Distribution\n(mean: {np.mean(word_counts):.1f}, median: {np.median(word_counts):.0f})"
+    )
+
+    # Token count histogram
+    axes[0, 2].hist(token_counts, bins=50, color=COLORS[2], edgecolor="white", alpha=0.8)
+    axes[0, 2].set_xlabel("Token Count")
+    axes[0, 2].set_ylabel("Frequency")
+    axes[0, 2].set_title(
+        f"Caption Token Count Distribution\n(mean: {np.mean(token_counts):.1f}, median: {np.median(token_counts):.0f})"
     )
 
     # Language distribution
@@ -323,8 +337,26 @@ def plot_caption_statistics(output_path: Path):
             0.5, 0.5, "No language data", ha="center", va="center", transform=axes[1, 0].transAxes
         )
 
+    # Words vs Tokens scatter plot
+    sample_size = min(5000, len(word_counts))
+    indices = np.random.choice(len(word_counts), sample_size, replace=False)
+    sample_words = [word_counts[i] for i in indices]
+    sample_tokens = [token_counts[i] for i in indices]
+
+    axes[1, 1].scatter(sample_words, sample_tokens, alpha=0.3, s=5, color=COLORS[3])
+    axes[1, 1].set_xlabel("Word Count")
+    axes[1, 1].set_ylabel("Token Count")
+    axes[1, 1].set_title(f"Words vs Tokens (n={sample_size:,} sampled)")
+    # Add diagonal reference line
+    max_val = max(max(sample_words), max(sample_tokens))
+    axes[1, 1].plot([0, max_val], [0, max_val], "r--", alpha=0.5, label="1:1 ratio")
+    axes[1, 1].legend()
+
     # Summary text
-    axes[1, 1].axis("off")
+    axes[1, 2].axis("off")
+    total_tokens = sum(token_counts)
+    avg_tokens_per_word = np.mean([t / w for t, w in zip(token_counts, word_counts) if w > 0])
+
     summary_text = f"""Caption Statistics Summary
 
 Total captions: {len(caption_lengths):,}
@@ -341,13 +373,21 @@ Word count:
   Median: {np.median(word_counts):.0f}
   Min: {min(word_counts)}
   Max: {max(word_counts)}
+
+Token count (cl100k_base):
+  Total: {total_tokens:,}
+  Mean: {np.mean(token_counts):.1f}
+  Median: {np.median(token_counts):.0f}
+  Min: {min(token_counts)}
+  Max: {max(token_counts)}
+  Avg tokens/word: {avg_tokens_per_word:.2f}
 """
-    axes[1, 1].text(
+    axes[1, 2].text(
         0.1,
-        0.9,
+        0.95,
         summary_text,
-        transform=axes[1, 1].transAxes,
-        fontsize=11,
+        transform=axes[1, 2].transAxes,
+        fontsize=10,
         verticalalignment="top",
         fontfamily="monospace",
         bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
@@ -944,14 +984,284 @@ def write_summary_report(counts: dict, output_path: Path):
         f.write("  02_classification_distribution.png - Classification class distribution\n")
         f.write("  03_confidence_distributions.png - Detection and classification confidence\n")
         f.write("  04_crop_dimensions.png - Crop width, height, and area distributions\n")
-        f.write("  05_caption_statistics.png - Caption length and language statistics\n")
+        f.write("  05_caption_statistics.png - Caption length, token count, and language statistics\n")
         f.write("  06_deduplication_statistics.png - Deduplication group statistics\n")
         f.write("  07_batch_progress.png - Batch progress (completed vs total)\n")
         f.write("  08_pipeline_statistics.png - Pipeline run and completed batch statistics\n")
         f.write("  09_volume_metadata.png - Volume metadata distributions\n")
         f.write("  10_detections_per_volume.png - Detections per volume distribution\n")
+        f.write("\n" + "=" * 80 + "\n")
+        f.write("DATA EXPORT\n")
+        f.write("-" * 40 + "\n")
+        f.write("  statistics.json - All computed statistics in JSON format\n")
 
     logger.info(f"Summary report written to: {report_file}")
+
+
+def collect_all_statistics(skip_slow: bool = False) -> dict:
+    """Collect all statistics into a dictionary for JSON export."""
+    stats_data = {
+        "generated_at": DATETIME_SLUG,
+        "table_counts": get_table_counts(),
+    }
+
+    # Classification distribution
+    class_counts = Counter()
+    for cls in Classification.select(Classification.pred_class):
+        class_counts[cls.pred_class] += 1
+    stats_data["classification_distribution"] = {
+        CLASSIFICATION_CLASS_DICT.get(str(k), f"unknown_{k}"): v
+        for k, v in class_counts.items()
+    }
+
+    # Confidence scores
+    det_confs = [
+        d.bbox_conf for d in Detection.select(Detection.bbox_conf) if d.bbox_conf is not None
+    ]
+    cls_confs = [
+        c.pred_conf for c in Classification.select(Classification.pred_conf) if c.pred_conf is not None
+    ]
+    stats_data["confidence_scores"] = {
+        "detection": {
+            "count": len(det_confs),
+            "mean": float(np.mean(det_confs)) if det_confs else None,
+            "median": float(np.median(det_confs)) if det_confs else None,
+            "min": float(min(det_confs)) if det_confs else None,
+            "max": float(max(det_confs)) if det_confs else None,
+            "std": float(np.std(det_confs)) if det_confs else None,
+        },
+        "classification": {
+            "count": len(cls_confs),
+            "mean": float(np.mean(cls_confs)) if cls_confs else None,
+            "median": float(np.median(cls_confs)) if cls_confs else None,
+            "min": float(min(cls_confs)) if cls_confs else None,
+            "max": float(max(cls_confs)) if cls_confs else None,
+            "std": float(np.std(cls_confs)) if cls_confs else None,
+        },
+    }
+
+    # Crop dimensions
+    widths, heights, areas = [], [], []
+    for det in Detection.select(Detection.bbox_xywh):
+        if det.bbox_xywh and len(det.bbox_xywh) == 4:
+            w, h = det.bbox_xywh[2], det.bbox_xywh[3]
+            widths.append(w)
+            heights.append(h)
+            areas.append(w * h)
+    stats_data["crop_dimensions"] = {
+        "count": len(widths),
+        "width": {
+            "mean": float(np.mean(widths)) if widths else None,
+            "median": float(np.median(widths)) if widths else None,
+            "min": float(min(widths)) if widths else None,
+            "max": float(max(widths)) if widths else None,
+            "std": float(np.std(widths)) if widths else None,
+        },
+        "height": {
+            "mean": float(np.mean(heights)) if heights else None,
+            "median": float(np.median(heights)) if heights else None,
+            "min": float(min(heights)) if heights else None,
+            "max": float(max(heights)) if heights else None,
+            "std": float(np.std(heights)) if heights else None,
+        },
+        "area": {
+            "mean": float(np.mean(areas)) if areas else None,
+            "median": float(np.median(areas)) if areas else None,
+            "min": float(min(areas)) if areas else None,
+            "max": float(max(areas)) if areas else None,
+            "std": float(np.std(areas)) if areas else None,
+        },
+    }
+
+    # Caption statistics
+    caption_lengths, word_counts, token_counts = [], [], []
+    languages = Counter()
+    encoding = tiktoken.get_encoding("cl100k_base")
+    for cap in Caption.select(Caption.text, Caption.lang):
+        if cap.text:
+            caption_lengths.append(len(cap.text))
+            word_counts.append(len(cap.text.split()))
+            token_counts.append(len(encoding.encode(cap.text)))
+        if cap.lang:
+            languages[cap.lang] += 1
+    stats_data["captions"] = {
+        "count": len(caption_lengths),
+        "character_length": {
+            "mean": float(np.mean(caption_lengths)) if caption_lengths else None,
+            "median": float(np.median(caption_lengths)) if caption_lengths else None,
+            "min": int(min(caption_lengths)) if caption_lengths else None,
+            "max": int(max(caption_lengths)) if caption_lengths else None,
+            "std": float(np.std(caption_lengths)) if caption_lengths else None,
+        },
+        "word_count": {
+            "mean": float(np.mean(word_counts)) if word_counts else None,
+            "median": float(np.median(word_counts)) if word_counts else None,
+            "min": int(min(word_counts)) if word_counts else None,
+            "max": int(max(word_counts)) if word_counts else None,
+            "std": float(np.std(word_counts)) if word_counts else None,
+        },
+        "token_count": {
+            "total": int(sum(token_counts)) if token_counts else None,
+            "mean": float(np.mean(token_counts)) if token_counts else None,
+            "median": float(np.median(token_counts)) if token_counts else None,
+            "min": int(min(token_counts)) if token_counts else None,
+            "max": int(max(token_counts)) if token_counts else None,
+            "std": float(np.std(token_counts)) if token_counts else None,
+            "encoding": "cl100k_base",
+        },
+        "language_distribution": dict(languages.most_common()),
+    }
+
+    # Deduplication statistics
+    hash_groups = defaultdict(int)
+    for dh in DedupedHash.select(DedupedHash.group_id):
+        hash_groups[dh.group_id] += 1
+    emb_groups = defaultdict(int)
+    for de in DedupedEmbedding.select(DedupedEmbedding.group_id):
+        emb_groups[de.group_id] += 1
+
+    hash_sizes = list(hash_groups.values())
+    emb_sizes = list(emb_groups.values())
+    stats_data["deduplication"] = {
+        "hash_based": {
+            "total_groups": len(hash_groups),
+            "total_items": sum(hash_sizes) if hash_sizes else 0,
+            "singleton_groups": sum(1 for s in hash_sizes if s == 1),
+            "duplicate_groups": sum(1 for s in hash_sizes if s > 1),
+            "largest_group": max(hash_sizes) if hash_sizes else 0,
+            "avg_group_size": float(np.mean(hash_sizes)) if hash_sizes else None,
+        },
+        "embedding_based": {
+            "total_groups": len(emb_groups),
+            "total_items": sum(emb_sizes) if emb_sizes else 0,
+            "singleton_groups": sum(1 for s in emb_sizes if s == 1),
+            "duplicate_groups": sum(1 for s in emb_sizes if s > 1),
+            "largest_group": max(emb_sizes) if emb_sizes else 0,
+            "avg_group_size": float(np.mean(emb_sizes)) if emb_sizes else None,
+        },
+    }
+
+    # Pipeline/batch statistics
+    all_batches = list(PipelineBatch.select())
+    completed_batches = [b for b in all_batches if b.started_date and b.ended_date]
+    processing_times = []
+    for batch in completed_batches:
+        duration = (batch.ended_date - batch.started_date).total_seconds() / 60
+        if duration > 0:
+            processing_times.append(duration)
+
+    crash_counts = sum(1 for b in completed_batches if b.has_crashed)
+    node_counts = Counter(b.node_name for b in completed_batches if b.node_name)
+
+    stats_data["pipeline"] = {
+        "total_runs": PipelineRun.select().count(),
+        "batches": {
+            "total": len(all_batches),
+            "completed": len(completed_batches),
+            "in_progress": len([b for b in all_batches if b.started_date and not b.ended_date]),
+            "pending": len([b for b in all_batches if not b.started_date]),
+            "crashed": crash_counts,
+            "success_rate": float(len(completed_batches) - crash_counts) / len(completed_batches) if completed_batches else None,
+        },
+        "processing_time_minutes": {
+            "mean": float(np.mean(processing_times)) if processing_times else None,
+            "median": float(np.median(processing_times)) if processing_times else None,
+            "min": float(min(processing_times)) if processing_times else None,
+            "max": float(max(processing_times)) if processing_times else None,
+            "std": float(np.std(processing_times)) if processing_times else None,
+        },
+        "batches_by_node": dict(node_counts),
+    }
+
+    # Volume metadata
+    topics = Counter()
+    dates = Counter()
+    vol_languages = Counter()
+    for vol in IBVolume.select(IBVolume.metadata):
+        metadata = vol.metadata
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except json.JSONDecodeError:
+                metadata = {}
+        elif metadata is None:
+            metadata = {}
+
+        topic = metadata.get("topic_or_subject_gen")
+        if topic:
+            topics[topic] += 1
+        date = metadata.get("date1_src")
+        if date:
+            try:
+                year = int(str(date)[:4])
+                if 1400 <= year <= 2100:
+                    dates[year] += 1
+            except (ValueError, TypeError):
+                pass
+        lang = metadata.get("language_src")
+        if lang:
+            vol_languages[lang] += 1
+
+    stats_data["volume_metadata"] = {
+        "total_volumes": IBVolume.select().count(),
+        "topics": {
+            "unique_count": len(topics),
+            "distribution": dict(topics.most_common(50)),
+        },
+        "publication_dates": {
+            "volumes_with_date": sum(dates.values()),
+            "year_range": [min(dates.keys()), max(dates.keys())] if dates else None,
+            "median_year": int(np.median(list(dates.keys()))) if dates else None,
+            "distribution": dict(sorted(dates.items())),
+        },
+        "languages": {
+            "unique_count": len(vol_languages),
+            "distribution": dict(vol_languages.most_common()),
+        },
+    }
+
+    # Detections per volume (slow query)
+    if not skip_slow:
+        volume_detection_counts = Counter()
+        for item in PipelineBatchItem.select(
+            PipelineBatchItem.id_pipeline_batch_item, PipelineBatchItem.ib_volume
+        ):
+            det_count = (
+                Detection.select()
+                .where(Detection.pipeline_batch_item == item.id_pipeline_batch_item)
+                .count()
+            )
+            volume_detection_counts[item.ib_volume.barcode] = det_count
+
+        counts = list(volume_detection_counts.values())
+        stats_data["detections_per_volume"] = {
+            "volumes_processed": len(counts),
+            "total_detections": sum(counts) if counts else 0,
+            "mean": float(np.mean(counts)) if counts else None,
+            "median": float(np.median(counts)) if counts else None,
+            "min": int(min(counts)) if counts else None,
+            "max": int(max(counts)) if counts else None,
+            "std": float(np.std(counts)) if counts else None,
+            "volumes_with_zero": sum(1 for c in counts if c == 0),
+            "volumes_with_over_100": sum(1 for c in counts if c > 100),
+            "percentiles": {
+                "25th": float(np.percentile(counts, 25)) if counts else None,
+                "50th": float(np.percentile(counts, 50)) if counts else None,
+                "75th": float(np.percentile(counts, 75)) if counts else None,
+                "90th": float(np.percentile(counts, 90)) if counts else None,
+                "99th": float(np.percentile(counts, 99)) if counts else None,
+            },
+        }
+
+    return stats_data
+
+
+def save_statistics_json(stats_data: dict, output_path: Path):
+    """Save all statistics to a JSON file."""
+    json_file = output_path / "statistics.json"
+    with open(json_file, "w") as f:
+        json.dump(stats_data, f, indent=2)
+    logger.info(f"Statistics JSON saved to: {json_file}")
 
 
 @click.command("stats")
@@ -1025,5 +1335,10 @@ def stats(output_dir, skip_slow):
 
     # Write summary report
     write_summary_report(counts, output_path)
+
+    # Collect and save all statistics to JSON
+    logger.info("Collecting statistics for JSON export...")
+    stats_data = collect_all_statistics(skip_slow=skip_slow)
+    save_statistics_json(stats_data, output_path)
 
     logger.success(f"Statistics generation complete! Results saved to: {output_path}")
