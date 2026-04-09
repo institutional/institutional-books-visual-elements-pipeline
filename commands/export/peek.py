@@ -5,6 +5,9 @@ import cv2
 import numpy as np
 from datetime import datetime
 import random
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from functools import partial
+import multiprocessing
 
 from models import PipelineBatch, Detection
 from const import CLASSIFICATION_CLASS_DICT, PEEK_OUTPUT_DIR, DATETIME_SLUG
@@ -42,22 +45,186 @@ DETECTION_CAPTION_WEIGHT = 1
 MAX_CAPTION_WIDTH = 100
 
 
+def _process_page_image(page_data: dict) -> dict:
+    """
+    Worker function to process a single page image.
+    Takes raw data (not peewee models) and returns result info.
+    """
+    from textwrap import wrap
+
+    page_idx = page_data["page_idx"]
+    volume_barcode = page_data["volume_barcode"]
+    scan_filename = page_data["scan_filename"]
+    image_bytes = page_data["image_bytes"]
+    detections = page_data["detections"]  # List of dicts with bbox, caption, classification info
+    output_path = page_data["output_path"]
+
+    try:
+        # Decode full image
+        buffer = np.frombuffer(image_bytes, dtype=np.uint8)
+        full_image = cv2.imdecode(buffer, flags=cv2.IMREAD_COLOR)
+
+        # Draw numbered bounding boxes on the image
+        image_with_boxes = full_image.copy()
+
+        for idx, det in enumerate(detections, 1):
+            bbox = det["bbox"]
+            x1, y1, x2, y2 = map(int, bbox)
+
+            # Draw rectangle (green if caption exists, red if failed)
+            has_caption = det["has_caption"]
+            color = BBOX_COLOR_CAPTION if has_caption else BBOX_COLOR_NO_CAPTION
+            cv2.rectangle(image_with_boxes, (x1, y1), (x2, y2), color, 4)
+
+            # Draw number in circle at top-left of bbox
+            circle_center = (x1 + 30, y1 + 30)
+            cv2.circle(image_with_boxes, circle_center, 25, color, -1)
+            cv2.putText(
+                image_with_boxes,
+                str(idx),
+                (x1 + 15, y1 + 40),
+                FONT,
+                1.0,
+                BBOX_NUMBER_COLOR,
+                3,
+            )
+
+        # Create legend panel
+        font = FONT
+        font_scale = LEGEND_FONT_SCALE
+        line_spacing = LEGEND_LINE_SPACING
+        padding = LEGEND_PADDING
+        max_caption_width = MAX_CAPTION_WIDTH
+
+        # Build legend lines
+        legend_lines = []
+        for idx, det in enumerate(detections, 1):
+            class_info = ""
+            detection_info = ""
+            if det["class_name"]:
+                detection_info = f" - Detection Confidence: {det['det_conf']}"
+                class_info = f" - {det['class_name']} - Class Confidence: {det['class_conf']}"
+            legend_lines.append(f"[{idx}]{detection_info}{class_info}")
+
+            caption_text = det["caption"] if det["caption"] else "(NO CAPTION)"
+            wrapped = wrap(caption_text, width=max_caption_width)
+            legend_lines.extend([f"  {line}" for line in wrapped])
+            legend_lines.append("")
+
+        legend_height = padding * 2 + len(legend_lines) * line_spacing
+        legend_width = image_with_boxes.shape[1]
+
+        legend_panel = np.full(
+            (legend_height, legend_width, 3), LEGEND_BG_COLOR, dtype=np.uint8
+        )
+
+        y_offset = padding + 25
+        for line in legend_lines:
+            if line.startswith("["):
+                color = DETECTION_NUMBER_FONT_COLOR
+                weight = DETECTION_NUMBER_WEIGHT
+            else:
+                color = DETECTION_CAPTION_FONT_COLOR
+                weight = DETECTION_CAPTION_WEIGHT
+
+            cv2.putText(
+                legend_panel,
+                line,
+                (padding, y_offset),
+                font,
+                font_scale,
+                color,
+                weight,
+            )
+            y_offset += line_spacing
+
+        # Create header
+        header_height = HEADING_HEIGHT
+        header = np.full((header_height, legend_width, 3), HEADING_BG_COLOR, dtype=np.uint8)
+
+        header_text = f"{volume_barcode} | {scan_filename}"
+        cv2.putText(
+            header,
+            header_text,
+            (20, 35),
+            FONT,
+            HEADING_FONT_SCALE,
+            HEADING_FONT_COLOR,
+            HEADING_WEIGHT,
+        )
+
+        cls_success = sum(1 for d in detections if d["class_name"])
+        cls_failed = len(detections) - cls_success
+        cls_text = f"Classifications: {cls_success} | Failed: {cls_failed}"
+        cv2.putText(
+            header,
+            cls_text,
+            (20, 65),
+            FONT,
+            SUBHEADING_FONT_SCALE,
+            SUBHEADING_FONT_COLOR,
+            SUBHEADING_WEIGHT,
+        )
+
+        cap_success = sum(1 for d in detections if d["has_caption"])
+        cap_failed = len(detections) - cap_success
+        cap_text = f"Captions: {cap_success} | Failed: {cap_failed}"
+        cv2.putText(
+            header,
+            cap_text,
+            (20, 90),
+            FONT,
+            SUBHEADING_FONT_SCALE,
+            SUBHEADING_FONT_COLOR,
+            SUBHEADING_WEIGHT,
+        )
+
+        output_image = np.vstack([header, image_with_boxes, legend_panel])
+
+        scan_name = scan_filename.replace(".jp2", "").replace(".tiff", "").replace(".tif", "")
+        output_filename = Path(output_path) / f"{page_idx:04d}_{volume_barcode}_{scan_name}.jpg"
+        cv2.imwrite(
+            str(output_filename), output_image, [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+        )
+
+        return {
+            "success": True,
+            "page_idx": page_idx,
+            "filename": output_filename.name,
+            "num_detections": len(detections),
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "page_idx": page_idx,
+            "error": str(e),
+        }
+
+
 @click.command("peek")
 @click.option("--scope", type=click.Choice(["detection", "deduplication"]), required=True)
 @click.option("--id-pipeline-batch", type=int, required=True, help="Pipeline batch ID to inspect")
-@click.option("--n", help="Number of random volumes to select (integer or 'all')")
+@click.option("--n", help="Number of random items to select (integer or 'all')")
+@click.option(
+    "--sample-type",
+    type=click.Choice(["volumes", "pages"]),
+    default="volumes",
+    help="Sample random volumes or random pages",
+)
 @click.option(
     "--output-dir",
     type=click.Path(),
     default=PEEK_OUTPUT_DIR,
     help="Output directory for visualization",
 )
-def peek(scope, id_pipeline_batch, n, output_dir):
+def peek(scope, id_pipeline_batch, n, sample_type, output_dir):
     """
     Visualize pipeline outputs for debugging and validation.
 
     Examples:
         peek --scope detection --id-pipeline-batch 123 --n 5
+        peek --scope detection --id-pipeline-batch 123 --n 50 --sample-type pages
         peek --scope deduplication --id-pipeline-batch 123 --n all
     """
 
@@ -72,17 +239,18 @@ def peek(scope, id_pipeline_batch, n, output_dir):
     output_path.mkdir(parents=True, exist_ok=True)
 
     logger.info(f"Peeking at batch {id_pipeline_batch}, scope: {scope}")
+    logger.info(f"Sample type: {sample_type}, n: {n}")
     logger.info(f"Output directory: {output_path}")
 
     if scope == "detection":
-        peek_detect(batch, n, output_path)
+        peek_detect(batch, n, sample_type, output_path)
     if scope == "deduplication":
-        peek_dedupe(batch, n, output_path)
+        peek_dedupe(batch, n, sample_type, output_path)
 
     logger.info(f"✓ Peek complete! Results saved to: {output_path}")
 
 
-def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
+def peek_detect(batch: PipelineBatch, n: int | str, sample_type: str, output_path: Path):
     """
     Visualize all pipeline results: detections with classifications and captions.
     """
@@ -103,13 +271,19 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
 
     with open(stats_file, "w") as f:
         f.write(f"Results for Batch {batch.id_pipeline_batch}\n")
+        f.write(f"Sample type: {sample_type}\n")
         f.write("=" * 80 + "\n\n")
 
     with open(detections_text_file, "w") as f:
         f.write(f"All results for Batch {batch.id_pipeline_batch}\n")
+        f.write(f"Sample type: {sample_type}\n")
         f.write("=" * 80 + "\n\n")
 
-    # Sample volumes
+    if sample_type == "pages":
+        _peek_detect_by_pages(batch, n, output_path, stats, stats_file, detections_text_file)
+        return
+
+    # Sample volumes (default)
     all_items = batch.items
     if n == "all":
         selected_items = all_items
@@ -419,12 +593,257 @@ def peek_detect(batch: PipelineBatch, n: int | str, output_path: Path):
     )
 
 
-def peek_dedupe(batch: PipelineBatch, n: int | str, output_path: Path):
+def _peek_detect_by_pages(
+    batch: PipelineBatch,
+    n: int | str,
+    output_path: Path,
+    stats: dict,
+    stats_file: Path,
+    detections_text_file: Path,
+):
+    """Sample and visualize by random pages (scans with detections)."""
+    from models import Caption, Classification
+    from textwrap import wrap
+
+    # Create item lookup map
+    item_map = {item.id_pipeline_batch_item: item for item in batch.items}
+    all_item_ids = list(item_map.keys())
+
+    # Get unique pages efficiently (without loading all detections)
+    logger.info("Finding unique pages with detections...")
+    unique_pages = list(
+        Detection.select(Detection.pipeline_batch_item, Detection.scan_filename)
+        .where(Detection.pipeline_batch_item.in_(all_item_ids))
+        .distinct()
+        .tuples()
+    )
+
+    if not unique_pages:
+        logger.warning("No detections found in batch")
+        return
+
+    all_page_keys = [(item_id, scan) for item_id, scan in unique_pages]
+    logger.info(f"Found {len(all_page_keys)} pages with detections")
+
+    # Sample pages
+    if n == "all":
+        selected_page_keys = all_page_keys
+    else:
+        n_samples = min(int(n), len(all_page_keys))
+        selected_page_keys = random.sample(all_page_keys, n_samples)
+
+    logger.info(f"Selected {len(selected_page_keys)} random pages")
+
+    # Load detections only for selected pages
+    logger.info("Loading detections for selected pages...")
+    pages = {}
+    selected_detections = []
+    for item_id, scan_filename in selected_page_keys:
+        page_dets = list(
+            Detection.select()
+            .where(
+                (Detection.pipeline_batch_item == item_id) &
+                (Detection.scan_filename == scan_filename)
+            )
+            .order_by(Detection.id_detection)
+        )
+        pages[(item_id, scan_filename)] = page_dets
+        selected_detections.extend(page_dets)
+
+    # Fetch related captions and classifications
+    detection_ids = [det.id_detection for det in selected_detections]
+
+    captions_dict = {
+        cap.detection_id: cap
+        for cap in Caption.select().where(Caption.detection_id.in_(detection_ids))
+    }
+
+    classifications_dict = {
+        cls.detection_id: cls
+        for cls in Classification.select().where(Classification.detection_id.in_(detection_ids))
+    }
+
+    # Attach captions and classifications to detections
+    for det in selected_detections:
+        det.caption_obj = captions_dict.get(det.id_detection)
+        det.classification_obj = classifications_dict.get(det.id_detection)
+
+    # Count failures
+    failed_captions = sum(
+        1
+        for det in selected_detections
+        if not det.caption_obj or not det.caption_obj.text or not det.caption_obj.text.strip()
+    )
+    failed_classifications = sum(
+        1
+        for det in selected_detections
+        if not det.classification_obj or not det.classification_obj.pred_class
+    )
+
+    stats["total_detections"] = len(selected_detections)
+    stats["failed_captions"] = failed_captions
+    stats["failed_classifications"] = failed_classifications
+    stats["detections_by_scan"] = len(selected_page_keys)
+
+    # Write all info to text file
+    with open(detections_text_file, "a") as f:
+        f.write(f"\nSampled {len(selected_page_keys)} random pages\n")
+        f.write("=" * 80 + "\n\n")
+
+    # Count unique volumes
+    unique_items = set(item_id for item_id, _ in selected_page_keys)
+    stats["total_items"] = len(unique_items)
+
+    # Create pages output directory
+    pages_output = output_path / "pages"
+    pages_output.mkdir(exist_ok=True)
+
+    # Identify unique volumes needed
+    unique_item_ids = list(set(item_id for item_id, _ in selected_page_keys))
+    logger.info(f"Need to load {len(unique_item_ids)} unique volumes...")
+
+    # Load volumes in parallel (I/O-bound - use threads)
+    def load_volume(item_id):
+        item = item_map.get(item_id)
+        if not item:
+            return item_id, None, None
+        try:
+            data = item.get_data()
+            return item_id, item.ib_volume.barcode, data
+        except Exception as e:
+            return item_id, item.ib_volume.barcode, e
+
+    item_data_cache = {}
+    num_threads = min(8, len(unique_item_ids))  # Limit concurrent S3 connections
+
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        results = list(executor.map(load_volume, unique_item_ids))
+
+    for item_id, barcode, result in results:
+        if result is None:
+            continue
+        elif isinstance(result, Exception):
+            logger.error(f"Could not load data for {barcode}: {result}")
+        else:
+            item_data_cache[item_id] = result
+            logger.info(f"Loaded volume: {barcode}")
+
+    logger.info(f"Loaded {len(item_data_cache)} volumes")
+
+    # Prepare page data for parallel processing
+    logger.info("Preparing page data for processing...")
+    page_data_list = []
+
+    for page_idx, (item_id, scan_filename) in enumerate(selected_page_keys, 1):
+        item = item_map.get(item_id)
+        if not item:
+            continue
+
+        volume_barcode = item.ib_volume.barcode
+        scan_detections = pages[(item_id, scan_filename)]
+
+        # Get cached volume data
+        item_data = item_data_cache.get(item_id)
+        if item_data is None:
+            continue
+
+        # Write to info file
+        with open(detections_text_file, "a") as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"Page {page_idx}: {volume_barcode} | {scan_filename}\n")
+            f.write(f"{'='*80}\n\n")
+            for i, det in enumerate(scan_detections, 1):
+                f.write(f"[{i}] Detection ID: {det.id_detection}\n")
+
+                if det.classification_obj and det.classification_obj.pred_class:
+                    class_num = str(det.classification_obj.pred_class)
+                    class_name = CLASSIFICATION_CLASS_DICT.get(
+                        class_num, f"Unknown ({class_num})"
+                    )
+                    f.write(f"    Class: {class_name} ")
+                    f.write(f"(conf: {det.classification_obj.pred_conf:.3f})\n")
+                else:
+                    f.write(f"    Class: (FAILED)\n")
+
+                caption_text = (
+                    det.caption_obj.text
+                    if det.caption_obj and det.caption_obj.text
+                    else "(FAILED)"
+                )
+                f.write(f"    Caption: {caption_text}\n\n")
+
+        # Get image bytes
+        image_bytes = item_data.images.get(scan_filename)
+        if image_bytes is None:
+            logger.warning(f"Image {scan_filename} not found in cache")
+            continue
+
+        # Convert detections to plain dicts (for pickling to worker processes)
+        det_dicts = []
+        for det in scan_detections:
+            class_name = None
+            class_conf = None
+            det_conf = det.bbox_conf
+            if det.classification_obj and det.classification_obj.pred_class:
+                class_num = str(det.classification_obj.pred_class)
+                class_name = CLASSIFICATION_CLASS_DICT.get(class_num, f"Unknown ({class_num})")
+                class_conf = str(det.classification_obj.pred_conf)
+
+            det_dicts.append({
+                "bbox": det.bbox_xyxy,
+                "has_caption": bool(det.caption_obj and det.caption_obj.text),
+                "caption": det.caption_obj.text if det.caption_obj and det.caption_obj.text else None,
+                "class_name": class_name,
+                "class_conf": class_conf,
+                "det_conf": det_conf,
+            })
+
+        page_data_list.append({
+            "page_idx": page_idx,
+            "volume_barcode": volume_barcode,
+            "scan_filename": scan_filename,
+            "image_bytes": image_bytes,
+            "detections": det_dicts,
+            "output_path": str(pages_output),
+        })
+
+    # Process pages in parallel
+    num_workers = min(multiprocessing.cpu_count(), len(page_data_list))
+    logger.info(f"Processing {len(page_data_list)} pages with {num_workers} workers...")
+
+    saved_count = 0
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        results = list(executor.map(_process_page_image, page_data_list))
+
+    for result in results:
+        if result["success"]:
+            saved_count += 1
+            logger.info(f"  Saved page {result['page_idx']}: {result['filename']} ({result['num_detections']} detections)")
+        else:
+            logger.error(f"  Failed page {result['page_idx']}: {result.get('error', 'Unknown error')}")
+
+    # Write summary stats
+    with open(stats_file, "a") as f:
+        f.write("\n" + "=" * 80 + "\n")
+        f.write("SUMMARY (Page Sampling)\n")
+        f.write("=" * 80 + "\n")
+        f.write(f"Total pages sampled: {stats['detections_by_scan']}\n")
+        f.write(f"Total detections: {stats['total_detections']}\n")
+        f.write(f"From volumes: {stats['total_items']}\n")
+        f.write(f"Failed captions: {stats['failed_captions']}\n")
+        f.write(f"Failed classifications: {stats['failed_classifications']}\n")
+
+    logger.info(f"Summary: Saved {saved_count} pages to {pages_output}")
+
+
+def peek_dedupe(batch: PipelineBatch, n: int | str, sample_type: str, output_path: Path):
     """
     Visualize deduplication results: groups of similar detections.
+    Note: sample_type is accepted but dedupe always samples by volumes.
     """
     from models import DedupedEmbedding, DedupedHash
 
+    _ = sample_type  # Currently only volume sampling supported for dedupe
     logger.info("Fetching deduplication results...")
 
     # Sample volumes first
