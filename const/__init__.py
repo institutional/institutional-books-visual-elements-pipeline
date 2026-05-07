@@ -25,6 +25,11 @@ REQUIRED_ENV_VARS = [
     "OUTPUT_ACCESS_KEY_ID",
     "OUTPUT_SECRET_ACCESS_KEY",
     "OUTPUT_REGION",
+    "FILTER_BUCKET_NAME",
+    "FILTER_ENDPOINT",
+    "FILTER_ACCESS_KEY_ID",
+    "FILTER_SECRET_ACCESS_KEY",
+    "FILTER_REGION",
     "POSTGRES_DB",
     "POSTGRES_USER",
     "POSTGRES_PASSWORD",
@@ -218,7 +223,7 @@ CAPTION_CLASSES_EXCLUDED = ["Ex Libris or Decorative", "Artifact"]
 CAPTION_MAX_BATCH_SIZE = 8
 """Max request batch size to send at once to OpenAI"""
 
-CPUS_LIMIT_CAPTION = 128
+CPUS_LIMIT_CAPTION = 20
 """ Default CPU limit for captioning step """
 
 
@@ -227,6 +232,9 @@ CPUS_LIMIT_CAPTION = 128
 #
 OUTPUT_STORAGE_BUCKET_NAME = str(os.getenv("OUTPUT_BUCKET_NAME"))
 """Bucket name where we store output"""
+
+FILTER_STORAGE_BUCKET_NAME = str(os.getenv("FILTER_BUCKET_NAME"))
+"""Bucket name where we store filtered dataset exports"""
 
 
 #
