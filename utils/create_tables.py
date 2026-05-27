@@ -20,13 +20,18 @@ def create_tables() -> bool:
 
     available_models = [model_name for model_name in dir(models) if model_name[0].isupper()]
 
-    with utils.get_db() as db:
-        for table_name, col_def in _PENDING_COLUMN_MIGRATIONS:
-            try:
-                db.execute_sql(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {col_def}")
-            except Exception:
-                pass
+    db = utils.get_db()
+    db.execute_sql("SET lock_timeout = '5s'")
 
+    for table_name, col_def in _PENDING_COLUMN_MIGRATIONS:
+        try:
+            db.execute_sql(f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {col_def}")
+        except Exception:
+            pass
+
+    try:
         db.create_tables([models.__getattribute__(model_name) for model_name in available_models])
+    except Exception:
+        pass
 
     return True
