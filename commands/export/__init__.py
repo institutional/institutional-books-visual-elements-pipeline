@@ -3,11 +3,12 @@ from .peek import peek
 from .analyze import analyze
 from .stats import stats
 from .backfill import backfill
-from .filter_dataset import filter_dataset
+from .to_s3 import to_s3
 from .viewer_gui import viewer_gui
 from .embedding_atlas import embedding_atlas
 from .caption_accuracy import caption_accuracy
 from .count_tokens import count_tokens
+from .to_hf import to_hf
 
 
 @click.group("export")
@@ -24,3 +25,4 @@ export.add_command(viewer_gui)
 export.add_command(embedding_atlas)
 export.add_command(caption_accuracy)
 export.add_command(count_tokens)
+export.add_command(to_hf)
