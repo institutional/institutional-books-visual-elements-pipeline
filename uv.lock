@@ -1439,6 +1439,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/83/8c/c7a33f3efaa8d6a5bc40e012e5ecc2d72c2e6124550ca9085fe0ceed9993/huggingface_hub-1.10.1-py3-none-any.whl", hash = "sha256:6b981107a62fbe68c74374418983399c632e35786dcd14642a9f2972633c8b5a", size = 642630, upload-time = "2026-04-09T15:01:17.35Z" },
 ]
 
+[package.optional-dependencies]
+hf-xet = [
+    { name = "hf-xet" },
+]
+
 [[package]]
 name = "humanize"
 version = "4.15.0"
@@ -1513,7 +1518,7 @@ dependencies = [
     { name = "gmpy2" },
     { name = "gradio" },
     { name = "h5py" },
-    { name = "huggingface-hub" },
+    { name = "huggingface-hub", extra = ["hf-xet"] },
     { name = "humanize" },
     { name = "imagehash" },
     { name = "iso639-lang" },
@@ -1550,6 +1555,7 @@ requires-dist = [
     { name = "gradio", specifier = ">=5.0.0" },
     { name = "h5py", specifier = ">=3.15.1" },
     { name = "huggingface-hub", specifier = ">=1.0.0" },
+    { name = "huggingface-hub", extras = ["hf-xet"], specifier = ">=1.0.0" },
     { name = "humanize", specifier = ">=4.14.0" },
     { name = "imagehash", specifier = ">=4.3.2" },
     { name = "iso639-lang", specifier = ">=2.6.3" },
