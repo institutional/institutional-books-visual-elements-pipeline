@@ -243,6 +243,86 @@ FILTER_STORAGE_BUCKET_NAME = str(os.getenv("FILTER_BUCKET_NAME"))
 ANALYSIS_OUTPUT_DIR = PEEK_OUTPUT_DIR = Path(CACHE_DIR_PATH, "temp_analysis")
 """Output directory for analysis files"""
 
+#
+# Exporting
+#
+DETECTION_CONFIDENCE_THRESHOLD = 0.75
+""" Minimum detection confidence to include a crop in the export. Detections below this are excluded. """
+
+CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.70
+""" Classifications below this confidence are reclassified as "Other" in the export. """
+
+SERVER_SIDE_CURSOR_SIZE = 100_000
+""" Number of rows to fetch per batch when streaming results via PostgreSQL server-side cursors. """
+
+MODEL_CLASS_INDEX_ORDER = [
+    "Artifact",
+    "Chart/Graph",
+    "Ex Libris/Decorative",
+    "Image/Illustration",
+    "Music",
+]
+""" Ordered list of classification labels matching the YOLO model's class index positions. """
+
+S3_ROW_GROUP_SIZE = 500
+""" Number of records per Parquet row group. Kept small to limit memory from crop bytes. """
+
+S3_MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100 MB
+""" File size above which S3 uploads switch to multipart. """
+
+S3_MULTIPART_CHUNK_SIZE = 50 * 1024 * 1024  # 50 MB
+""" Size of each part in a multipart S3 upload. """
+
+S3_MULTIPART_PARALLEL_PARTS = 6
+""" Number of parts to upload to S3 concurrently during a multipart S3 upload. """
+
+S3_BATCH_SIZE_DB = 500_000
+""" Batch size for PostgreSQL IN-clause queries to avoid exceeding memory limits. """
+
+S3_SAMPLE_LIMIT = 10_000
+""" Maximum number of records to export to S3 when running in sample mode. """
+
+S3_MAX_PENDING_UPLOADS = 8
+""" Maximum number of concurrent shard uploads to S3 before backpressure pauses record processing. """
+
+S3_MAX_INFLIGHT = 4
+""" Maximum number of S3 item download tasks in flight at once during export. """
+
+S3_SHARD_SIZE = 5000
+""" Default number of rows per Parquet shard file uploaded to S3. """
+
+HF_IMAGES_REPO = "institutional/institutional-books-hl-visual-elements-images"
+""" Hugging Face repo for uploading crop images as a bucket. """
+
+HF_DATASET_REPO = "institutional/institutional-books-hl-visual-elements"
+""" Hugging Face repo for the parquet dataset (metadata + embeddings). """
+
+HF_SAMPLE_LIMIT = 500
+""" Maximum number of items to export when running in sample mode. """
+
+HF_NETWORK_TIMEOUT = 300
+""" Seconds to wait before timing out a Hugging Face network operation. """
+
+HF_NETWORK_MAX_RETRIES = 5
+""" Maximum number of retry attempts for failed Hugging Face network calls. """
+
+HF_NETWORK_BASE_DELAY = 5
+""" Base delay in seconds for exponential backoff between retries. """
+
+HF_ITEM_IDS_CACHE_PATH = Path(ANALYSIS_OUTPUT_DIR) / "hf_export_item_ids.json"
+""" Local cache file storing item IDs to resume interrupted HF exports. """
+
+HF_SHARD_SIZE = 5000
+""" Number of rows per parquet shard uploaded to the HF dataset repo. """
+
+HF_IMAGE_BATCH_SIZE = 1000
+""" Number of images to upload per commit to the HF images bucket. """
+
+HF_ITEMS_PER_FETCH = 200
+""" Number of pipeline batch items to fetch from the database per query. """
+
+HF_IO_WORKERS = 4
+""" Number of parallel I/O workers for downloading crops from S3. """
 
 #
 # Misc
