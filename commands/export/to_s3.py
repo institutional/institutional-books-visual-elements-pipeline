@@ -6,16 +6,15 @@ import json
 import orjson
 from pathlib import Path
 import openai
-import cv2
 import pyarrow as pa
 import pyarrow.parquet as pq
 from iso639 import Lang
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import io
+import tarfile
 import tempfile
 import os
-
 from models import (
     Detection,
     Classification,
@@ -26,7 +25,7 @@ from models import (
     ImageHash,
     ImageEmbedding,
 )
-from utils import decode_image_bytes, get_db
+from utils import get_db
 from utils.get_s3_client import get_s3_client
 from const import (
     CLASSIFICATION_CLASS_DICT,
@@ -35,13 +34,21 @@ from const import (
     OPENAI_REQUEST_TIMEOUT,
     CPUS_LIMIT,
     FILTER_STORAGE_BUCKET_NAME,
+    OUTPUT_STORAGE_BUCKET_NAME,
+    DETECTION_CONFIDENCE_THRESHOLD,
+    CLASSIFICATION_CONFIDENCE_THRESHOLD,
+    SERVER_SIDE_CURSOR_SIZE,
+    MODEL_CLASS_INDEX_ORDER,
+    S3_ROW_GROUP_SIZE,
+    S3_MULTIPART_THRESHOLD,
+    S3_MULTIPART_CHUNK_SIZE,
+    S3_MULTIPART_PARALLEL_PARTS,
+    S3_S3_BATCH_SIZE_DB,
+    S3_SAMPLE_LIMIT,
+    S3_MAX_PENDING_UPLOADS,
+    S3_MAX_INFLIGHT,
+    S3_SHARD_SIZE,
 )
-
-# Thresholds
-DETECTION_CONFIDENCE_THRESHOLD = 0.75
-CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.70
-
-SERVER_SIDE_CURSOR_SIZE = 100_000
 
 
 def _get_raw_connection():
@@ -171,8 +178,8 @@ def get_dedupe_intersection_groups(detection_ids: list[int] | None = None):
         logger.info(f"Loading dedupe groups for {len(det_id_set)} detections...")
 
         hash_by_detection = {}
-        for i in range(0, len(detection_ids), BATCH_SIZE):
-            chunk = detection_ids[i : i + BATCH_SIZE]
+        for i in range(0, len(detection_ids), S3_BATCH_SIZE_DB):
+            chunk = detection_ids[i : i + S3_BATCH_SIZE_DB]
             for dh in DedupedHash.select(DedupedHash.detection, DedupedHash.group_id).where(
                 DedupedHash.detection.in_(chunk)
             ):
@@ -181,8 +188,8 @@ def get_dedupe_intersection_groups(detection_ids: list[int] | None = None):
         logger.info(f"  Found {len(hash_by_detection)} detections with hash groups")
 
         emb_by_detection = {}
-        for i in range(0, len(detection_ids), BATCH_SIZE):
-            chunk = detection_ids[i : i + BATCH_SIZE]
+        for i in range(0, len(detection_ids), S3_BATCH_SIZE_DB):
+            chunk = detection_ids[i : i + S3_BATCH_SIZE_DB]
             for de in DedupedEmbedding.select(DedupedEmbedding.detection, DedupedEmbedding.group_id).where(
                 DedupedEmbedding.detection.in_(chunk)
             ):
@@ -262,31 +269,6 @@ def lang_name_to_iso639_3(name: str) -> str | None:
         return None
 
 
-def generate_crop_png_bytes(bbox_xyxy: list[float], scan_image) -> bytes | None:
-    """Generate uncompressed PNG bytes for a crop defined by bbox_xyxy."""
-    try:
-        x1, y1, x2, y2 = [int(round(v)) for v in bbox_xyxy]
-        h, w = scan_image.shape[:2]
-        x1, x2 = max(0, min(w, x1)), max(0, min(w, x2))
-        y1, y2 = max(0, min(h, y1)), max(0, min(h, y2))
-        crop_array = scan_image[y1:y2, x1:x2, :]
-        success, png_bytes = cv2.imencode(".png", crop_array, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-        if success:
-            return png_bytes.tobytes()
-    except Exception:
-        pass
-    return None
-
-
-MODEL_CLASS_INDEX_ORDER = [
-    "Artifact",
-    "Chart/Graph",
-    "Ex Libris/Decorative",
-    "Image/Illustration",
-    "Music",
-]
-
-
 def format_classification_probs(probs: list[float] | None) -> list[dict] | None:
     """
     Convert classification probabilities list to sorted list of {"label": str, "prob": float} dicts.
@@ -320,8 +302,8 @@ PARQUET_SCHEMA = pa.schema([
     ("barcode_src", pa.string()),
     ("page_filename_src", pa.string()),
     ("bbox_xyxy_gen", pa.list_(pa.float64())),
-    ("width_gen", pa.float64()),
-    ("height_gen", pa.float64()),
+    ("width_gen", pa.int64()),
+    ("height_gen", pa.int64()),
     ("pixel_count_mpx_gen", pa.float64()),
     ("detection_confidence_gen", pa.float64()),
     ("classification_gen", pa.string()),
@@ -336,8 +318,6 @@ PARQUET_SCHEMA = pa.schema([
     ("caption_chronam_thesauri_matches_exp", pa.map_(pa.string(), pa.map_(pa.string(), pa.int64()))),
 ])
 
-ROW_GROUP_SIZE = 500
-
 
 def _build_row_group_table(records: list[dict]) -> pa.Table:
     """Build a PyArrow table for a small row group chunk."""
@@ -345,17 +325,12 @@ def _build_row_group_table(records: list[dict]) -> pa.Table:
     return pa.table(columns, schema=PARQUET_SCHEMA)
 
 
-MULTIPART_THRESHOLD = 100 * 1024 * 1024  # 100 MB
-MULTIPART_CHUNK_SIZE = 50 * 1024 * 1024  # 50 MB
-MULTIPART_PARALLEL_PARTS = 6
-
-
 def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket_name: str) -> bool:
     """Upload a parquet file from disk to R2, streaming chunks to avoid holding in memory. Deletes the temp file when done."""
     try:
         file_size = os.path.getsize(parquet_path)
 
-        if file_size < MULTIPART_THRESHOLD:
+        if file_size < S3_MULTIPART_THRESHOLD:
             with open(parquet_path, "rb") as fh:
                 s3_client.put_object(
                     Bucket=bucket_name,
@@ -364,8 +339,8 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                     ContentType="application/octet-stream",
                 )
         else:
-            total_parts = (file_size + MULTIPART_CHUNK_SIZE - 1) // MULTIPART_CHUNK_SIZE
-            logger.info(f"  Multipart upload {s3_key} ({file_size / 1024 / 1024:.0f} MB, {total_parts} parts, {MULTIPART_PARALLEL_PARTS} parallel)")
+            total_parts = (file_size + S3_MULTIPART_CHUNK_SIZE - 1) // S3_MULTIPART_CHUNK_SIZE
+            logger.info(f"  Multipart upload {s3_key} ({file_size / 1024 / 1024:.0f} MB, {total_parts} parts, {S3_MULTIPART_PARALLEL_PARTS} parallel)")
             mpu = s3_client.create_multipart_upload(
                 Bucket=bucket_name,
                 Key=s3_key,
@@ -377,7 +352,7 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                 part_number = 1
                 offset = 0
                 while offset < file_size:
-                    length = min(MULTIPART_CHUNK_SIZE, file_size - offset)
+                    length = min(S3_MULTIPART_CHUNK_SIZE, file_size - offset)
                     part_specs.append((part_number, offset, length))
                     offset += length
                     part_number += 1
@@ -398,7 +373,7 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                     )
                     return pn, resp["ETag"]
 
-                with ThreadPoolExecutor(max_workers=MULTIPART_PARALLEL_PARTS) as part_executor:
+                with ThreadPoolExecutor(max_workers=S3_MULTIPART_PARALLEL_PARTS) as part_executor:
                     for pn, etag in part_executor.map(_upload_one_part, part_specs):
                         parts[pn - 1] = {"ETag": etag, "PartNumber": pn}
 
@@ -425,22 +400,19 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
             pass
 
 
-BATCH_SIZE = 500_000
-
-
 def _batched_fetch(model_class, id_field, ids: list[int]) -> list:
     """Fetch rows in batches to avoid exceeding PostgreSQL's memory limits on large IN clauses."""
     rows = []
-    for i in range(0, len(ids), BATCH_SIZE):
-        chunk = ids[i : i + BATCH_SIZE]
+    for i in range(0, len(ids), S3_BATCH_SIZE_DB):
+        chunk = ids[i : i + S3_BATCH_SIZE_DB]
         rows.extend(list(model_class.select().where(id_field.in_(chunk))))
     return rows
 
 
 def _batched_iter(model_class, id_field, ids: list[int]):
     """Yield rows in batches without accumulating all into a list."""
-    for i in range(0, len(ids), BATCH_SIZE):
-        chunk = ids[i : i + BATCH_SIZE]
+    for i in range(0, len(ids), S3_BATCH_SIZE_DB):
+        chunk = ids[i : i + S3_BATCH_SIZE_DB]
         yield from model_class.select().where(id_field.in_(chunk))
 
 
@@ -464,8 +436,8 @@ def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, wor
     def fetch_volume_barcodes():
         item_ids = list(set(d["pipeline_batch_item_id"] for d in detections_data.values()))
         rows = []
-        for i in range(0, len(item_ids), BATCH_SIZE):
-            chunk = item_ids[i : i + BATCH_SIZE]
+        for i in range(0, len(item_ids), S3_BATCH_SIZE_DB):
+            chunk = item_ids[i : i + S3_BATCH_SIZE_DB]
             rows.extend(list(
                 PipelineBatchItem.select(
                     PipelineBatchItem.id_pipeline_batch_item,
@@ -474,7 +446,7 @@ def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, wor
             ))
         return rows
 
-    logger.info(f"Fetching DB data in parallel with {workers} workers ({len(detection_ids)} detection IDs in batches of {BATCH_SIZE})...")
+    logger.info(f"Fetching DB data in parallel with {workers} workers ({len(detection_ids)} detection IDs in batches of {S3_BATCH_SIZE_DB})...")
 
     with ThreadPoolExecutor(max_workers=min(workers, 5)) as executor:
         future_cls = executor.submit(fetch_classifications)
@@ -503,7 +475,7 @@ def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, wor
     return results
 
 
-@click.command("filter-dataset")
+@click.command("to-s3")
 @click.option(
     "--output-dir",
     type=click.Path(),
@@ -519,7 +491,7 @@ def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, wor
 @click.option(
     "--shard-size",
     type=int,
-    default=5000,
+    default=S3_SHARD_SIZE,
     help="Number of rows per parquet shard (default: 5000, ~4GB each)",
 )
 @click.option(
@@ -577,7 +549,7 @@ def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, wor
     default=None,
     help="Partition spec K/N (e.g. 1/4). Process every Nth item starting at K.",
 )
-def filter_dataset(
+def to_s3(
     output_dir,
     output_format,
     shard_size,
@@ -621,7 +593,6 @@ def filter_dataset(
         filter-dataset --sample
         filter-dataset --r2-prefix my_export/v2
     """
-    SAMPLE_LIMIT = 10_000
 
     # Validate partition arg
     partition_k, partition_n = None, None
@@ -755,7 +726,7 @@ def filter_dataset(
         if dummy:
             limit = 1000
         elif sample:
-            limit = SAMPLE_LIMIT * 3
+            limit = S3_SAMPLE_LIMIT * 3
 
         logger.info(f"Fetching detections with confidence >= {detection_threshold} (raw SQL, server-side cursor)...")
         detections_data = _raw_fetch_detections(detection_threshold, limit=limit)
@@ -915,7 +886,7 @@ def filter_dataset(
     if dummy:
         record_limit = 100
     elif sample:
-        record_limit = SAMPLE_LIMIT
+        record_limit = S3_SAMPLE_LIMIT
 
     effective_shard_size = shard_size or 5000
 
@@ -925,31 +896,42 @@ def filter_dataset(
     upload_executor = ThreadPoolExecutor(max_workers=10) if upload_r2 else None
     upload_futures = []
     upload_stats = {"uploaded": 0, "failed": 0}
-    MAX_PENDING_UPLOADS = 8
 
-    # Check which shards already exist in R2 to allow resuming
-    existing_shards: set[str] = set()
+    # Find highest existing shard index in R2 to continue numbering
+    records_to_skip = 0
+    start_shard_idx = 0
     if upload_r2 and s3_client:
         try:
             paginator = s3_client.get_paginator("list_objects_v2")
             for page in paginator.paginate(Bucket=bucket_name, Prefix=dateslug):
                 for obj in page.get("Contents", []):
-                    existing_shards.add(obj["Key"])
-            if existing_shards:
-                logger.info(f"  Found {len(existing_shards)} existing shards in R2, will skip them")
+                    try:
+                        shard_num = int(obj["Key"].rsplit("-", 1)[1].split(".")[0])
+                        start_shard_idx = max(start_shard_idx, shard_num)
+                    except (ValueError, IndexError):
+                        pass
+            if start_shard_idx:
+                logger.info(f"  Starting shard numbering after existing shard {start_shard_idx}")
         except Exception as e:
             logger.warning(f"  Could not list existing R2 shards: {e}")
 
-    # Fast-forward past records covered by existing shards
-    records_to_skip = len(existing_shards) * effective_shard_size if existing_shards else 0
-    if records_to_skip:
-        logger.info(f"  Will skip first {records_to_skip} records ({len(existing_shards)} existing shards x {effective_shard_size} rows)")
+    # Resume from local checkpoint (non-partition mode only)
+    checkpoint_path = output_path / "checkpoint.json" if partition_k is None else None
+    if checkpoint_path and checkpoint_path.exists():
+        try:
+            with open(checkpoint_path, "rb") as f:
+                ckpt = orjson.loads(f.read())
+            records_to_skip = ckpt.get("records_written", 0)
+            start_shard_idx = ckpt.get("last_shard_idx", 0)
+            logger.info(f"  Resuming from checkpoint: {records_to_skip} records written, last shard idx {start_shard_idx}")
+        except Exception as e:
+            logger.warning(f"  Could not read checkpoint {checkpoint_path}: {e}")
 
-    # Streaming state — records are written in small row groups (ROW_GROUP_SIZE)
+    # Streaming state — records are written in small row groups (S3_ROW_GROUP_SIZE)
     # to an open ParquetWriter so crop bytes never accumulate past ~500 rows.
     row_group_buf: list[dict] = []
     row_group_crop_bytes: int = 0  # track crop_gen column size to flush before 2GB Parquet limit
-    shard_idx = len(existing_shards)
+    shard_idx = start_shard_idx
     shard_record_count = 0  # records written into the current shard so far
     total_records = 0
     skipped_records = 0
@@ -1027,7 +1009,7 @@ def filter_dataset(
             upload_futures[:] = still_pending
 
             # Backpressure: wait until pending uploads drop below threshold
-            while len(upload_futures) >= MAX_PENDING_UPLOADS:
+            while len(upload_futures) >= S3_MAX_PENDING_UPLOADS:
                 logger.info(f"  Upload backpressure: {len(upload_futures)} uploads pending, waiting...")
                 for f, _ in upload_futures:
                     if not f.done():
@@ -1046,51 +1028,58 @@ def filter_dataset(
         _current_tmp_path = None
         _current_s3_key = None
 
-    MAX_INFLIGHT = 12
-    image_load_workers = MAX_INFLIGHT
+        # Write local checkpoint so we can resume (non-partition mode only)
+        if checkpoint_path:
+            with open(checkpoint_path, "wb") as f:
+                f.write(orjson.dumps({
+                    "records_written": records_to_skip + total_records,
+                    "last_shard_idx": shard_idx,
+                }))
+
+    image_load_workers = S3_MAX_INFLIGHT
     item_list = list(dets_by_item.items())
     done = False
     items_processed = 0
 
-    logger.info(f"  Processing {total_items} items with {image_load_workers} workers (max {MAX_INFLIGHT} in-flight)...")
+    logger.info(f"  Processing {total_items} items with {image_load_workers} workers (max {S3_MAX_INFLIGHT} in-flight)...")
     logger.info(f"  Shard size: {effective_shard_size} rows")
 
+    output_s3_client = get_s3_client("OUTPUT")
+
     def _load_and_crop(item_id: int, item_det_ids: list[int]) -> tuple[int, list[int], dict[int, bytes | None]]:
-        """Load scan images one at a time, crop, then free the decoded array before the next."""
-        try:
-            item = PipelineBatchItem.get(PipelineBatchItem.id_pipeline_batch_item == item_id)
-            all_images = item.data.images
-        except Exception:
+        """Download pre-computed crop PNGs from the OUTPUT bucket tar.gz archive."""
+        barcode = item_volumes.get(item_id)
+        if not barcode:
             return (item_id, item_det_ids, {})
 
-        # Group detections by scan filename so we decode each scan only once
-        dets_by_scan: dict[str, list[int]] = defaultdict(list)
+        s3_key = f"crops/{item_id}/{barcode}.tar.gz"
+
+        # Build expected filenames: {scan_base}_{det_id}.png
+        expected_files: dict[str, int] = {}
         for det_id in item_det_ids:
-            dets_by_scan[detections_data[det_id]["scan_filename"]].append(det_id)
+            scan_fn = detections_data[det_id]["scan_filename"]
+            scan_base = scan_fn.rsplit(".", 1)[0]
+            expected_files[f"{scan_base}_{det_id}.png"] = det_id
 
         crops: dict[int, bytes | None] = {}
-        for scan_fn, det_ids_for_scan in dets_by_scan.items():
-            key = next((k for k in all_images if str(k) == scan_fn), None)
-            if key is None:
-                for det_id in det_ids_for_scan:
-                    crops[det_id] = None
-                continue
-            try:
-                decoded = decode_image_bytes(all_images[key])
-            except Exception:
-                for det_id in det_ids_for_scan:
-                    crops[det_id] = None
-                continue
+        try:
+            response = output_s3_client.get_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
+            tar_bytes = response["Body"].read()
+            with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
+                for member in tar.getmembers():
+                    if member.name in expected_files:
+                        f = tar.extractfile(member)
+                        if f:
+                            crops[expected_files[member.name]] = f.read()
+            del tar_bytes
+        except Exception as e:
+            logger.warning(f"Could not load crops tar.gz for item {item_id} ({barcode}): {e}")
 
-            for det_id in det_ids_for_scan:
-                det = detections_data[det_id]
-                if det["bbox_xyxy"]:
-                    crops[det_id] = generate_crop_png_bytes(det["bbox_xyxy"], decoded)
-                else:
-                    crops[det_id] = None
-            del decoded
+        # Mark missing crops as None
+        for det_id in item_det_ids:
+            if det_id not in crops:
+                crops[det_id] = None
 
-        del all_images, item
         return (item_id, item_det_ids, crops)
 
     # Fast-forward: skip entire items whose detections fall within already-uploaded shards
@@ -1122,7 +1111,7 @@ def filter_dataset(
             except StopIteration:
                 pass
 
-        for _ in range(MAX_INFLIGHT):
+        for _ in range(S3_MAX_INFLIGHT):
             _submit_next()
 
         while pending and not done:
@@ -1157,8 +1146,8 @@ def filter_dataset(
 
                 bbox_xywh = det_data["bbox_xywh"]
                 if bbox_xywh and len(bbox_xywh) >= 4:
-                    width = bbox_xywh[2]
-                    height = bbox_xywh[3]
+                    width = int(round(bbox_xywh[2]))
+                    height = int(round(bbox_xywh[3]))
                     pixel_count_mpx = (width * height) / 1_000_000
                 else:
                     width = None
@@ -1241,8 +1230,8 @@ def filter_dataset(
                 if thesaurus_matches:
                     thesaurus_match_count += 1
 
-                # Flush row group when it reaches ROW_GROUP_SIZE or crop column approaches 2GB
-                if len(row_group_buf) >= ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
+                # Flush row group when it reaches S3_ROW_GROUP_SIZE or crop column approaches 2GB
+                if len(row_group_buf) >= S3_ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
                     _flush_row_group()
 
                 # Close shard when it reaches effective_shard_size
@@ -1312,7 +1301,7 @@ def filter_dataset(
     logger.info(f"Total shards: {shard_idx} ({effective_shard_size} rows each)")
     logger.info(f"Reclassified to 'Other': {reclassified_count}")
     if sample:
-        logger.info(f"Sample mode: limited to first {SAMPLE_LIMIT} crops")
+        logger.info(f"Sample mode: limited to first {S3_SAMPLE_LIMIT} crops")
     logger.info("-" * 60)
     logger.info("Classification distribution:")
     for cls_label, count in sorted(class_counts.items(), key=lambda x: -x[1]):
