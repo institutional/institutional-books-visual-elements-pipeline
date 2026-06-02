@@ -2,265 +2,122 @@ import click
 from loguru import logger
 from collections import defaultdict
 import gc
+import gzip
+import io
 import json
-import orjson
+import tarfile
 from pathlib import Path
-import openai
 import pyarrow as pa
 import pyarrow.parquet as pq
 from iso639 import Lang
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
-import io
-import tarfile
-import tempfile
 import os
-from models import (
-    Detection,
-    Classification,
-    Caption,
-    DedupedHash,
-    DedupedEmbedding,
-    PipelineBatchItem,
-    ImageHash,
-    ImageEmbedding,
-)
+import tempfile
+import threading
+import time
 from utils import get_db
 from utils.get_s3_client import get_s3_client
 from const import (
     CLASSIFICATION_CLASS_DICT,
     ANALYSIS_OUTPUT_DIR,
     DATETIME_SLUG,
-    OPENAI_REQUEST_TIMEOUT,
-    CPUS_LIMIT,
-    FILTER_STORAGE_BUCKET_NAME,
     OUTPUT_STORAGE_BUCKET_NAME,
+    FILTER_STORAGE_BUCKET_NAME,
     DETECTION_CONFIDENCE_THRESHOLD,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
-    SERVER_SIDE_CURSOR_SIZE,
     MODEL_CLASS_INDEX_ORDER,
     S3_ROW_GROUP_SIZE,
     S3_MULTIPART_THRESHOLD,
     S3_MULTIPART_CHUNK_SIZE,
     S3_MULTIPART_PARALLEL_PARTS,
-    S3_S3_BATCH_SIZE_DB,
-    S3_SAMPLE_LIMIT,
-    S3_MAX_PENDING_UPLOADS,
-    S3_MAX_INFLIGHT,
     S3_SHARD_SIZE,
+    S3_MAX_INFLIGHT,
+    HF_ITEM_IDS_CACHE_PATH,
 )
 
 
 def _get_raw_connection():
-    """Get the underlying psycopg2 connection from peewee, with autocommit off for named cursors."""
+    import psycopg2
     db = get_db()
     conn = db.connection()
+    try:
+        conn.cursor().execute("SELECT 1")
+        conn.rollback()
+    except (psycopg2.InterfaceError, psycopg2.OperationalError):
+        db.close()
+        db.connect()
+        conn = db.connection()
     if conn.autocommit:
         conn.autocommit = False
-    else:
-        conn.rollback()
     return conn
 
 
-def _raw_fetch_detections(detection_threshold: float, limit: int | None = None) -> dict[int, dict]:
-    """Fetch detections using a server-side cursor. Returns {det_id: {fields...}}."""
-    import time
+def _fetch_item_ids_paginated() -> list[int]:
+    if HF_ITEM_IDS_CACHE_PATH.exists():
+        with open(HF_ITEM_IDS_CACHE_PATH, "r") as f:
+            return json.load(f)
 
     conn = _get_raw_connection()
-    sql = "SELECT id_detection, pipeline_batch_item_id, scan_filename, bbox_xyxy, bbox_xywh, bbox_conf FROM detection WHERE bbox_conf >= %s"
-    if limit:
-        sql += f" LIMIT {limit}"
-
-    detections_data = {}
-    with conn.cursor(name="det_cursor") as cursor:
-        cursor.itersize = SERVER_SIDE_CURSOR_SIZE
-        logger.info("  Executing detection query...")
-        t0 = time.time()
-        cursor.execute(sql, (detection_threshold,))
-        logger.info(f"  Query started (took {time.time() - t0:.1f}s to begin streaming)")
-        count = 0
-        t_last = time.time()
-        while True:
-            rows = cursor.fetchmany(SERVER_SIDE_CURSOR_SIZE)
-            if not rows:
-                break
-            for row in rows:
-                det_id, item_id, scan_fn, bbox_xyxy, bbox_xywh, bbox_conf = row
-                detections_data[det_id] = {
-                    "id_detection": det_id,
-                    "pipeline_batch_item_id": item_id,
-                    "scan_filename": scan_fn,
-                    "bbox_xyxy": list(bbox_xyxy) if bbox_xyxy else None,
-                    "bbox_xywh": list(bbox_xywh) if bbox_xywh else None,
-                    "bbox_conf": float(bbox_conf) if bbox_conf is not None else None,
-                }
-            count += len(rows)
-            now = time.time()
-            if now - t_last >= 10:
-                elapsed = now - t0
-                rate = count / elapsed if elapsed > 0 else 0
-                logger.info(f"    ... {count:,} detections loaded ({rate:,.0f} rows/sec, {elapsed:.0f}s elapsed)")
-                t_last = now
-    elapsed = time.time() - t0
-    logger.info(f"  Detections loaded: {count:,} in {elapsed:.1f}s")
-    return detections_data
-
-
-def _raw_fetch_dedupe_groups(table_name: str) -> dict[int, int]:
-    """Fetch detection_id -> group_id mapping from a dedupe table using server-side cursor."""
-    conn = _get_raw_connection()
-    sql = f"SELECT detection_id, group_id FROM {table_name}"
-    mapping = {}
-    with conn.cursor(name=f"{table_name}_cursor") as cursor:
-        cursor.itersize = SERVER_SIDE_CURSOR_SIZE
-        cursor.execute(sql)
-        count = 0
-        while True:
-            rows = cursor.fetchmany(SERVER_SIDE_CURSOR_SIZE)
-            if not rows:
-                break
-            for det_id, group_id in rows:
-                mapping[det_id] = group_id
-            count += len(rows)
-            if count % 5_000_000 == 0:
-                logger.info(f"    ... loaded {count:,} rows from {table_name}")
-    return mapping
-
-
-def _raw_fetch_dedupe_intersection() -> dict[tuple[int, int], list[int]]:
-    """
-    Compute dedupe intersection groups via a SQL JOIN instead of loading both tables into memory.
-    Returns {(hash_group, emb_group): [detection_ids]}.
-    """
-    import time
-
-    conn = _get_raw_connection()
-    sql = """
-        SELECT dh.detection_id, dh.group_id, de.group_id
-        FROM deduped_hash dh
-        INNER JOIN deduped_embedding de ON dh.detection_id = de.detection_id
-    """
-    intersection_groups = defaultdict(list)
-    with conn.cursor(name="dedupe_join_cursor") as cursor:
-        cursor.itersize = SERVER_SIDE_CURSOR_SIZE
-        logger.info("  Executing JOIN query...")
-        t0 = time.time()
-        cursor.execute(sql)
-        logger.info(f"  Query started (took {time.time() - t0:.1f}s to begin streaming)")
-        count = 0
-        t_last = time.time()
-        while True:
-            rows = cursor.fetchmany(SERVER_SIDE_CURSOR_SIZE)
-            if not rows:
-                break
-            for det_id, hash_group, emb_group in rows:
-                intersection_groups[(hash_group, emb_group)].append(det_id)
-            count += len(rows)
-            now = time.time()
-            if now - t_last >= 10:
-                elapsed = now - t0
-                rate = count / elapsed if elapsed > 0 else 0
-                logger.info(f"    ... {count:,} rows processed ({rate:,.0f} rows/sec, {len(intersection_groups):,} groups, {elapsed:.0f}s elapsed)")
-                t_last = now
-    elapsed = time.time() - t0
-    logger.info(f"  JOIN complete: {count:,} rows -> {len(intersection_groups):,} groups in {elapsed:.1f}s")
-    return intersection_groups
-
-
-def get_dedupe_intersection_groups(detection_ids: list[int] | None = None):
-    """
-    Find the intersection of hash and embedding dedupe groups.
-    When detection_ids is provided, only load groups for those detections.
-    Returns a dict mapping (hash_group, emb_group) -> [detection_ids]
-    """
-    if detection_ids is not None:
-        det_id_set = set(detection_ids)
-        logger.info(f"Loading dedupe groups for {len(det_id_set)} detections...")
-
-        hash_by_detection = {}
-        for i in range(0, len(detection_ids), S3_BATCH_SIZE_DB):
-            chunk = detection_ids[i : i + S3_BATCH_SIZE_DB]
-            for dh in DedupedHash.select(DedupedHash.detection, DedupedHash.group_id).where(
-                DedupedHash.detection.in_(chunk)
-            ):
-                hash_by_detection[dh.detection_id] = dh.group_id
-
-        logger.info(f"  Found {len(hash_by_detection)} detections with hash groups")
-
-        emb_by_detection = {}
-        for i in range(0, len(detection_ids), S3_BATCH_SIZE_DB):
-            chunk = detection_ids[i : i + S3_BATCH_SIZE_DB]
-            for de in DedupedEmbedding.select(DedupedEmbedding.detection, DedupedEmbedding.group_id).where(
-                DedupedEmbedding.detection.in_(chunk)
-            ):
-                emb_by_detection[de.detection_id] = de.group_id
-
-        logger.info(f"  Found {len(emb_by_detection)} detections with embedding groups")
-    else:
-        logger.info("Loading all hash dedupe groups...")
-        hash_by_detection = {}
-        for dh in DedupedHash.select(DedupedHash.detection, DedupedHash.group_id):
-            hash_by_detection[dh.detection_id] = dh.group_id
-
-        logger.info(f"  Found {len(hash_by_detection)} detections with hash groups")
-
-        logger.info("Loading all embedding dedupe groups...")
-        emb_by_detection = {}
-        for de in DedupedEmbedding.select(DedupedEmbedding.detection, DedupedEmbedding.group_id):
-            emb_by_detection[de.detection_id] = de.group_id
-
-        logger.info(f"  Found {len(emb_by_detection)} detections with embedding groups")
-
-    # Find intersection: detection must be in both hash and embedding groups
-    common_detections = set(hash_by_detection.keys()) & set(emb_by_detection.keys())
-    logger.info(f"  {len(common_detections)} detections have both hash and embedding groups")
-
-    # Create intersection groups: (hash_group, emb_group) tuple -> unique id
-    intersection_groups = defaultdict(list)
-    for det_id in common_detections:
-        key = (hash_by_detection[det_id], emb_by_detection[det_id])
-        intersection_groups[key].append(det_id)
-
-    logger.info(f"  Found {len(intersection_groups)} unique intersection groups")
-
-    return intersection_groups
-
-
-def select_representative(detection_ids: list, detections_data: dict) -> int:
-    """
-    Select a representative detection from a group.
-    Strategy: pick the one with highest detection confidence.
-    """
-    best_det_id = None
-    best_conf = -1
-
-    for det_id in sorted(detection_ids):
-        if det_id in detections_data:
-            conf = detections_data[det_id].get("bbox_conf", 0) or 0
-            if conf > best_conf:
-                best_conf = conf
-                best_det_id = det_id
-
-    return best_det_id if best_det_id else detection_ids[0]
-
-
-def run_moderation_fn(client: openai.OpenAI, text: str) -> dict | None:
-    """
-    Run a single text through OpenAI's moderation API.
-    Returns the moderation result or None on error.
-    """
-    if not text or not text.strip():
-        return None
     try:
-        response = client.moderations.create(input=text)
-        return response.model_dump()
-    except Exception as e:
-        logger.warning(f"Moderation API error: {e}")
-        return None
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT pipeline_batch_item_id
+            FROM filtered_dataset
+            ORDER BY pipeline_batch_item_id
+        """)
+        ids = [row[0] for row in cur.fetchall()]
+        cur.close()
+    finally:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+    HF_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = str(HF_ITEM_IDS_CACHE_PATH) + ".tmp"
+    with open(tmp_path, "w") as f:
+        json.dump(ids, f)
+    os.replace(tmp_path, str(HF_ITEM_IDS_CACHE_PATH))
+    return ids
+
+
+def _fetch_rows_for_items(item_ids: list[int]) -> list[dict]:
+    if not item_ids:
+        return []
+    conn = _get_raw_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT *
+            FROM filtered_dataset
+            WHERE pipeline_batch_item_id = ANY(%s)
+            ORDER BY pipeline_batch_item_id
+        """, (item_ids,))
+        rows = cur.fetchall()
+        if not rows:
+            cur.close()
+            return []
+        col_names = [desc[0] for desc in cur.description]
+        cur.close()
+        return [dict(zip(col_names, row)) for row in rows]
+    finally:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+
+
+def _group_rows_by_item(rows: list[dict]) -> dict[int, list[dict]]:
+    grouped: dict[int, list[dict]] = {}
+    for row in rows:
+        item_id = row["pipeline_batch_item_id"]
+        if item_id not in grouped:
+            grouped[item_id] = []
+        grouped[item_id].append(row)
+    return grouped
 
 
 def lang_name_to_iso639_3(name: str) -> str | None:
-    """Convert a human-readable language name (e.g. "English") to ISO 639-3 code (e.g. "eng")."""
     if not name:
         return None
     try:
@@ -269,31 +126,14 @@ def lang_name_to_iso639_3(name: str) -> str | None:
         return None
 
 
-def format_classification_probs(probs: list[float] | None) -> list[dict] | None:
-    """
-    Convert classification probabilities list to sorted list of {"label": str, "prob": float} dicts.
-    Sorted by confidence descending.
-
-    Uses MODEL_CLASS_INDEX_ORDER which matches the YOLO model's actual class index order.
-    """
+def format_classification_probs(probs) -> list[dict] | None:
     if not probs:
         return None
-
     if len(probs) != len(MODEL_CLASS_INDEX_ORDER):
         return None
-
-    prob_dicts = [{"label": MODEL_CLASS_INDEX_ORDER[i], "prob": probs[i]} for i in range(len(probs))]
+    prob_dicts = [{"label": MODEL_CLASS_INDEX_ORDER[i], "prob": float(probs[i])} for i in range(len(probs))]
     prob_dicts.sort(key=lambda x: x["prob"], reverse=True)
-
     return prob_dicts
-
-
-def generate_record_id(det_id: int) -> int:
-    """
-    Generate a unique identifier for a record.
-    Returns the detection id.
-    """
-    return det_id
 
 
 PARQUET_SCHEMA = pa.schema([
@@ -320,13 +160,143 @@ PARQUET_SCHEMA = pa.schema([
 
 
 def _build_row_group_table(records: list[dict]) -> pa.Table:
-    """Build a PyArrow table for a small row group chunk."""
     columns = {field.name: pa.array([r[field.name] for r in records], type=field.type) for field in PARQUET_SCHEMA}
     return pa.table(columns, schema=PARQUET_SCHEMA)
 
 
-def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket_name: str) -> bool:
-    """Upload a parquet file from disk to R2, streaming chunks to avoid holding in memory. Deletes the temp file when done."""
+def _extract_row_fields(row: dict, classification_threshold: float) -> dict:
+    det_id = row["id_detection"]
+    item_id = row["pipeline_batch_item_id"]
+    scan_fn = row["scan_filename"]
+    bbox_xyxy = row["bbox_xyxy"]
+    bbox_xywh = row["bbox_xywh"]
+    bbox_conf = row["bbox_conf"]
+
+    if bbox_xyxy and not isinstance(bbox_xyxy, list):
+        bbox_xyxy = list(bbox_xyxy)
+    if bbox_xywh and not isinstance(bbox_xywh, list):
+        bbox_xywh = list(bbox_xywh)
+
+    pred_class = row["pred_class"]
+    pred_conf = row["classification_conf"]
+    probs = row["classification_probs"]
+
+    if pred_conf is not None and pred_conf < classification_threshold:
+        pred_class = "Other"
+    classification_label = CLASSIFICATION_CLASS_DICT.get(pred_class, pred_class) if pred_class else None
+
+    caption_text = row["caption_text"]
+    caption_lang = row["caption_lang"]
+    caption_lang_detected = row["caption_lang_detected"]
+    caption_linear_prob = row["caption_linear_prob"]
+    thesaurus_matches = row["caption_thesaurus_matches"]
+
+    image_hash = row["image_hash"]
+    embedding = row["embedding"]
+    volume_barcode = row["barcode"]
+
+    is_non_captionable = classification_label in ("Artifact", "Ex Libris/Decorative")
+    if caption_text:
+        if caption_text in ("Undetermined", "Undetermined."):
+            caption_text = "CAPTION FAILED"
+        caption_lang_passed = lang_name_to_iso639_3(caption_lang)
+    elif is_non_captionable:
+        caption_text = None
+        caption_lang_passed = None
+    else:
+        caption_text = "CAPTION FAILED"
+        caption_lang_passed = None
+
+    caption_is_valid = caption_text is not None and caption_text != "CAPTION FAILED"
+    if not caption_is_valid:
+        caption_linear_prob = None
+        caption_lang_detected = None
+        thesaurus_matches = None
+        caption_lang_passed = None
+
+    if isinstance(thesaurus_matches, str) and thesaurus_matches == "null":
+        thesaurus_matches = None
+
+    if bbox_xywh and len(bbox_xywh) >= 4:
+        width = int(round(bbox_xywh[2]))
+        height = int(round(bbox_xywh[3]))
+        pixel_count_mpx = (width * height) / 1_000_000
+    else:
+        width = None
+        height = None
+        pixel_count_mpx = None
+
+    classification_probs_formatted = format_classification_probs(probs)
+
+    embedding_list = None
+    if embedding is not None:
+        if isinstance(embedding, str):
+            embedding_list = [float(x) for x in embedding.strip("[]").split(",")]
+        else:
+            embedding_list = [float(x) for x in embedding]
+
+    return {
+        "det_id": det_id,
+        "item_id": item_id,
+        "scan_filename": scan_fn,
+        "bbox_xyxy": bbox_xyxy,
+        "bbox_conf": float(bbox_conf) if bbox_conf is not None else None,
+        "volume_barcode": str(volume_barcode) if volume_barcode else None,
+        "width": width,
+        "height": height,
+        "pixel_count_mpx": pixel_count_mpx,
+        "classification_label": classification_label,
+        "classification_confidence": float(pred_conf) if pred_conf is not None else None,
+        "classification_probs": classification_probs_formatted,
+        "phash": image_hash,
+        "embedding": embedding_list,
+        "caption_text": caption_text,
+        "caption_linear_prob": float(caption_linear_prob) if caption_linear_prob is not None else None,
+        "caption_lang_passed": caption_lang_passed,
+        "caption_lang_detected": caption_lang_detected,
+        "thesaurus_matches": thesaurus_matches,
+    }
+
+
+_thread_local = threading.local()
+
+
+def _get_output_s3_client():
+    if not hasattr(_thread_local, "s3"):
+        _thread_local.s3 = get_s3_client("OUTPUT")
+    return _thread_local.s3
+
+
+def _load_crops_for_item(item_id: int, barcode: str, det_ids: list[int], scan_filenames: dict[int, str]) -> dict[int, bytes | None]:
+    s3 = _get_output_s3_client()
+    s3_key = f"crops/{item_id}/{barcode}.tar.gz"
+
+    expected_files: dict[str, int] = {}
+    for det_id in det_ids:
+        scan_base = scan_filenames[det_id].rsplit(".", 1)[0]
+        expected_files[f"{scan_base}_{det_id}.png"] = det_id
+
+    crops: dict[int, bytes | None] = {d: None for d in det_ids}
+    try:
+        response = s3.get_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
+        gz_bytes = response["Body"].read()
+        with gzip.GzipFile(fileobj=io.BytesIO(gz_bytes), mode="rb") as gz:
+            tar_bytes = gz.read()
+        del gz_bytes
+        with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as tar:
+            for member in tar.getmembers():
+                if member.name in expected_files:
+                    f = tar.extractfile(member)
+                    if f:
+                        crops[expected_files[member.name]] = f.read()
+        del tar_bytes
+    except Exception as e:
+        logger.warning(f"Could not load crops for item {item_id} ({barcode}): {e}")
+
+    return crops
+
+
+def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name: str) -> bool:
     try:
         file_size = os.path.getsize(parquet_path)
 
@@ -340,7 +310,7 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                 )
         else:
             total_parts = (file_size + S3_MULTIPART_CHUNK_SIZE - 1) // S3_MULTIPART_CHUNK_SIZE
-            logger.info(f"  Multipart upload {s3_key} ({file_size / 1024 / 1024:.0f} MB, {total_parts} parts, {S3_MULTIPART_PARALLEL_PARTS} parallel)")
+            logger.info(f"  Multipart upload {s3_key} ({file_size / 1024 / 1024:.0f} MB, {total_parts} parts)")
             mpu = s3_client.create_multipart_upload(
                 Bucket=bucket_name,
                 Key=s3_key,
@@ -360,10 +330,10 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                 parts = [None] * len(part_specs)
 
                 def _upload_one_part(spec):
-                    pn, off, length = spec
+                    pn, off, ln = spec
                     with open(parquet_path, "rb") as fh:
                         fh.seek(off)
-                        chunk = fh.read(length)
+                        chunk = fh.read(ln)
                     resp = s3_client.upload_part(
                         Bucket=bucket_name,
                         Key=s3_key,
@@ -377,7 +347,6 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
                     for pn, etag in part_executor.map(_upload_one_part, part_specs):
                         parts[pn - 1] = {"ETag": etag, "PartNumber": pn}
 
-                logger.info(f"    All {len(parts)} parts uploaded for {s3_key}")
                 s3_client.complete_multipart_upload(
                     Bucket=bucket_name,
                     Key=s3_key,
@@ -400,912 +369,291 @@ def _upload_parquet_file_to_r2(s3_client, parquet_path: str, s3_key: str, bucket
             pass
 
 
-def _batched_fetch(model_class, id_field, ids: list[int]) -> list:
-    """Fetch rows in batches to avoid exceeding PostgreSQL's memory limits on large IN clauses."""
-    rows = []
-    for i in range(0, len(ids), S3_BATCH_SIZE_DB):
-        chunk = ids[i : i + S3_BATCH_SIZE_DB]
-        rows.extend(list(model_class.select().where(id_field.in_(chunk))))
-    return rows
-
-
-def _batched_iter(model_class, id_field, ids: list[int]):
-    """Yield rows in batches without accumulating all into a list."""
-    for i in range(0, len(ids), S3_BATCH_SIZE_DB):
-        chunk = ids[i : i + S3_BATCH_SIZE_DB]
-        yield from model_class.select().where(id_field.in_(chunk))
-
-
-def _fetch_db_data_parallel(detection_ids: list[int], detections_data: dict, workers: int):
-    """Fetch classifications, captions, hashes, embeddings, and volume info in parallel."""
-
-    results = {}
-
-    def fetch_classifications():
-        return _batched_fetch(Classification, Classification.detection, detection_ids)
-
-    def fetch_captions():
-        return _batched_fetch(Caption, Caption.detection, detection_ids)
-
-    def fetch_image_hashes():
-        return _batched_fetch(ImageHash, ImageHash.detection, detection_ids)
-
-    def fetch_image_embeddings():
-        return _batched_fetch(ImageEmbedding, ImageEmbedding.detection, detection_ids)
-
-    def fetch_volume_barcodes():
-        item_ids = list(set(d["pipeline_batch_item_id"] for d in detections_data.values()))
-        rows = []
-        for i in range(0, len(item_ids), S3_BATCH_SIZE_DB):
-            chunk = item_ids[i : i + S3_BATCH_SIZE_DB]
-            rows.extend(list(
-                PipelineBatchItem.select(
-                    PipelineBatchItem.id_pipeline_batch_item,
-                    PipelineBatchItem.ib_volume,
-                ).where(PipelineBatchItem.id_pipeline_batch_item.in_(chunk))
-            ))
-        return rows
-
-    logger.info(f"Fetching DB data in parallel with {workers} workers ({len(detection_ids)} detection IDs in batches of {S3_BATCH_SIZE_DB})...")
-
-    with ThreadPoolExecutor(max_workers=min(workers, 5)) as executor:
-        future_cls = executor.submit(fetch_classifications)
-        future_cap = executor.submit(fetch_captions)
-        future_hash = executor.submit(fetch_image_hashes)
-        future_emb = executor.submit(fetch_image_embeddings)
-        future_vol = executor.submit(fetch_volume_barcodes)
-
-        classifications = future_cls.result()
-        captions = future_cap.result()
-        image_hashes = future_hash.result()
-        image_embeddings = future_emb.result()
-        volume_items = future_vol.result()
-
-    logger.info(f"  Found {len(classifications)} classifications")
-    logger.info(f"  Found {len(captions)} captions")
-    logger.info(f"  Found {len(image_hashes)} image hashes")
-    logger.info(f"  Found {len(image_embeddings)} image embeddings")
-
-    results["classifications"] = classifications
-    results["captions"] = captions
-    results["image_hashes"] = image_hashes
-    results["image_embeddings"] = image_embeddings
-    results["volume_items"] = volume_items
-
-    return results
+ITEMS_PER_FETCH = 50
 
 
 @click.command("to-s3")
-@click.option(
-    "--output-dir",
-    type=click.Path(),
-    default=ANALYSIS_OUTPUT_DIR,
-    help="Output directory for filtered dataset",
-)
-@click.option(
-    "--output-format",
-    type=click.Choice(["jsonl", "json", "parquet"]),
-    default="jsonl",
-    help="Output format",
-)
-@click.option(
-    "--shard-size",
-    type=int,
-    default=S3_SHARD_SIZE,
-    help="Number of rows per parquet shard (default: 5000, ~4GB each)",
-)
-@click.option(
-    "--dummy",
-    is_flag=True,
-    help="Run in dummy mode with only 10 rows to check formatting",
-)
-@click.option(
-    "--detection-threshold",
-    type=float,
-    default=DETECTION_CONFIDENCE_THRESHOLD,
-    help=f"Minimum detection confidence threshold (default: {DETECTION_CONFIDENCE_THRESHOLD})",
-)
-@click.option(
-    "--classification-threshold",
-    type=float,
-    default=CLASSIFICATION_CONFIDENCE_THRESHOLD,
-    help=f"Classification confidence below this becomes 'other' (default: {CLASSIFICATION_CONFIDENCE_THRESHOLD})",
-)
-@click.option(
-    "--run-moderation/--no-moderation",
-    default=False,
-    help="Run OpenAI moderation on captions (default: enabled)",
-)
-@click.option(
-    "--upload-r2/--no-upload-r2",
-    default=True,
-    help="Upload parquet shards to R2 bucket (default: enabled)",
-)
-@click.option(
-    "--r2-prefix",
-    type=str,
-    default=None,
-    help="Key prefix for R2 uploads (default: filtered_dataset_{DATETIME_SLUG})",
-)
-@click.option(
-    "--sample",
-    is_flag=True,
-    help="Upload only the first 10,000 crops as a sample",
-)
-@click.option(
-    "--prepare",
-    is_flag=True,
-    help="Prepare mode: run dedupe + selection, save manifest for parallel partition runs",
-)
-@click.option(
-    "--manifest",
-    type=click.Path(exists=True),
-    default=None,
-    help="Path to manifest JSON from --prepare run. Used with --partition.",
-)
-@click.option(
-    "--partition",
-    type=str,
-    default=None,
-    help="Partition spec K/N (e.g. 1/4). Process every Nth item starting at K.",
-)
-def to_s3(
-    output_dir,
-    output_format,
-    shard_size,
-    dummy,
-    detection_threshold,
-    classification_threshold,
-    run_moderation,
-    upload_r2,
-    r2_prefix,
-    sample,
-    prepare,
-    manifest,
-    partition,
-):
+@click.option("--shard-size", type=int, default=S3_SHARD_SIZE, help="Rows per parquet shard")
+@click.option("--classification-threshold", type=float, default=CLASSIFICATION_CONFIDENCE_THRESHOLD)
+@click.option("--chunk-index", type=int, default=None, help="Which chunk to process (0-indexed). Use with --total-chunks for GNU parallel.")
+@click.option("--total-chunks", type=int, default=None, help="Total number of chunks. Use with --chunk-index for GNU parallel.")
+@click.option("--io-workers", type=int, default=S3_MAX_INFLIGHT, help="Threads for S3 crop download")
+@click.option("--prefix", type=str, default=None, help="S3 key prefix for shard files (default: generated datetime slug)")
+@click.option("--sample", type=int, default=None, help="Limit to N items for testing")
+def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_workers, prefix, sample):
     """
-    Filter the dataset with confidence thresholds and deduplication.
+    Export filtered dataset to S3 as parquet shards with embedded PNG crops.
 
-    Applies the following filters:
-    - Only detections with confidence >= detection_threshold (default 0.75)
-    - Classifications with confidence < classification_threshold (default 0.70) are labeled "other"
-    - Selects representative items from unique dedupe groups (intersection of hash and embedding groups)
-    - Runs OpenAI moderation on captions (can be disabled with --no-moderation)
+    Use GNU parallel for parallelism:
 
-    By default, outputs parquet shards and uploads them to the R2 FILTER bucket in parallel.
-
-    Parallel mode (run on N machines / tmux panes):
-        1) filter-dataset --prepare                  # saves manifest.json
-        2) filter-dataset --manifest manifest.json --partition 1/4
-           filter-dataset --manifest manifest.json --partition 2/4
-           filter-dataset --manifest manifest.json --partition 3/4
-           filter-dataset --manifest manifest.json --partition 4/4
-
-    Examples:
-        filter-dataset
-        filter-dataset --dummy
-        filter-dataset --output-format json --no-upload-r2
-        filter-dataset --output-format parquet
-        filter-dataset --output-format parquet --shard-size 100000
-        filter-dataset --detection-threshold 0.8 --classification-threshold 0.6
-        filter-dataset --no-moderation
-        filter-dataset --sample
-        filter-dataset --r2-prefix my_export/v2
+        seq 0 31 | parallel -j8 'python main.py export to-s3 --chunk-index {} --total-chunks 32'
     """
-
-    # Validate partition arg
-    partition_k, partition_n = None, None
-    if partition:
-        try:
-            partition_k, partition_n = [int(x) for x in partition.split("/")]
-            assert 1 <= partition_k <= partition_n
-        except Exception:
-            logger.error(f"Invalid --partition format '{partition}'. Expected K/N (e.g. 1/4)")
-            return
-    if partition and not manifest:
-        logger.error("--partition requires --manifest from a --prepare run")
-        return
-    if prepare and manifest:
-        logger.error("--prepare and --manifest are mutually exclusive")
+    if (chunk_index is None) != (total_chunks is None):
+        logger.error("--chunk-index and --total-chunks must be used together")
         return
 
-    logger.info("Starting dataset filtering...")
-    logger.info(f"  Detection confidence threshold: {detection_threshold}")
-    logger.info(f"  Classification confidence threshold: {classification_threshold}")
-    logger.info(f"  Run moderation: {run_moderation}")
-    logger.info(f"  Dummy mode: {dummy}")
-    logger.info(f"  Upload to R2: {upload_r2}")
-    logger.info(f"  Sample mode: {sample}")
-    logger.info(f"  CPUS_LIMIT: {CPUS_LIMIT}")
-    if prepare:
-        logger.info("  Mode: PREPARE (will save manifest and exit)")
-    if partition:
-        logger.info(f"  Mode: PARTITION {partition_k}/{partition_n}")
+    chunk_label = f"[chunk {chunk_index}/{total_chunks}] " if chunk_index is not None else ""
 
-    # ---- PARTITION MODE: load slim manifest, re-fetch DB data ----
-    if manifest:
-        logger.info(f"Loading manifest from {manifest}...")
-        with open(manifest, "rb") as f:
-            manifest_data = orjson.loads(f.read())
+    if prefix is None:
+        prefix = DATETIME_SLUG
 
-        dateslug = manifest_data.get("dateslug")
-        if not dateslug:
-            manifest_dir_name = Path(manifest).resolve().parent.name
-            prefix = "filtered_dataset_"
-            if manifest_dir_name.startswith(prefix):
-                dateslug = manifest_dir_name[len(prefix):]
-            else:
-                dateslug = DATETIME_SLUG
+    logger.info(f"{chunk_label}Starting S3 export...")
+    logger.info(f"  Classification threshold: {classification_threshold}")
+    logger.info(f"  Shard size: {shard_size}")
+    logger.info(f"  S3 prefix: {prefix}")
+    logger.info(f"  I/O workers: {io_workers}")
+
+    logger.info(f"{chunk_label}Fetching item IDs...")
+    all_item_ids = _fetch_item_ids_paginated()
+    total_items = len(all_item_ids)
+    logger.info(f"  Total items in filtered_dataset: {total_items:,}")
+
+    if chunk_index is not None:
+        items_per_chunk = (total_items + total_chunks - 1) // total_chunks
+        start = chunk_index * items_per_chunk
+        end = min(start + items_per_chunk, total_items)
+        my_item_ids = all_item_ids[start:end]
+        logger.info(f"  This chunk: items {start:,}-{end:,} ({len(my_item_ids):,} items)")
     else:
-        dateslug = DATETIME_SLUG
+        my_item_ids = all_item_ids
 
-    # Create output directory
-    output_path = Path(output_dir) / f"filtered_dataset_{dateslug}"
-    output_path.mkdir(parents=True, exist_ok=True)
+    if sample:
+        my_item_ids = my_item_ids[:sample]
+        logger.info(f"  Sample mode: {len(my_item_ids)} items")
 
-    if manifest:
+    del all_item_ids
 
-        dets_by_item_all: dict[int, list[int]] = {int(k): v for k, v in manifest_data["dets_by_item"].items()}
+    s3_client = get_s3_client("FILTER")
+    bucket_name = FILTER_STORAGE_BUCKET_NAME
 
-        # Take this partition's slice of items FIRST, before building detections_data
-        all_item_ids = sorted(dets_by_item_all.keys())
-        if partition_k is not None and partition_n is not None:
-            my_item_ids = [iid for i, iid in enumerate(all_item_ids) if (i % partition_n) == (partition_k - 1)]
-        else:
-            my_item_ids = all_item_ids
+    # Shard state
+    shard_prefix = f"{prefix}-c{chunk_index:02d}" if chunk_index is not None else prefix
 
-        dets_by_item: dict[int, list[int]] = {iid: dets_by_item_all[iid] for iid in my_item_ids}
-        del dets_by_item_all
-        my_det_id_set = set()
-        for dids in dets_by_item.values():
-            my_det_id_set.update(dids)
+    # Resume: find existing shards for this chunk's prefix to determine how many records to skip
+    existing_shards = 0
+    try:
+        paginator = s3_client.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=bucket_name, Prefix=shard_prefix):
+            for obj in page.get("Contents", []):
+                if obj["Key"].endswith(".parquet"):
+                    existing_shards += 1
+    except Exception as e:
+        logger.warning(f"  Could not list existing shards: {e}")
 
-        # Only keep detections_data for this partition's detections
-        detections_data = {}
-        for k, v in manifest_data["detections_data"].items():
-            int_k = int(k)
-            if int_k in my_det_id_set:
-                detections_data[int_k] = v
-        del manifest_data
+    records_to_skip = existing_shards * shard_size
+    shard_idx = existing_shards
+    shard_start_idx = existing_shards
 
-        my_detection_ids = list(my_det_id_set)
-        del my_det_id_set
-        logger.info(f"  Partition has {len(dets_by_item)} items, {len(my_detection_ids)} detections")
+    if existing_shards:
+        logger.info(f"  {chunk_label}Resuming: found {existing_shards} existing shards, skipping {records_to_skip:,} records")
 
-        # Re-fetch DB data sequentially to avoid holding all raw rows in memory at once
-        logger.info(f"Fetching DB data sequentially for {len(my_detection_ids)} detections...")
-
-        logger.info("  Fetching classifications...")
-        classifications_by_det = {}
-        for cls in _batched_iter(Classification, Classification.detection, my_detection_ids):
-            pred_class = cls.pred_class
-            pred_conf = cls.pred_conf
-            if pred_conf is not None and pred_conf < classification_threshold:
-                pred_class = "Other"
-            classifications_by_det[cls.detection_id] = {
-                "pred_class": pred_class,
-                "pred_class_label": CLASSIFICATION_CLASS_DICT.get(pred_class, pred_class),
-                "pred_conf": pred_conf,
-                "probs": [float(p) for p in cls.probs] if cls.probs else None,
-            }
-        logger.info(f"    {len(classifications_by_det)} classifications")
-
-        logger.info("  Fetching captions...")
-        captions_by_det = {}
-        for cap in _batched_iter(Caption, Caption.detection, my_detection_ids):
-            captions_by_det[cap.detection_id] = {
-                "text": cap.text,
-                "lang": cap.lang,
-                "lang_detected": cap.lang_detected,
-                "linear_prob": cap.linear_prob,
-                "thesaurus_matches": cap.thesaurus_matches,
-            }
-        logger.info(f"    {len(captions_by_det)} captions")
-
-        logger.info("  Fetching volume barcodes...")
-        item_ids = list(dets_by_item.keys())
-        item_volumes = {}
-        for item in _batched_iter(PipelineBatchItem, PipelineBatchItem.id_pipeline_batch_item, item_ids):
-            item_volumes[item.id_pipeline_batch_item] = item.ib_volume_id
-        logger.info(f"    {len(item_volumes)} volumes")
-
-        logger.info("  Fetching image hashes...")
-        image_hash_by_det = {}
-        for ih in _batched_iter(ImageHash, ImageHash.detection, my_detection_ids):
-            image_hash_by_det[ih.detection_id] = {"image_hash": ih.image_hash}
-        logger.info(f"    {len(image_hash_by_det)} hashes")
-
-        image_embedding_by_det = None
-        del my_detection_ids
-        logger.info("  Embeddings will be fetched per-shard to avoid OOM")
-    else:
-        # ---- NORMAL / PREPARE MODE: fetch from DB ----
-        # Step 1: Get all detections with confidence >= threshold
-        limit = None
-        if dummy:
-            limit = 1000
-        elif sample:
-            limit = S3_SAMPLE_LIMIT * 3
-
-        logger.info(f"Fetching detections with confidence >= {detection_threshold} (raw SQL, server-side cursor)...")
-        detections_data = _raw_fetch_detections(detection_threshold, limit=limit)
-        logger.info(f"  Found {len(detections_data)} detections meeting confidence threshold")
-
-        if not detections_data:
-            logger.warning("No detections found meeting the threshold")
-            return
-
-        detection_ids = list(detections_data.keys())
-
-        # Step 2: Skip heavy DB fetch in prepare mode (partitions re-fetch their own data)
-        if not prepare:
-            db_data = _fetch_db_data_parallel(detection_ids, detections_data, CPUS_LIMIT)
-
-            classifications_by_det = {}
-            for cls in db_data["classifications"]:
-                pred_class = cls.pred_class
-                pred_conf = cls.pred_conf
-
-                if pred_conf is not None and pred_conf < classification_threshold:
-                    pred_class = "Other"
-
-                classifications_by_det[cls.detection_id] = {
-                    "pred_class": pred_class,
-                    "pred_class_label": CLASSIFICATION_CLASS_DICT.get(pred_class, pred_class),
-                    "pred_conf": pred_conf,
-                    "probs": [float(p) for p in cls.probs] if cls.probs else None,
-                }
-
-            captions_by_det = {}
-            for cap in db_data["captions"]:
-                captions_by_det[cap.detection_id] = {
-                    "text": cap.text,
-                    "lang": cap.lang,
-                    "lang_detected": cap.lang_detected,
-                    "linear_prob": cap.linear_prob,
-                    "thesaurus_matches": cap.thesaurus_matches,
-                }
-
-            item_volumes = {}
-            for item in db_data["volume_items"]:
-                item_volumes[item.id_pipeline_batch_item] = item.ib_volume_id
-
-            image_hash_by_det = {}
-            for ih in db_data["image_hashes"]:
-                image_hash_by_det[ih.detection_id] = {
-                    "id_imagehash": ih.id_imagehash,
-                    "image_hash": ih.image_hash,
-                    "created": ih.created.isoformat() if ih.created else None,
-                }
-
-            image_embedding_by_det = {}
-            for ie in db_data["image_embeddings"]:
-                embedding_vector = [float(x) for x in ie.embedding] if ie.embedding is not None else None
-                image_embedding_by_det[ie.detection_id] = {
-                    "id_embedding": ie.id_embedding,
-                    "embedding": embedding_vector,
-                    "created": ie.created.isoformat() if ie.created else None,
-                }
-
-            del db_data
-
-        # Step 3: Get dedupe intersection groups (use raw SQL for prepare mode)
-        logger.info("Computing dedupe intersection groups...")
-        if prepare:
-            logger.info("  Using SQL JOIN for dedupe intersection (single pass)...")
-            intersection_groups = _raw_fetch_dedupe_intersection()
-        else:
-            intersection_groups = get_dedupe_intersection_groups(detection_ids)
-
-        # Step 4: Select representatives from each intersection group
-        import time as _time
-        logger.info(f"Selecting representatives from {len(intersection_groups):,} dedupe groups...")
-        selected_detection_ids = set()
-
-        detections_in_groups = set()
-        t0_sel = _time.time()
-        t_last_sel = t0_sel
-        groups_processed = 0
-        total_groups = len(intersection_groups)
-        for group_key, group_det_ids in intersection_groups.items():
-            valid_det_ids = [d for d in group_det_ids if d in detections_data]
-            if valid_det_ids:
-                representative = select_representative(valid_det_ids, detections_data)
-                selected_detection_ids.add(representative)
-                detections_in_groups.update(valid_det_ids)
-            groups_processed += 1
-            now = _time.time()
-            if now - t_last_sel >= 15:
-                logger.info(f"    ... {groups_processed:,}/{total_groups:,} groups ({groups_processed*100//total_groups}%, {now - t0_sel:.0f}s elapsed)")
-                t_last_sel = now
-
-        detections_without_group = set(detections_data.keys()) - detections_in_groups
-        selected_detection_ids.update(detections_without_group)
-
-        logger.info(f"  Detections in dedupe groups: {len(detections_in_groups)}")
-        logger.info(f"  Detections without groups (unique): {len(detections_without_group)}")
-        logger.info(f"  Total selected (after deduplication): {len(selected_detection_ids)}")
-
-        # Group selected detections by pipeline_batch_item for efficient scan loading
-        dets_by_item: dict[int, list[int]] = defaultdict(list)
-        for det_id in selected_detection_ids:
-            item_id = detections_data[det_id]["pipeline_batch_item_id"]
-            dets_by_item[item_id].append(det_id)
-
-        # ---- PREPARE MODE: save slim manifest and exit ----
-        if prepare:
-            manifest_path = output_path / "manifest.json"
-            logger.info(f"Building manifest dict ({len(detections_data):,} detections, {len(dets_by_item):,} items)...")
-            manifest_out = {
-                "detection_threshold": detection_threshold,
-                "classification_threshold": classification_threshold,
-                "detections_data": {str(k): v for k, v in detections_data.items()},
-                "dets_by_item": {str(k): v for k, v in dets_by_item.items()},
-                "total_selected": len(selected_detection_ids),
-                "total_items": len(dets_by_item),
-                "dateslug": DATETIME_SLUG,
-            }
-            logger.info("Serializing manifest with orjson...")
-            with open(manifest_path, "wb") as f:
-                f.write(orjson.dumps(manifest_out))
-            manifest_mb = manifest_path.stat().st_size / 1024 / 1024
-            logger.success(f"Manifest saved to {manifest_path} ({manifest_mb:.0f} MB, {len(selected_detection_ids)} detections across {len(dets_by_item)} items)")
-            logger.info(f"Run partitions with: --manifest {manifest_path} --partition K/N")
-
-            if upload_r2:
-                s3_client = get_s3_client("FILTER")
-                manifest_s3_key = f"{DATETIME_SLUG}-manifest.json"
-                logger.info(f"Uploading manifest to R2: {manifest_s3_key}...")
-                try:
-                    with open(manifest_path, "rb") as fh:
-                        s3_client.put_object(
-                            Bucket=FILTER_STORAGE_BUCKET_NAME,
-                            Key=manifest_s3_key,
-                            Body=fh,
-                            ContentType="application/json",
-                        )
-                    logger.success(f"Manifest uploaded to R2: {manifest_s3_key}")
-                except Exception as e:
-                    logger.error(f"Failed to upload manifest to R2: {e}")
-
-            return
-
-    # Step 5: Build filtered dataset, streaming to shards
-    logger.info("Building filtered dataset (streaming to shards)...")
-
-    moderation_client = None
-    if run_moderation:
-        logger.info("Initializing OpenAI client for moderation...")
-        moderation_client = openai.OpenAI(timeout=OPENAI_REQUEST_TIMEOUT)
-
-    total_items = len(dets_by_item)
-
-    # Apply sample limit
-    record_limit = None
-    if dummy:
-        record_limit = 100
-    elif sample:
-        record_limit = S3_SAMPLE_LIMIT
-
-    effective_shard_size = shard_size or 5000
-
-    # R2 upload setup
-    s3_client = get_s3_client("FILTER") if upload_r2 else None
-    bucket_name = FILTER_STORAGE_BUCKET_NAME if upload_r2 else None
-    upload_executor = ThreadPoolExecutor(max_workers=10) if upload_r2 else None
-    upload_futures = []
-    upload_stats = {"uploaded": 0, "failed": 0}
-
-    # Find highest existing shard index in R2 to continue numbering
-    records_to_skip = 0
-    start_shard_idx = 0
-    if upload_r2 and s3_client:
-        try:
-            paginator = s3_client.get_paginator("list_objects_v2")
-            for page in paginator.paginate(Bucket=bucket_name, Prefix=dateslug):
-                for obj in page.get("Contents", []):
-                    try:
-                        shard_num = int(obj["Key"].rsplit("-", 1)[1].split(".")[0])
-                        start_shard_idx = max(start_shard_idx, shard_num)
-                    except (ValueError, IndexError):
-                        pass
-            if start_shard_idx:
-                logger.info(f"  Starting shard numbering after existing shard {start_shard_idx}")
-        except Exception as e:
-            logger.warning(f"  Could not list existing R2 shards: {e}")
-
-    # Resume from local checkpoint (non-partition mode only)
-    checkpoint_path = output_path / "checkpoint.json" if partition_k is None else None
-    if checkpoint_path and checkpoint_path.exists():
-        try:
-            with open(checkpoint_path, "rb") as f:
-                ckpt = orjson.loads(f.read())
-            records_to_skip = ckpt.get("records_written", 0)
-            start_shard_idx = ckpt.get("last_shard_idx", 0)
-            logger.info(f"  Resuming from checkpoint: {records_to_skip} records written, last shard idx {start_shard_idx}")
-        except Exception as e:
-            logger.warning(f"  Could not read checkpoint {checkpoint_path}: {e}")
-
-    # Streaming state — records are written in small row groups (S3_ROW_GROUP_SIZE)
-    # to an open ParquetWriter so crop bytes never accumulate past ~500 rows.
     row_group_buf: list[dict] = []
-    row_group_crop_bytes: int = 0  # track crop_gen column size to flush before 2GB Parquet limit
-    shard_idx = start_shard_idx
-    shard_record_count = 0  # records written into the current shard so far
+    row_group_crop_bytes = 0
+    shard_record_count = 0
+    current_writer: pq.ParquetWriter | None = None
+    current_tmp_path: str | None = None
+    current_s3_key: str | None = None
+
     total_records = 0
     skipped_records = 0
-    class_counts = defaultdict(int)
-    reclassified_count = 0
-    thesaurus_match_count = 0
-
-    shard_prefix = dateslug
-
-    # Current open shard writer state (managed by _open_shard / _flush_row_group / _close_shard)
-    _current_writer: pq.ParquetWriter | None = None
-    _current_tmp_path: str | None = None
-    _current_s3_key: str | None = None
-    # IDs in the current shard, used for just-in-time embedding fetch
-    _current_shard_ids: list[int] = []
+    items_processed = 0
+    upload_executor = ThreadPoolExecutor(max_workers=4)
+    upload_futures = []
 
     def _open_shard():
-        nonlocal shard_idx, shard_record_count, _current_writer, _current_tmp_path, _current_s3_key, _current_shard_ids
+        nonlocal shard_idx, shard_record_count, current_writer, current_tmp_path, current_s3_key
         shard_idx += 1
-        _current_s3_key = f"{shard_prefix}-{shard_idx:04d}.parquet"
-        tmp_fd, _current_tmp_path = tempfile.mkstemp(suffix=".parquet")
+        current_s3_key = f"{shard_prefix}-{shard_idx:04d}.parquet"
+        tmp_fd, current_tmp_path = tempfile.mkstemp(suffix=".parquet")
         os.close(tmp_fd)
-        _current_writer = pq.ParquetWriter(_current_tmp_path, PARQUET_SCHEMA)
+        current_writer = pq.ParquetWriter(current_tmp_path, PARQUET_SCHEMA)
         shard_record_count = 0
-        _current_shard_ids = []
 
     def _flush_row_group():
         nonlocal row_group_buf, shard_record_count, row_group_crop_bytes
         if not row_group_buf:
             return
-
-        # Just-in-time embedding fetch for this row group
-        if image_embedding_by_det is None:
-            rg_det_ids = [r["id"] for r in row_group_buf]
-            rg_embeddings = {}
-            for ie in _batched_iter(ImageEmbedding, ImageEmbedding.detection, rg_det_ids):
-                rg_embeddings[ie.detection_id] = [float(x) for x in ie.embedding] if ie.embedding is not None else None
-            for r in row_group_buf:
-                r["embedding_gen"] = rg_embeddings.get(r["id"])
-            del rg_embeddings
-
-        _current_writer.write_table(_build_row_group_table(row_group_buf))
+        current_writer.write_table(_build_row_group_table(row_group_buf))
         shard_record_count += len(row_group_buf)
         row_group_buf = []
         row_group_crop_bytes = 0
 
     def _close_shard():
-        nonlocal _current_writer, _current_tmp_path, _current_s3_key, _current_shard_ids
-        if _current_writer is None:
+        nonlocal current_writer, current_tmp_path, current_s3_key
+        if current_writer is None:
             return
-
         _flush_row_group()
-        _current_writer.close()
-        _current_writer = None
-        _current_shard_ids = []
+        current_writer.close()
+        current_writer = None
 
-        tmp_size_mb = os.path.getsize(_current_tmp_path) / 1024 / 1024
+        tmp_path = current_tmp_path
+        s3_key = current_s3_key
+        current_tmp_path = None
+        current_s3_key = None
 
-        if upload_r2:
-            # Drain completed futures to free resources
-            still_pending = []
-            for f, key in upload_futures:
-                if f.done():
-                    try:
-                        if f.result():
-                            upload_stats["uploaded"] += 1
-                        else:
-                            upload_stats["failed"] += 1
-                            logger.error(f"  Upload failed for {key}")
-                    except Exception as e:
-                        upload_stats["failed"] += 1
-                        logger.error(f"  Upload exception for {key}: {e}")
-                else:
-                    still_pending.append((f, key))
-            upload_futures[:] = still_pending
+        tmp_size_mb = os.path.getsize(tmp_path) / 1024 / 1024
+        logger.info(f"  {chunk_label}Closed shard {shard_idx} ({shard_record_count} rows, {tmp_size_mb:.0f} MB) -> uploading")
 
-            # Backpressure: wait until pending uploads drop below threshold
-            while len(upload_futures) >= S3_MAX_PENDING_UPLOADS:
-                logger.info(f"  Upload backpressure: {len(upload_futures)} uploads pending, waiting...")
-                for f, _ in upload_futures:
-                    if not f.done():
-                        f.result(timeout=30)
-                        break
-                upload_futures[:] = [(f, k) for f, k in upload_futures if not f.done()]
-
-            logger.info(f"  Closed shard {shard_idx} ({shard_record_count} rows, {tmp_size_mb:.0f} MB) -> uploading to R2")
-            fut = upload_executor.submit(_upload_parquet_file_to_r2, s3_client, _current_tmp_path, _current_s3_key, bucket_name)
-            upload_futures.append((fut, _current_s3_key))
-        else:
-            shard_file = output_path / _current_s3_key
-            os.rename(_current_tmp_path, str(shard_file))
-            logger.info(f"  Wrote shard {shard_idx}: {shard_file} ({shard_record_count} rows)")
-
-        _current_tmp_path = None
-        _current_s3_key = None
-
-        # Write local checkpoint so we can resume (non-partition mode only)
-        if checkpoint_path:
-            with open(checkpoint_path, "wb") as f:
-                f.write(orjson.dumps({
-                    "records_written": records_to_skip + total_records,
-                    "last_shard_idx": shard_idx,
-                }))
-
-    image_load_workers = S3_MAX_INFLIGHT
-    item_list = list(dets_by_item.items())
-    done = False
-    items_processed = 0
-
-    logger.info(f"  Processing {total_items} items with {image_load_workers} workers (max {S3_MAX_INFLIGHT} in-flight)...")
-    logger.info(f"  Shard size: {effective_shard_size} rows")
-
-    output_s3_client = get_s3_client("OUTPUT")
-
-    def _load_and_crop(item_id: int, item_det_ids: list[int]) -> tuple[int, list[int], dict[int, bytes | None]]:
-        """Download pre-computed crop PNGs from the OUTPUT bucket tar.gz archive."""
-        barcode = item_volumes.get(item_id)
-        if not barcode:
-            return (item_id, item_det_ids, {})
-
-        s3_key = f"crops/{item_id}/{barcode}.tar.gz"
-
-        # Build expected filenames: {scan_base}_{det_id}.png
-        expected_files: dict[str, int] = {}
-        for det_id in item_det_ids:
-            scan_fn = detections_data[det_id]["scan_filename"]
-            scan_base = scan_fn.rsplit(".", 1)[0]
-            expected_files[f"{scan_base}_{det_id}.png"] = det_id
-
-        crops: dict[int, bytes | None] = {}
-        try:
-            response = output_s3_client.get_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
-            tar_bytes = response["Body"].read()
-            with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:gz") as tar:
-                for member in tar.getmembers():
-                    if member.name in expected_files:
-                        f = tar.extractfile(member)
-                        if f:
-                            crops[expected_files[member.name]] = f.read()
-            del tar_bytes
-        except Exception as e:
-            logger.warning(f"Could not load crops tar.gz for item {item_id} ({barcode}): {e}")
-
-        # Mark missing crops as None
-        for det_id in item_det_ids:
-            if det_id not in crops:
-                crops[det_id] = None
-
-        return (item_id, item_det_ids, crops)
-
-    # Fast-forward: skip entire items whose detections fall within already-uploaded shards
-    skip_item_list = []
-    process_item_list = []
-    if records_to_skip:
-        cumulative = 0
-        for item_id, det_ids in item_list:
-            if cumulative + len(det_ids) <= records_to_skip:
-                cumulative += len(det_ids)
-                skip_item_list.append((item_id, det_ids))
+        # Drain completed futures
+        still_pending = []
+        for f, key in upload_futures:
+            if f.done():
+                try:
+                    f.result()
+                except Exception as e:
+                    logger.error(f"  Upload failed for {key}: {e}")
             else:
-                process_item_list.append((item_id, det_ids))
-        skipped_records = cumulative
-        logger.info(f"  Fast-forwarding past {len(skip_item_list)} items ({skipped_records} records) covered by existing shards")
-        items_processed = len(skip_item_list)
-    else:
-        process_item_list = item_list
+                still_pending.append((f, key))
+        upload_futures[:] = still_pending
 
-    with ThreadPoolExecutor(max_workers=image_load_workers) as executor:
-        pending = {}
-        item_iter = iter(enumerate(process_item_list))
-
-        def _submit_next():
-            try:
-                idx, (item_id, det_ids) = next(item_iter)
-                f = executor.submit(_load_and_crop, item_id, det_ids)
-                pending[f] = item_id
-            except StopIteration:
-                pass
-
-        for _ in range(S3_MAX_INFLIGHT):
-            _submit_next()
-
-        while pending and not done:
-            finished = next(as_completed(pending))
-            del pending[finished]
-            _submit_next()
-
-            item_id, item_det_ids, crops = finished.result()
-            items_processed += 1
-
-            if items_processed % 50 == 0 or items_processed == total_items:
-                logger.info(f"  Processed {items_processed}/{total_items} items ({total_records} records, shard {shard_idx})")
-
-            for det_id in item_det_ids:
-                if done:
+        # Backpressure
+        while len(upload_futures) >= 8:
+            for f, _ in upload_futures:
+                if not f.done():
+                    f.result(timeout=60)
                     break
+            upload_futures[:] = [(f, k) for f, k in upload_futures if not f.done()]
 
-                # Skip individual records in the first partially-covered item
-                if skipped_records < records_to_skip:
-                    skipped_records += 1
-                    continue
+        fut = upload_executor.submit(_upload_parquet_to_s3, s3_client, tmp_path, s3_key, bucket_name)
+        upload_futures.append((fut, s3_key))
 
-                det_data = detections_data[det_id]
-                cls_data = classifications_by_det.get(det_id, {})
-                cap_data = captions_by_det.get(det_id, {})
-                hash_data = image_hash_by_det.get(det_id, {})
-                embedding_data = image_embedding_by_det.get(det_id, {}) if image_embedding_by_det is not None else {}
+    t_start = time.time()
 
-                volume_barcode = item_volumes.get(det_data["pipeline_batch_item_id"])
-
-                crop_bytes = crops.get(det_id)
-
-                bbox_xywh = det_data["bbox_xywh"]
-                if bbox_xywh and len(bbox_xywh) >= 4:
-                    width = int(round(bbox_xywh[2]))
-                    height = int(round(bbox_xywh[3]))
-                    pixel_count_mpx = (width * height) / 1_000_000
-                else:
-                    width = None
-                    height = None
-                    pixel_count_mpx = None
-
-                classification_label = cls_data.get("pred_class_label") if cls_data else None
-                is_non_captionable = classification_label in ("Artifact", "Ex Libris/Decorative")
-
-                if cap_data and cap_data.get("text"):
-                    caption_text = cap_data.get("text")
-                    if caption_text in ("Undetermined", "Undetermined."):
-                        caption_text = "CAPTION FAILED"
-                    caption_lang_passed = lang_name_to_iso639_3(cap_data.get("lang"))
-                elif is_non_captionable:
-                    caption_text = None
-                    caption_lang_passed = None
-                else:
-                    caption_text = "CAPTION FAILED"
-                    caption_lang_passed = None
-
-                moderation_result = None
-                if run_moderation and cap_data and cap_data.get("text"):
-                    moderation_result = run_moderation_fn(moderation_client, cap_data.get("text"))
-
-                caption_is_valid = caption_text is not None and caption_text != "CAPTION FAILED"
-                caption_linear_prob = cap_data.get("linear_prob") if cap_data and caption_is_valid else None
-                caption_lang_detected = cap_data.get("lang_detected") if cap_data and caption_is_valid else None
-                thesaurus_matches = cap_data.get("thesaurus_matches") if cap_data and caption_is_valid else None
-                if isinstance(thesaurus_matches, str) and thesaurus_matches == "null":
-                    thesaurus_matches = None
-                if not caption_is_valid:
-                    caption_lang_passed = None
-
-                classification_probs_formatted = format_classification_probs(
-                    cls_data.get("probs") if cls_data else None
-                )
-
-                record_id = generate_record_id(det_id)
-
-                record = {
-                    "id": record_id,
-                    "crop_gen": crop_bytes,
-                    "barcode_src": volume_barcode,
-                    "page_filename_src": det_data["scan_filename"],
-                    "bbox_xyxy_gen": det_data["bbox_xyxy"],
-                    "width_gen": width,
-                    "height_gen": height,
-                    "pixel_count_mpx_gen": pixel_count_mpx,
-                    "detection_confidence_gen": det_data["bbox_conf"],
-                    "classification_gen": classification_label,
-                    "classification_confidence_gen": cls_data.get("pred_conf") if cls_data else None,
-                    "classification_probs_gen": classification_probs_formatted,
-                    "phash_gen": hash_data.get("image_hash") if hash_data else None,
-                    "embedding_gen": embedding_data.get("embedding") if embedding_data else None,
-                    "caption_exp": caption_text,
-                    "caption_linear_prob_exp": caption_linear_prob,
-                    "caption_lang_passed_exp": caption_lang_passed,
-                    "caption_lang_detected_exp": caption_lang_detected,
-                    "caption_chronam_thesauri_matches_exp": thesaurus_matches,
-                }
-
-                # Open a new shard writer if needed
-                if _current_writer is None:
-                    _open_shard()
-
-                row_group_buf.append(record)
-                row_group_crop_bytes += len(crop_bytes) if crop_bytes else 0
-                total_records += 1
-
-                # Incremental stats
-                cls_label = classification_label or "Unknown"
-                class_counts[cls_label] += 1
-                if (
-                    classification_label == "Other"
-                    and cls_data.get("pred_conf") is not None
-                    and cls_data["pred_conf"] < classification_threshold
-                ):
-                    reclassified_count += 1
-                if thesaurus_matches:
-                    thesaurus_match_count += 1
-
-                # Flush row group when it reaches S3_ROW_GROUP_SIZE or crop column approaches 2GB
-                if len(row_group_buf) >= S3_ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
-                    _flush_row_group()
-
-                # Close shard when it reaches effective_shard_size
-                if shard_record_count + len(row_group_buf) >= effective_shard_size:
-                    _close_shard()
-
-                if record_limit and total_records >= record_limit:
-                    done = True
-
-            del crops
-
-    # Close any open shard with remaining records
-    if _current_writer is not None:
-        _close_shard()
-    elif row_group_buf:
-        _open_shard()
-        _close_shard()
-
-    logger.info(f"Total records: {total_records} across {shard_idx} shards")
-
-    # Wait for remaining uploads to finish
-    if upload_r2:
-        logger.info("Waiting for remaining R2 uploads to complete...")
-        for f, s3_key in upload_futures:
+    # Fast-skip items covered by existing shards without fetching from DB or S3
+    items_to_skip = 0
+    if records_to_skip > 0:
+        logger.info(f"  {chunk_label}Counting items to skip...")
+        cumulative = 0
+        for fetch_start in range(0, len(my_item_ids), ITEMS_PER_FETCH):
+            if cumulative >= records_to_skip:
+                break
+            fetch_ids = my_item_ids[fetch_start:fetch_start + ITEMS_PER_FETCH]
+            conn = _get_raw_connection()
             try:
-                if f.result():
-                    upload_stats["uploaded"] += 1
-                else:
-                    upload_stats["failed"] += 1
-            except Exception as e:
-                upload_stats["failed"] += 1
-                logger.error(f"  Upload exception for {s3_key}: {e}")
-        upload_futures.clear()
-        upload_executor.shutdown(wait=False)
-        logger.info(f"  R2 upload complete: {upload_stats['uploaded']} succeeded, {upload_stats['failed']} failed")
+                cur = conn.cursor()
+                cur.execute("SELECT COUNT(*) FROM filtered_dataset WHERE pipeline_batch_item_id = ANY(%s)", (fetch_ids,))
+                batch_count = cur.fetchone()[0]
+                cur.close()
+            finally:
+                conn.rollback()
+            if cumulative + batch_count <= records_to_skip:
+                cumulative += batch_count
+                items_to_skip += len(fetch_ids)
+            else:
+                break
+        skipped_records = cumulative
+        logger.info(f"  {chunk_label}Skipping {items_to_skip:,} items ({skipped_records:,} records)")
 
-    # Write stats summary
-    stats_suffix = "" if partition_k else "" # do we need partition name?
-    stats = {
-        "detection_threshold": detection_threshold,
-        "classification_threshold": classification_threshold,
-        "moderation_enabled": run_moderation,
-        "partition": f"{partition_k}/{partition_n}" if partition_k else None,
-        "final_record_count": total_records,
-        "total_shards": shard_idx,
-        "shard_size": effective_shard_size,
-        "dummy_mode": dummy,
-        "sample_mode": sample,
-        "uploaded_to_r2": upload_r2,
-        "classification_distribution": dict(class_counts),
-        "reclassified_to_other": reclassified_count,
-        "thesaurus_match_count": thesaurus_match_count,
-    }
+    active_item_ids = my_item_ids[items_to_skip:]
 
-    stats_file = output_path / f"filter_stats{stats_suffix}.json"
-    with open(stats_file, "w") as f:
-        json.dump(stats, f, indent=2)
-    logger.info(f"Stats written to: {stats_file}")
+    with ThreadPoolExecutor(max_workers=io_workers) as crop_executor:
+        for fetch_start in range(0, len(active_item_ids), ITEMS_PER_FETCH):
+            fetch_ids = active_item_ids[fetch_start:fetch_start + ITEMS_PER_FETCH]
+            rows = _fetch_rows_for_items(fetch_ids)
+            if not rows:
+                continue
 
-    # Print summary
-    logger.info("=" * 60)
-    logger.info(f"FILTERING SUMMARY{f' (partition {partition_k}/{partition_n})' if partition_k else ''}")
-    logger.info("=" * 60)
-    logger.info(f"Detection threshold: >= {detection_threshold}")
-    logger.info(f"Classification threshold: < {classification_threshold} -> 'Other'")
-    logger.info(f"After deduplication: {total_records}")
-    logger.info(f"Total shards: {shard_idx} ({effective_shard_size} rows each)")
-    logger.info(f"Reclassified to 'Other': {reclassified_count}")
-    if sample:
-        logger.info(f"Sample mode: limited to first {S3_SAMPLE_LIMIT} crops")
-    logger.info("-" * 60)
-    logger.info("Classification distribution:")
-    for cls_label, count in sorted(class_counts.items(), key=lambda x: -x[1]):
-        logger.info(f"  {cls_label}: {count}")
-    logger.info("=" * 60)
+            grouped = _group_rows_by_item(rows)
+            del rows
 
-    logger.success(f"Filtering complete! Output: {output_path}")
+            item_work: list[tuple[int, str, list[dict]]] = []
+            for item_id, item_rows in grouped.items():
+                processed = [_extract_row_fields(row, classification_threshold) for row in item_rows]
+                barcode = processed[0]["volume_barcode"] or "unknown"
+                item_work.append((item_id, barcode, processed))
+            del grouped
+
+            for batch_start in range(0, len(item_work), io_workers):
+                batch = item_work[batch_start:batch_start + io_workers]
+                futures = {}
+                for item_id, barcode, processed in batch:
+                    det_ids = [r["det_id"] for r in processed]
+                    scan_fns = {r["det_id"]: r["scan_filename"] for r in processed}
+                    fut = crop_executor.submit(_load_crops_for_item, item_id, barcode, det_ids, scan_fns)
+                    futures[fut] = (item_id, barcode, processed)
+
+                for fut in as_completed(futures):
+                    item_id, barcode, processed = futures[fut]
+                    try:
+                        crops = fut.result()
+                    except Exception as e:
+                        logger.warning(f"  {chunk_label}Crop failed for item {item_id}: {e}")
+                        crops = {}
+
+                    items_processed += 1
+
+                    for r in processed:
+                        det_id = r["det_id"]
+                        crop_bytes = crops.get(det_id)
+                        if crop_bytes is None:
+                            continue
+
+                        # Skip remaining records from the partial-skip boundary
+                        if skipped_records < records_to_skip:
+                            skipped_records += 1
+                            continue
+
+                        embedding = r["embedding"]
+
+                        record = {
+                            "id": det_id,
+                            "crop_gen": crop_bytes,
+                            "barcode_src": r["volume_barcode"],
+                            "page_filename_src": r["scan_filename"],
+                            "bbox_xyxy_gen": r["bbox_xyxy"],
+                            "width_gen": r["width"],
+                            "height_gen": r["height"],
+                            "pixel_count_mpx_gen": r["pixel_count_mpx"],
+                            "detection_confidence_gen": r["bbox_conf"],
+                            "classification_gen": r["classification_label"],
+                            "classification_confidence_gen": r["classification_confidence"],
+                            "classification_probs_gen": r["classification_probs"],
+                            "phash_gen": r["phash"],
+                            "embedding_gen": embedding,
+                            "caption_exp": r["caption_text"],
+                            "caption_linear_prob_exp": r["caption_linear_prob"],
+                            "caption_lang_passed_exp": r["caption_lang_passed"],
+                            "caption_lang_detected_exp": r["caption_lang_detected"],
+                            "caption_chronam_thesauri_matches_exp": r["thesaurus_matches"],
+                        }
+
+                        if current_writer is None:
+                            _open_shard()
+
+                        row_group_buf.append(record)
+                        row_group_crop_bytes += len(crop_bytes)
+                        total_records += 1
+
+                        if len(row_group_buf) >= S3_ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
+                            _flush_row_group()
+
+                        if shard_record_count + len(row_group_buf) >= shard_size:
+                            _close_shard()
+
+                    del crops
+                del futures
+
+            del item_work
+            gc.collect()
+
+            elapsed = time.time() - t_start
+            rate = total_records / elapsed if elapsed > 0 else 0
+            logger.info(f"  {chunk_label}Progress: {items_processed:,} items, {total_records:,} records, {rate:.0f} rec/s")
+
+    # Close final shard
+    if current_writer is not None:
+        _close_shard()
+
+    # Wait for uploads
+    logger.info(f"{chunk_label}Waiting for remaining uploads...")
+    for f, key in upload_futures:
+        try:
+            f.result()
+        except Exception as e:
+            logger.error(f"  Upload failed for {key}: {e}")
+    upload_futures.clear()
+    upload_executor.shutdown(wait=False)
+
+    total_shards = shard_idx - shard_start_idx
+    elapsed = time.time() - t_start
+    logger.success(f"{chunk_label}Done: {total_records:,} records across {total_shards} shards in {elapsed:.0f}s")
