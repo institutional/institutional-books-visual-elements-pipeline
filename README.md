@@ -15,8 +15,9 @@ The Institutional Data Initiative's pipeline for extracting, analyzing, and publ
 - [Sequencing of a pipeline run](#sequencing-of-a-pipeline-run)
 - [Available utilities](#available-utilities)
 - [CLI: `system`](#cli-system)
-- [CLI: `orchestration`](#cli-system)
+- [CLI: `orchestration`](#cli-orchestration)
 - [CLI: `steps`](#cli-steps)
+- [CLI: `export`](#cli-export)
 - [About IDI](#about-idi)
 - [Cite](#cite)
 
@@ -153,42 +154,99 @@ uv run pipeline.py orchestration execute --id-pipeline-run=1 --ignore-locks
 uv run pipeline.py orchestration execute --id-pipeline-run=1 --batch-processing-only"
 ```
 
-### 4. Export
+### 4. Create the `filtered_dataset` view
 
-> Work in progress
+Before running export commands, you must create a `filtered_dataset` PostgreSQL view. This view joins pipeline data into a single queryable surface that all export commands read from.
 
-"Peek" at samples to confirm the pipeline is working as expected.
-The peek function allows for peeking at batch level steps (detection, classification, captioning) and run level steps (embedding and hash deduplication).
-Peek at the batch level steps using `--step batch` and run level steps using `--step run`. Specify a batch number and the number of random volumes to peek at.
+The view applies the following filtering logic:
+- Filters detections by detection confidence threshold (0.75)
+- Applies classification confidence thresholding (low-confidence predictions become "Other")
+- Only includes records present in both deduplication groups (hash-based and embedding-based)
+
+**Conceptual structure:**
+
+```sql
+CREATE VIEW filtered_dataset AS
+SELECT
+    d.id_detection, pbi.id_pipeline_batch_item AS pipeline_batch_item_id,
+    v.barcode, d.scan_filename,
+    d.bbox_xyxy, d.bbox_xywh, d.bbox_conf,
+    c.pred_class, c.classification_conf, c.classification_probs,
+    cap.text AS caption_text, cap.lang AS caption_lang,
+    cap.lang_detected AS caption_lang_detected,
+    cap.linear_prob AS caption_linear_prob,
+    cap.thesaurus_matches AS caption_thesaurus_matches,
+    ih.image_hash, ie.embedding
+FROM detection d
+JOIN pipeline_batch_item pbi ON ...
+JOIN ib_volume v ON ...
+JOIN classification c ON ...
+LEFT JOIN caption cap ON ...
+LEFT JOIN image_hash ih ON ...
+LEFT JOIN image_embedding ie ON ...
+JOIN deduped_hash dh ON ...
+JOIN deduped_embedding de ON ...
+WHERE d.bbox_conf >= 0.75;
+```
+
+Adapt the exact join conditions and column names to your schema. The view must be created before any export commands can run.
+
+### 5. Export
+
+Once the pipeline run is complete and the `filtered_dataset` view has been created, use export commands to publish results.
+
+**Backfill computed columns** (run before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches`):
+
+```bash
+uv run pipeline.py export backfill
+uv run pipeline.py export backfill --cpus-limit 8
+```
+
+**Count tokens** in captions:
+
+```bash
+uv run pipeline.py export count-tokens
+```
+
+**Peek** at samples to confirm the pipeline is working as expected:
 
 ```bash
 uv run pipeline.py export peek --step run --id-pipeline-batch 1 --n 10
-
-# Run a specific batch
 uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n all
-
-# Run a specific batch
-uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n 5 --output-dir peek-5-volumes/
 ```
 
-Full dataset:
+**Export to S3** (parquet shards with embedded PNG crops):
 
 ```bash
-uv run pipeline.py export to-hf ...
+# Single process
+uv run pipeline.py export to-s3
+
+# Parallel using GNU parallel (recommended for large datasets)
+seq 0 31 | parallel -j8 'uv run pipeline.py export to-s3 --chunk-index {} --total-chunks 32'
 ```
 
-Data Analysis:
-
-For collecting analysis data from a pipeline run and export to CSV for further analysis, use `analyze`.
-Gathers crop-level metrics including metadata, dimensions, confidence scores, duplication information, and caption statistics.
-
-NOTE: This is a run-level step, which expects a `pipeline_run`.
+**Export to HuggingFace** (images + parquet datasets):
 
 ```bash
-uv run pipeline.py export analyze --id-pipeline-run=1
+# Single process
+uv run pipeline.py export to-hf
+
+# Parallel using GNU parallel (recommended for large datasets)
+seq 0 31 | parallel -j8 'uv run pipeline.py export to-hf --chunk-index {} --total-chunks 32'
 ```
 
-</details>
+**Statistics and visualization:**
+
+```bash
+# Aggregate stats and charts
+uv run pipeline.py export stats
+
+# Create a HuggingFace Space viewer
+uv run pipeline.py export viewer-space --push
+
+# Interactive embedding visualization
+uv run pipeline.py export embedding-atlas --sample 10000
+```
 
 
 [👆 Back to the summary](#summary)
@@ -439,25 +497,33 @@ uv run pipeline.py steps step05-store --id-pipeline-batch=1
 </details>
 
 <details>
-<summary><h3>steps step06-dedupe-hashes</h3></summary>
+<summary><h3>steps step06-dedupe-fast</h3></summary>
 
-Deduplicate image hashes using exact or fuzzy matching.
+Deduplicate image hashes using external-sort LSH with mmap bucket processing.
 
-    - For exact matching (--hamming-threshold=0), uses hash grouping (very fast).
-    - For fuzzy matching (--hamming-threshold>0), uses LSH for efficient approximate matching.
+Uses a fixed LSH band structure (6 bands x 24 bits for 144-bit perceptual hashes) to identify candidate pairs, then verifies matches using Hamming distance. Processing pipeline:
 
-    Tuning:
-    - For high recall (find more matches): Increase --lsh-num-tables, decrease --lsh-key-size
-    - For speed: Decrease --lsh-num-tables, increase --lsh-key-size
-    - For 256-bit hashes with threshold ≤5: Default settings work well
-    - For larger thresholds: Increase --lsh-num-tables (each doubling of threshold needs ~2× tables)
+1. Loads all hashes from DB into binary files (`hashes.bin`, `hash_ids.bin`, `metadata.jsonl`)
+2. Generates band entries (TSV) for all hashes across 6 LSH bands
+3. External-sorts the band file using GNU `sort`
+4. Streams sorted buckets, filters oversized buckets (>20k entries)
+5. Processes candidate pairs in parallel using `ProcessPoolExecutor` with `fork` start method
+6. Workers read hash data from mmap shared memory (zero-copy via fork inheritance)
+7. Builds Union-Find clusters and writes dedupe assignments to DB in parallel
 
 NOTE:
 - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
-- This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
+- This is a run-level step, which expects a `pipeline_run` rather than a `pipeline_batch`.
+- Requires GNU `sort` for the external sort step.
 
 ```bash
-uv run pipeline.py steps step06-dedupe-hashes --id-pipeline-run=1
+uv run pipeline.py steps step06-dedupe-fast --id-pipeline-run=1
+
+# Custom hamming threshold
+uv run pipeline.py steps step06-dedupe-fast --id-pipeline-run=1 --hamming-threshold=12
+
+# Limit workers
+uv run pipeline.py steps step06-dedupe-fast --id-pipeline-run=1 --workers=32
 ```
 
 </details>
@@ -480,10 +546,174 @@ uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
 
 </details>
 
+[👆 Back to the summary](#summary)
 
+---
 
+## CLI: export
 
+> Export commands require the `filtered_dataset` view to exist in PostgreSQL. See [Create the filtered_dataset view](#4-create-the-filtered_dataset-view).
 
+<details>
+<summary><h3>export backfill</h3></summary>
+
+Backfill computed columns on the `caption` table. Computes and stores:
+- `lang_detected`: ISO 639-3 language code via lingua language detection
+- `linear_prob`: Geometric mean of token probabilities from OpenAI logprobs
+- `thesaurus_matches`: ChronAm thesaurus term matches (JSONB)
+
+Uses a process pool (default 4 workers) because lingua holds the GIL. Each worker loads its own lingua model (~200MB each). Runs periodic VACUUM on the caption table.
+
+NOTE: Run this before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches` columns.
+
+```bash
+uv run pipeline.py export backfill
+uv run pipeline.py export backfill --force              # Re-compute already-backfilled captions
+uv run pipeline.py export backfill --limit 1000         # Process only 1000 captions (testing)
+uv run pipeline.py export backfill --cpus-limit 8       # Use 8 worker processes
+```
+
+</details>
+
+<details>
+<summary><h3>export count-tokens</h3></summary>
+
+Count tokens and compute corpus statistics for the `caption_text` column in `filtered_dataset` using tiktoken.
+
+Outputs statistics including total tokens, mean/median/std/percentile tokens per document. Writes results to a JSON file.
+
+```bash
+uv run pipeline.py export count-tokens
+uv run pipeline.py export count-tokens --encoding o200k_base   # Default encoding
+uv run pipeline.py export count-tokens --output logs/token_stats.json
+uv run pipeline.py export count-tokens --workers 8
+```
+
+</details>
+
+<details>
+<summary><h3>export to-s3</h3></summary>
+
+Export filtered dataset to S3 as parquet shards with embedded PNG crops.
+
+Reads from the `filtered_dataset` view, downloads crops from the OUTPUT S3 bucket (tar.gz archives), and writes parquet files with the crop bytes embedded directly in each row. Supports resume (detects existing shards and skips processed records) and multipart upload for large files.
+
+**Designed for GNU parallel** using `--chunk-index` and `--total-chunks` to split the item list into non-overlapping ranges:
+
+```bash
+# Single process
+uv run pipeline.py export to-s3
+
+# Parallel (recommended for large datasets)
+seq 0 31 | parallel -j8 'uv run pipeline.py export to-s3 --chunk-index {} --total-chunks 32'
+
+# With options
+uv run pipeline.py export to-s3 --shard-size 5000 --io-workers 16 --prefix my-export
+uv run pipeline.py export to-s3 --sample 100  # Test with 100 items
+```
+
+Each chunk writes shards with a unique prefix (e.g., `{prefix}-c05-0001.parquet`).
+
+</details>
+
+<details>
+<summary><h3>export to-hf</h3></summary>
+
+Export filtered dataset to HuggingFace: crop images to a HF bucket, metadata to a dataset repo as parquet shards split by classification label.
+
+Reads from the `filtered_dataset` view, downloads crops from the OUTPUT S3 bucket, re-encodes as WebP (quality 95), uploads images via `batch_bucket_files`, and writes parquet shards.
+
+**Designed for GNU parallel** using `--chunk-index` and `--total-chunks`:
+
+```bash
+# Single process
+uv run pipeline.py export to-hf
+
+# Parallel (recommended for large datasets)
+seq 0 31 | parallel -j8 'uv run pipeline.py export to-hf --chunk-index {} --total-chunks 32'
+
+# With options
+uv run pipeline.py export to-hf --shard-size 5000 --image-batch-size 200
+uv run pipeline.py export to-hf --skip-existing         # Skip items already in HF bucket
+uv run pipeline.py export to-hf --skip-parquet-upload   # Images only, combine shards later
+uv run pipeline.py export to-hf --io-workers 8          # Threads for S3 download + crop
+uv run pipeline.py export to-hf --sample                # Upload a sample only
+```
+
+Each chunk writes its own parquet shards and uploads its own images. Combine shards afterward with a final upload step.
+
+</details>
+
+<details>
+<summary><h3>export viewer-space</h3></summary>
+
+Export a self-contained HuggingFace Space with static volume data for interactive browsing.
+
+Generates a complete Gradio app directory including:
+- `app.py` — generated from `commands/export/templates/viewer_space_app.py`
+- `static/` — CSS/HTML assets from `commands/export/templates/static/`
+- Pre-exported volume images (compressed JPEG, max 1400px) and JSON metadata
+- `requirements.txt` and Space `README.md`
+
+The generated Space shows bounding box annotations, classifications, and captions for a set of demo volumes defined in `VOLUME_BARCODES`.
+
+```bash
+uv run pipeline.py export viewer-space
+uv run pipeline.py export viewer-space --output-dir ./my-space
+uv run pipeline.py export viewer-space --detections-only  # Only pages with detections
+uv run pipeline.py export viewer-space --push             # Push to HuggingFace Space
+```
+
+When `--push` is used, images are synced to a HF data bucket and the Space files are uploaded to a HF Space repo.
+
+</details>
+
+<details>
+<summary><h3>export embedding-atlas</h3></summary>
+
+Create an interactive 2D embedding visualization using [Apple's embedding-atlas](https://github.com/apple/embedding-atlas).
+
+Samples records from `filtered_dataset` that have embeddings, prepares a parquet file, and launches an interactive server (or exports as standalone HTML).
+
+```bash
+uv run pipeline.py export embedding-atlas --sample 10000
+uv run pipeline.py export embedding-atlas --sample 50000 --export-html atlas.html
+uv run pipeline.py export embedding-atlas --port 8080 --host 0.0.0.0
+uv run pipeline.py export embedding-atlas --text-column caption_text
+uv run pipeline.py export embedding-atlas --no-serve  # Prepare data only
+```
+
+</details>
+
+<details>
+<summary><h3>export peek</h3></summary>
+
+Peek at random samples to visually confirm the pipeline is working as expected.
+
+Supports both batch-level steps (detection, classification, captioning) and run-level steps (embedding, hash deduplication).
+
+```bash
+uv run pipeline.py export peek --step run --id-pipeline-batch 1 --n 10
+uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n all
+uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n 5 --output-dir peek-5-volumes/
+```
+
+</details>
+
+<details>
+<summary><h3>export stats</h3></summary>
+
+Generate aggregate statistics and visualizations from the database.
+
+Creates PNG charts and a JSON summary covering table counts, classification distributions, confidence scores, crop dimensions, caption statistics, deduplication effectiveness, pipeline performance, and volume metadata.
+
+```bash
+uv run pipeline.py export stats
+uv run pipeline.py export stats --output-dir ./my_stats
+uv run pipeline.py export stats --skip-slow  # Skip expensive queries
+```
+
+</details>
 
 [👆 Back to the summary](#summary)
 

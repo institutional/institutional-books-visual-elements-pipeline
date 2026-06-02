@@ -2,7 +2,7 @@ import boto3
 from botocore.config import Config
 import os
 
-VALID_TARGETS = ["GRIN_DATA", "OUTPUT"]
+VALID_TARGETS = ["GRIN_DATA", "OUTPUT", "FILTER"]
 
 
 def get_s3_client(target: str = VALID_TARGETS[0]) -> object:
@@ -12,6 +12,7 @@ def get_s3_client(target: str = VALID_TARGETS[0]) -> object:
     target can be:
     - "GRIN_DATA": Remote storage for Google Books tar.gz archives
     - "OUTPUT": Remote storage for the pipeline's output
+    - "FILTER": Remote storage for filtered dataset exports
     """
     assert target in VALID_TARGETS
 

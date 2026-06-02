@@ -38,6 +38,11 @@ class Caption(Model):
     lang = CharField(max_length=50)
 
     # Store the logprobs from the model response as JSON
-    logprobs = BinaryJSONField(null=True)
+    logprobs = BinaryJSONField(null=True, index=False)
+
+    # Backfilled columns (computed from text/logprobs after initial caption creation)
+    lang_detected = CharField(max_length=10, null=True)
+    linear_prob = FloatField(null=True)
+    thesaurus_matches = BinaryJSONField(null=True)
 
     created = DateTimeField(constraints=[SQL("DEFAULT CURRENT_TIMESTAMP")])
