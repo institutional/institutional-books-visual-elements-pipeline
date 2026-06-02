@@ -60,7 +60,7 @@ IB_10_METADATA_DATASET_REPO = "institutional/institutional-books-1.0-metadata"
 
 
 #
-# Detectiom model params
+# Detection model params
 #
 DETECTION_MODEL_REPO = "institutional/institutional-books-visual-elements-detection-yolo26n"
 """ Name of the repo containing final weights for the detection model. """
@@ -115,7 +115,7 @@ CLASSIFICATION_CLASS_DICT = {
 
 
 #
-# Dedupe Embeddings
+# Deduplication Embeddings
 #
 DEDUPE_EMBEDDING_MODEL_STORAGE_PATH = "pretrained-models"
 """ S3 folder in which the deduplication model is saved. """
@@ -159,7 +159,7 @@ DEDUPE_EMBEDDING_CACHE_DIR = Path(CACHE_DIR_PATH, "temp_image_embeddings")
 
 
 #
-# Dedupe Hashes
+# Deduplication Hashes
 #
 HASH_DEDUPE_LENGTH_BYTES = 12  # NOTE: change the max_length of the ImageHash model accordingly
 """Size of phash. The hash will be of size HASH_SIZE*HASH_SIZE bytes"""
