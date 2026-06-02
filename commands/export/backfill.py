@@ -2,7 +2,6 @@ import click
 from loguru import logger
 import json
 import math
-from pathlib import Path
 import re
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -11,9 +10,9 @@ from lingua import LanguageDetectorBuilder
 
 from models import Caption
 from utils import get_db, process_db_write_batch
-from const import DATA_DIR_PATH, DEFAULT_DB_BATCH_SIZE
+from const import DEFAULT_DB_BATCH_SIZE
 
-THESAURUS_FILE = Path(DATA_DIR_PATH) / "thesarus.jsonl"
+HF_THESAURUS_REPO = "institutional/chronicling-america-thesauri"
 
 BACKFILL_DEFAULT_WORKERS = 4
 VACUUM_EVERY_N_CHUNKS = 100
@@ -21,31 +20,36 @@ VACUUM_EVERY_N_CHUNKS = 100
 
 def load_thesaurus() -> tuple[dict[str, str], re.Pattern | None]:
     """
-    Load thesaurus and return (term_to_category, compiled_regex).
+    Load thesaurus from HuggingFace and return (term_to_category, compiled_regex).
     The regex matches any term in a single pass.
     """
+    import os
+    from datasets import load_dataset
+
     term_to_category = {}
-    if not THESAURUS_FILE.exists():
-        logger.warning(f"Thesaurus file not found: {THESAURUS_FILE}")
+
+    hf_token = os.environ.get("HF_TOKEN")
+    if not hf_token:
+        logger.warning("HF_TOKEN not set, cannot load thesaurus from HuggingFace")
         return term_to_category, None
 
-    with open(THESAURUS_FILE, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            entry = json.loads(line)
-            category = entry.get("category", "unknown")
-            if entry.get("keyword"):
-                term_to_category[entry["keyword"].lower()] = category
-            for term in entry.get("related_terms", []):
-                if term:
-                    term_to_category[term.lower()] = category
+    try:
+        dataset = load_dataset(HF_THESAURUS_REPO, split="train", token=hf_token)
+    except Exception as e:
+        logger.warning(f"Failed to load thesaurus from {HF_THESAURUS_REPO}: {e}")
+        return term_to_category, None
+
+    for entry in dataset:
+        category = entry.get("category", "unknown")
+        if entry.get("keyword"):
+            term_to_category[entry["keyword"].lower()] = category
+        for term in entry.get("related_terms", []):
+            if term:
+                term_to_category[term.lower()] = category
 
     if not term_to_category:
         return term_to_category, None
 
-    # Longest-first so "naturalized citizen" matches before "citizen"
     sorted_terms = sorted(term_to_category.keys(), key=len, reverse=True)
     pattern = r"\b(" + "|".join(re.escape(t) for t in sorted_terms) + r")\b"
     compiled = re.compile(pattern)
