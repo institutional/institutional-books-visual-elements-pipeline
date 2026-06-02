@@ -1,8 +1,6 @@
 # 📚 Institutional Books Visual Elements Pipeline
 The Institutional Data Initiative's pipeline for extracting, analyzing, and publishing visual elements from the Institutional Books 1.0 collection.
 
-> 🚧 Work in progress, experimental
-
 - 🤗 [Institutional Books on HuggingFace](https://huggingface.co/collections/instdin/institutional-books-68366258bfb38364238477cf)
 - 📄 [Technical report](TODO)
 - 🌐 [Website](TODO)
