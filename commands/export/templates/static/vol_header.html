@@ -1,0 +1,14 @@
+<dialog class="vol-dialog">
+  <div class="dialog-header">
+    <h3>Volume Details</h3>
+    <button class="dialog-close" onclick="this.closest('dialog').close()">×</button>
+  </div>
+  <div class="dialog-body">
+    <table class="vol-info-table">{vol_info_rows}</table>
+  </div>
+</dialog>
+<div class="vol-title-wrap">
+  <span class="vol-title-link" onclick="this.closest('.vol-header').querySelector('dialog').showModal()">
+    <h3 style="margin:0;display:inline;">{title}</h3> ℹ️</span>
+  <p style="font-size:0.9rem;color:var(--muted-text);margin:0;">{subtitle}</p>
+</div>
