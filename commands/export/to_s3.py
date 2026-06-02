@@ -32,7 +32,7 @@ from const import (
     S3_MULTIPART_PARALLEL_PARTS,
     S3_SHARD_SIZE,
     S3_MAX_INFLIGHT,
-    HF_ITEM_IDS_CACHE_PATH,
+    HF_EXPORT_ITEM_IDS_CACHE_PATH,
 )
 
 
@@ -53,8 +53,8 @@ def _get_raw_connection():
 
 
 def _fetch_item_ids_paginated() -> list[int]:
-    if HF_ITEM_IDS_CACHE_PATH.exists():
-        with open(HF_ITEM_IDS_CACHE_PATH, "r") as f:
+    if HF_EXPORT_ITEM_IDS_CACHE_PATH.exists():
+        with open(HF_EXPORT_ITEM_IDS_CACHE_PATH, "r") as f:
             return json.load(f)
 
     conn = _get_raw_connection()
@@ -73,11 +73,11 @@ def _fetch_item_ids_paginated() -> list[int]:
         except Exception:
             pass
 
-    HF_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = str(HF_ITEM_IDS_CACHE_PATH) + ".tmp"
+    HF_EXPORT_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(ids, f)
-    os.replace(tmp_path, str(HF_ITEM_IDS_CACHE_PATH))
+    os.replace(tmp_path, str(HF_EXPORT_ITEM_IDS_CACHE_PATH))
     return ids
 
 

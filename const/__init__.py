@@ -291,37 +291,37 @@ S3_MAX_INFLIGHT = 4
 S3_SHARD_SIZE = 5000
 """ Default number of rows per Parquet shard file uploaded to S3. """
 
-HF_IMAGES_REPO = "institutional/institutional-books-hl-visual-elements-images"
+HF_EXPORT_IMAGES_REPO = "institutional/institutional-books-hl-visual-elements-images"
 """ Hugging Face repo for uploading crop images as a bucket. """
 
-HF_DATASET_REPO = "institutional/institutional-books-hl-visual-elements"
+HF_EXPORT_DATASET_REPO = "institutional/institutional-books-hl-visual-elements"
 """ Hugging Face repo for the parquet dataset (metadata + embeddings). """
 
-HF_SAMPLE_LIMIT = 500
+HF_EXPORT_SAMPLE_LIMIT = 500
 """ Maximum number of items to export when running in sample mode. """
 
-HF_NETWORK_TIMEOUT = 300
+HF_EXPORT_NETWORK_TIMEOUT = 300
 """ Seconds to wait before timing out a Hugging Face network operation. """
 
-HF_NETWORK_MAX_RETRIES = 5
+HF_EXPORT_NETWORK_MAX_RETRIES = 5
 """ Maximum number of retry attempts for failed Hugging Face network calls. """
 
-HF_NETWORK_BASE_DELAY = 5
+HF_EXPORT_NETWORK_BASE_DELAY = 5
 """ Base delay in seconds for exponential backoff between retries. """
 
-HF_ITEM_IDS_CACHE_PATH = Path(ANALYSIS_OUTPUT_DIR) / "hf_export_item_ids.json"
+HF_EXPORT_ITEM_IDS_CACHE_PATH = Path(ANALYSIS_OUTPUT_DIR) / "hf_export_item_ids.json"
 """ Local cache file storing item IDs to resume interrupted HF exports. """
 
-HF_SHARD_SIZE = 5000
+HF_EXPORT_SHARD_SIZE = 5000
 """ Number of rows per parquet shard uploaded to the HF dataset repo. """
 
-HF_IMAGE_BATCH_SIZE = 1000
+HF_EXPORT_IMAGE_BATCH_SIZE = 1000
 """ Number of images to upload per commit to the HF images bucket. """
 
-HF_ITEMS_PER_FETCH = 200
+HF_EXPORT_ITEMS_PER_FETCH = 200
 """ Number of pipeline batch items to fetch from the database per query. """
 
-HF_IO_WORKERS = 4
+HF_EXPORT_IO_WORKERS = 4
 """ Number of parallel I/O workers for downloading crops from S3. """
 
 #
