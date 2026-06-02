@@ -253,8 +253,6 @@ uv run pipeline.py export embedding-atlas --sample 10000
 
 ## Available utilities
 
-> Work in progress
-
 Here is an example of some of the utility features this pipeline provides.
 
 ```python
@@ -406,8 +404,6 @@ uv run pipeline.py orchestration status
 ---
 
 ## CLI: steps
-
-> Work in progress
 
 <details>
 <summary><h3>steps step01-detect</h3></summary>
