@@ -431,6 +431,13 @@ uv run pipeline.py steps step02-classify --id-pipeline-batch=1
 
 Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch, and saves them to the database, per GPU.
 
+Uses Facebook/Meta AI's [SSCD (Self-Supervised Copy Detection)](https://github.com/facebookresearch/sscd-copy-detection) model in TorchScript format. The model is downloaded automatically before worker processes are spawned:
+
+1. **Primary source:** Downloaded from the public URL at `https://dl.fbaipublicfiles.com/sscd-copy-detection/sscd_disc_mixup.classy.pt`
+2. **Fallback:** If the public URL is unreachable, the model is downloaded from the project's S3-compatible object storage (`OUTPUT` bucket, under the `pretrained-models/` prefix).
+
+The downloaded model is cached locally at `pretrained-models/sscd_disc_mixup.torchscript.pt` and reused on subsequent runs.
+
 NOTE:
 - This command is intended to be run by the orchestrator. See `orchestration/execute.py` for details.
 - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.

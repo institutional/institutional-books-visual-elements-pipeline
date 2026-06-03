@@ -24,6 +24,7 @@ from models import PipelineBatchItem, Detection, ImageEmbedding, ImageHash
 from const import (
     DEDUPE_EMBEDDING_MODEL_FILEPATH,
     DEDUPE_EMBEDDING_MODEL_STORAGE_PATH,
+    DEDUPE_EMBEDDING_MODEL_URL,
     DEDUPE_EMBEDDING_NUM_PROCESSES_PER_GPU,
     HASH_DEDUPE_LENGTH_BYTES,
     CUDA_GPUS,
@@ -328,53 +329,61 @@ def embed_batch_of_items(
 
 
 def download_model():
-    s3 = get_s3_client("OUTPUT")
+    """
+    Downloads the SSCD model. Tries the public URL first, falls back to S3 storage.
+    """
+    import urllib.request
 
-    # Ensure the parent directory exists
     DEDUPE_EMBEDDING_MODEL_FILEPATH.parent.mkdir(parents=True, exist_ok=True)
-
-    # Download to a temporary file first, then rename (atomic operation)
     temp_filepath = DEDUPE_EMBEDDING_MODEL_FILEPATH.with_suffix(".pt.tmp")
 
-    # Construct the full S3 key for the model file
-    s3_key = DEDUPE_EMBEDDING_MODEL_STORAGE_PATH
-    if not s3_key.endswith(".pt"):
-        s3_key = f"{s3_key.rstrip('/')}/{DEDUPE_EMBEDDING_MODEL_NAME}"
+    if temp_filepath.exists():
+        temp_filepath.unlink()
+    if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
+        DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
 
+    # Try primary source: public URL
     try:
-        # Remove any existing files
+        click.echo(f"  Downloading model from {DEDUPE_EMBEDDING_MODEL_URL}...")
+        urllib.request.urlretrieve(DEDUPE_EMBEDDING_MODEL_URL, str(temp_filepath))
+
+        actual_size = temp_filepath.stat().st_size
+        click.echo(f"  Downloaded {actual_size:,} bytes")
+
+        if actual_size < 1_000_000:
+            raise RuntimeError(
+                f"Downloaded file is too small ({actual_size} bytes), likely not a valid model"
+            )
+
+        temp_filepath.rename(DEDUPE_EMBEDDING_MODEL_FILEPATH)
+        click.echo(f"  ✓ Model downloaded from URL: {DEDUPE_EMBEDDING_MODEL_FILEPATH}")
+        return
+    except Exception as e:
+        logger.warning(f"Failed to download model from URL: {e}. Falling back to S3...")
         if temp_filepath.exists():
             temp_filepath.unlink()
-        if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
-            DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
 
-        # First, check if the object exists and get its metadata
+    # Fallback: S3 storage
+    try:
+        s3 = get_s3_client("OUTPUT")
+
+        s3_key = DEDUPE_EMBEDDING_MODEL_STORAGE_PATH
+        if not s3_key.endswith(".pt"):
+            s3_key = f"{s3_key.rstrip('/')}/{DEDUPE_EMBEDDING_MODEL_NAME}"
+
         click.echo(f"  Checking S3 object: {s3_key}")
-        try:
-            # We proactively call head_object to:
-            # - Fail fast if the key does not exist.
-            # - Get the expected content length, so we can validate the download later.
-            # - Check for partial/corrupted downloads.
-            head_response = s3.head_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
-            expected_size = head_response["ContentLength"]
-            click.echo(f"  Expected file size: {expected_size:,} bytes")
+        head_response = s3.head_object(Bucket=OUTPUT_STORAGE_BUCKET_NAME, Key=s3_key)
+        expected_size = head_response["ContentLength"]
+        click.echo(f"  Expected file size: {expected_size:,} bytes")
 
-            if expected_size < 1_000_000:
-                raise RuntimeError(
-                    f"S3 object is too small ({expected_size} bytes), likely not a valid model"
-                )
-        except s3.exceptions.NoSuchKey:
-            logger.error(f"S3 object not found: s3://{OUTPUT_STORAGE_BUCKET_NAME}/{s3_key}")
-            raise
-        except Exception as e:
-            logger.error(f"Error checking S3 object: {e}")
-            raise
+        if expected_size < 1_000_000:
+            raise RuntimeError(
+                f"S3 object is too small ({expected_size} bytes), likely not a valid model"
+            )
 
-        # Download the file
         click.echo(f"  Downloading {s3_key} from bucket {OUTPUT_STORAGE_BUCKET_NAME}...")
         s3.download_file(OUTPUT_STORAGE_BUCKET_NAME, s3_key, str(temp_filepath))
 
-        # Verify file size matches
         actual_size = temp_filepath.stat().st_size
         click.echo(f"  Downloaded {actual_size:,} bytes")
 
@@ -383,18 +392,14 @@ def download_model():
                 f"File size mismatch: expected {expected_size:,} bytes, got {actual_size:,} bytes"
             )
 
-        # Move temp file to final location (atomic)
         temp_filepath.rename(DEDUPE_EMBEDDING_MODEL_FILEPATH)
         click.echo(
-            f"  ✓ Model successfully downloaded and validated: {DEDUPE_EMBEDDING_MODEL_FILEPATH}"
+            f"  ✓ Model downloaded from S3 (fallback): {DEDUPE_EMBEDDING_MODEL_FILEPATH}"
         )
-
     except Exception as e:
-        logger.error(f"Error downloading model from S3: {e}")
-        # Clean up temp file
+        logger.error(f"Error downloading model from S3 fallback: {e}")
         if temp_filepath.exists():
             temp_filepath.unlink()
-        # Clean up corrupted final file
         if DEDUPE_EMBEDDING_MODEL_FILEPATH.exists():
             DEDUPE_EMBEDDING_MODEL_FILEPATH.unlink()
         raise

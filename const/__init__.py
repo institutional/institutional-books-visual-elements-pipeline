@@ -124,8 +124,11 @@ CLASSIFICATION_CLASS_DICT = {
 #
 # Deduplication Embeddings
 #
+DEDUPE_EMBEDDING_MODEL_URL = "https://dl.fbaipublicfiles.com/sscd-copy-detection/sscd_disc_mixup.classy.pt"
+""" Primary download URL for the SSCD deduplication model (Facebook AI). """
+
 DEDUPE_EMBEDDING_MODEL_STORAGE_PATH = "pretrained-models"
-""" S3 folder in which the deduplication model is saved. """
+""" S3 folder in which the deduplication model is saved (fallback). """
 
 DEDUPE_EMBEDDING_MODEL_NAME = "sscd_disc_mixup.torchscript.pt"
 """ Filename of the deduplication embedding model. """
