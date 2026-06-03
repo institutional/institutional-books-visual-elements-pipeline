@@ -1,12 +1,10 @@
 import click
 from loguru import logger
-from collections import defaultdict
 import gc
 import gzip
 import io
 import json
 import tarfile
-from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 from iso639 import Lang
@@ -19,11 +17,9 @@ from utils import get_db
 from utils.get_s3_client import get_s3_client
 from const import (
     CLASSIFICATION_CLASS_DICT,
-    ANALYSIS_OUTPUT_DIR,
     DATETIME_SLUG,
     OUTPUT_STORAGE_BUCKET_NAME,
     FILTER_STORAGE_BUCKET_NAME,
-    DETECTION_CONFIDENCE_THRESHOLD,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
     MODEL_CLASS_INDEX_ORDER,
     S3_EXPORT_ROW_GROUP_SIZE,

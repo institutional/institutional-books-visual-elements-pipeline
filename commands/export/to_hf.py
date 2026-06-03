@@ -13,21 +13,18 @@ import pyarrow.parquet as pq
 from iso639 import Lang
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
-import shutil
 import time
 import random
 import numpy as np
 import requests.exceptions
-from huggingface_hub import HfApi, CommitOperationAdd, batch_bucket_files, sync_bucket
-from utils import decode_image_bytes, get_db
+from huggingface_hub import HfApi, CommitOperationAdd, batch_bucket_files
+from utils import get_db
 from utils.get_s3_client import get_s3_client
-from utils.get_cache import get_cache
 from const import (
     CLASSIFICATION_CLASS_DICT,
     ANALYSIS_OUTPUT_DIR,
     DATETIME_SLUG,
     OUTPUT_STORAGE_BUCKET_NAME,
-    DETECTION_CONFIDENCE_THRESHOLD,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
     MODEL_CLASS_INDEX_ORDER,
     HF_EXPORT_IMAGES_REPO,
@@ -423,12 +420,6 @@ def _load_and_crop_item(item_id: int, barcode: str, rows: list[dict]) -> dict[in
 
 @click.command("to-hf")
 @click.option(
-    "--detection-threshold",
-    type=float,
-    default=DETECTION_CONFIDENCE_THRESHOLD,
-    help=f"Minimum detection confidence threshold (default: {DETECTION_CONFIDENCE_THRESHOLD})",
-)
-@click.option(
     "--classification-threshold",
     type=float,
     default=CLASSIFICATION_CONFIDENCE_THRESHOLD,
@@ -480,7 +471,6 @@ def _load_and_crop_item(item_id: int, barcode: str, rows: list[dict]) -> dict[in
     help="Check HF images bucket for existing files and skip downloading/processing those items",
 )
 def to_hf(
-    detection_threshold,
     classification_threshold,
     sample,
     shard_size,
@@ -547,7 +537,6 @@ def to_hf(
     chunk_label = f"[chunk {chunk_index}/{total_chunks}] " if chunk_index is not None else ""
 
     logger.info(f"{chunk_label}Starting HuggingFace export...")
-    logger.info(f"  Detection confidence threshold: {detection_threshold}")
     logger.info(f"  Classification confidence threshold: {classification_threshold}")
     if sample:
         logger.info(f"  Sample mode: {HF_EXPORT_SAMPLE_LIMIT} images")
