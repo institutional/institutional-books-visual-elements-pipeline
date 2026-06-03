@@ -244,16 +244,19 @@ ANALYSIS_OUTPUT_DIR = PEEK_OUTPUT_DIR = Path(CACHE_DIR_PATH, "temp_analysis")
 """Output directory for analysis files"""
 
 #
-# Exporting
+# Post-processing
 #
 DETECTION_CONFIDENCE_THRESHOLD = 0.75
-""" Minimum detection confidence to include a crop in the export. Detections below this are excluded. """
-
-CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.70
-""" Classifications below this confidence are reclassified as "Other" in the export. """
+""" Minimum detection confidence to include in the filtered_dataset view. Detections below this are excluded. """
 
 SERVER_SIDE_CURSOR_SIZE = 100_000
 """ Number of rows to fetch per batch when streaming results via PostgreSQL server-side cursors. """
+
+#
+# Exporting
+#
+CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.70
+""" Classifications below this confidence are reclassified as "Other" at export time. """
 
 MODEL_CLASS_INDEX_ORDER = [
     "Artifact",
