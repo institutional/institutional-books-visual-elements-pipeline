@@ -125,13 +125,16 @@ def ensure_backfill_columns():
 _worker_detector = None
 _worker_thesaurus = None
 _worker_regex = None
+_worker_skip_thesaurus = False
 
 
-def _init_worker():
+def _init_worker(skip_thesaurus: bool = False):
     """Called once per worker process to initialize DB and heavy resources."""
-    global _worker_detector, _worker_thesaurus, _worker_regex
+    global _worker_detector, _worker_thesaurus, _worker_regex, _worker_skip_thesaurus
+    _worker_skip_thesaurus = skip_thesaurus
     get_db()
-    _worker_thesaurus, _worker_regex = load_thesaurus()
+    if not skip_thesaurus:
+        _worker_thesaurus, _worker_regex = load_thesaurus()
     _worker_detector = LanguageDetectorBuilder.from_all_languages().build()
 
 
@@ -148,16 +151,21 @@ def backfill_worker(caption_ids: list[int], batch_size: int) -> int:
 
         cap.lang_detected = detect_caption_language(text, _worker_detector)
         cap.linear_prob = calculate_caption_linear_prob(cap.logprobs)
-        cap.thesaurus_matches = (
-            get_thesaurus_matches(text, _worker_thesaurus, _worker_regex)
-            if _worker_regex
-            else None
-        )
+        if not _worker_skip_thesaurus:
+            cap.thesaurus_matches = (
+                get_thesaurus_matches(text, _worker_thesaurus, _worker_regex)
+                if _worker_regex
+                else None
+            )
+
+    fields_to_update = [Caption.lang_detected, Caption.linear_prob]
+    if not _worker_skip_thesaurus:
+        fields_to_update.append(Caption.thesaurus_matches)
 
     process_db_write_batch(
         Caption,
         entries_to_update=captions,
-        fields_to_update=[Caption.lang_detected, Caption.linear_prob, Caption.thesaurus_matches],
+        fields_to_update=fields_to_update,
     )
     return count
 
@@ -186,14 +194,19 @@ def backfill_worker(caption_ids: list[int], batch_size: int) -> int:
     default=BACKFILL_DEFAULT_WORKERS,
     help=f"Number of parallel worker processes (default: {BACKFILL_DEFAULT_WORKERS})",
 )
-def backfill(batch_size, force, limit, cpus_limit):
+@click.option(
+    "--skip-thesaurus",
+    is_flag=True,
+    help="Skip ChronAm thesaurus matching (avoids HF_TOKEN requirement)",
+)
+def backfill(batch_size, force, limit, cpus_limit, skip_thesaurus):
     """
     Backfill computed columns on the caption table.
 
     Computes and stores:
     - lang_detected: ISO 639-3 code from lingua language detection
     - linear_prob: geometric mean of token probabilities from logprobs
-    - thesaurus_matches: ChronAm thesaurus term matches (JSONB)
+    - thesaurus_matches: ChronAm thesaurus term matches (JSONB) [optional]
 
     Uses a small process pool (default 4) because lingua holds the GIL.
     Each worker loads its own lingua model (~200MB each).
@@ -203,8 +216,11 @@ def backfill(batch_size, force, limit, cpus_limit):
         backfill --force
         backfill --limit 1000
         backfill --cpus-limit 8
+        backfill --skip-thesaurus
     """
     logger.info("Starting caption backfill...")
+    if skip_thesaurus:
+        logger.info("  Skipping ChronAm thesaurus matching (--skip-thesaurus)")
 
     ensure_backfill_columns()
 
@@ -234,7 +250,7 @@ def backfill(batch_size, force, limit, cpus_limit):
     processed = 0
     chunks_completed = 0
 
-    with ProcessPoolExecutor(max_workers=processes_total, initializer=_init_worker) as executor:
+    with ProcessPoolExecutor(max_workers=processes_total, initializer=_init_worker, initargs=(skip_thesaurus,)) as executor:
         futures = {
             executor.submit(backfill_worker, caption_ids=chunk, batch_size=batch_size): idx
             for idx, chunk in enumerate(chunks)
