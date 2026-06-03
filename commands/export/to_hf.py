@@ -30,17 +30,17 @@ from const import (
     DETECTION_CONFIDENCE_THRESHOLD,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
     MODEL_CLASS_INDEX_ORDER,
-    HF_IMAGES_REPO,
-    HF_DATASET_REPO,
-    HF_SAMPLE_LIMIT,
-    HF_NETWORK_TIMEOUT,
-    HF_NETWORK_MAX_RETRIES,
-    HF_NETWORK_BASE_DELAY,
-    HF_ITEM_IDS_CACHE_PATH,
-    HF_SHARD_SIZE,
-    HF_IMAGE_BATCH_SIZE,
-    HF_ITEMS_PER_FETCH,
-    HF_IO_WORKERS,
+    HF_EXPORT_IMAGES_REPO,
+    HF_EXPORT_DATASET_REPO,
+    HF_EXPORT_SAMPLE_LIMIT,
+    HF_EXPORT_NETWORK_TIMEOUT,
+    HF_EXPORT_NETWORK_MAX_RETRIES,
+    HF_EXPORT_NETWORK_BASE_DELAY,
+    HF_EXPORT_ITEM_IDS_CACHE_PATH,
+    HF_EXPORT_SHARD_SIZE,
+    HF_EXPORT_IMAGE_BATCH_SIZE,
+    HF_EXPORT_ITEMS_PER_FETCH,
+    HF_EXPORT_IO_WORKERS,
 )
 
 os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
@@ -64,13 +64,13 @@ def _is_retryable(exc: BaseException) -> bool:
     return False
 
 
-def _retry(fn, *args, max_retries=HF_NETWORK_MAX_RETRIES, label="network call", **kwargs):
+def _retry(fn, *args, max_retries=HF_EXPORT_NETWORK_MAX_RETRIES, label="network call", **kwargs):
     for attempt in range(1, max_retries + 1):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
             if _is_retryable(e) and attempt < max_retries:
-                delay = HF_NETWORK_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 2)
+                delay = HF_EXPORT_NETWORK_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 2)
                 logger.warning(f"{label} failed ({type(e).__name__}), retry {attempt}/{max_retries} in {delay:.1f}s...")
                 time.sleep(delay)
             else:
@@ -128,8 +128,8 @@ def _fetch_chunk(resume_after_item_id: int | None, limit: int) -> tuple[list[dic
 
 def _fetch_item_ids_paginated() -> list[int]:
     """Fetch all distinct pipeline_batch_item_ids in order, with local file cache."""
-    if HF_ITEM_IDS_CACHE_PATH.exists():
-        with open(HF_ITEM_IDS_CACHE_PATH, "r") as f:
+    if HF_EXPORT_ITEM_IDS_CACHE_PATH.exists():
+        with open(HF_EXPORT_ITEM_IDS_CACHE_PATH, "r") as f:
             ids = json.load(f)
         return ids
 
@@ -149,11 +149,11 @@ def _fetch_item_ids_paginated() -> list[int]:
         except Exception:
             pass
 
-    HF_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = str(HF_ITEM_IDS_CACHE_PATH) + ".tmp"
+    HF_EXPORT_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(ids, f)
-    os.replace(tmp_path, str(HF_ITEM_IDS_CACHE_PATH))
+    os.replace(tmp_path, str(HF_EXPORT_ITEM_IDS_CACHE_PATH))
     return ids
 
 
@@ -269,7 +269,7 @@ def _make_crop_filename(barcode: str, page_filename: str, detection_id: int) -> 
 
 
 def _make_crop_hf_url(filename: str) -> str:
-    return f"https://huggingface.co/buckets/{HF_IMAGES_REPO}/resolve/{filename}"
+    return f"https://huggingface.co/buckets/{HF_EXPORT_IMAGES_REPO}/resolve/{filename}"
 
 
 def _extract_row_fields(row: dict, classification_threshold: float) -> dict:
@@ -437,12 +437,12 @@ def _load_and_crop_item(item_id: int, barcode: str, rows: list[dict]) -> dict[in
 @click.option(
     "--sample",
     is_flag=True,
-    help=f"Upload only a sample of {HF_SAMPLE_LIMIT} images to start with",
+    help=f"Upload only a sample of {HF_EXPORT_SAMPLE_LIMIT} images to start with",
 )
 @click.option(
     "--shard-size",
     type=int,
-    default=HF_SHARD_SIZE,
+    default=HF_EXPORT_SHARD_SIZE,
     help="Number of rows per parquet shard (default: 5000)",
 )
 @click.option(
@@ -460,7 +460,7 @@ def _load_and_crop_item(item_id: int, barcode: str, rows: list[dict]) -> dict[in
 @click.option(
     "--image-batch-size",
     type=int,
-    default=HF_IMAGE_BATCH_SIZE,
+    default=HF_EXPORT_IMAGE_BATCH_SIZE,
     help="Number of images per upload batch (default: 200)",
 )
 @click.option(
@@ -471,7 +471,7 @@ def _load_and_crop_item(item_id: int, barcode: str, rows: list[dict]) -> dict[in
 @click.option(
     "--io-workers",
     type=int,
-    default=HF_IO_WORKERS,
+    default=HF_EXPORT_IO_WORKERS,
     help="Number of threads for S3 download + crop (default: 4)",
 )
 @click.option(
@@ -529,7 +529,7 @@ def to_hf(
         else:
             logger.info("Fetching existing image list from HF bucket (one-time)...")
             try:
-                for entry in api.list_bucket_tree(HF_IMAGES_REPO, recursive=True):
+                for entry in api.list_bucket_tree(HF_EXPORT_IMAGES_REPO, recursive=True):
                     if hasattr(entry, "path"):
                         existing_images.add(entry.path)
                 existing_cache_path.parent.mkdir(parents=True, exist_ok=True)
@@ -543,16 +543,16 @@ def to_hf(
                 logger.warning(f"  Failed to list existing images: {e}. Proceeding without skip.")
                 existing_images.clear()
 
-    record_limit = HF_SAMPLE_LIMIT if sample else None
+    record_limit = HF_EXPORT_SAMPLE_LIMIT if sample else None
     chunk_label = f"[chunk {chunk_index}/{total_chunks}] " if chunk_index is not None else ""
 
     logger.info(f"{chunk_label}Starting HuggingFace export...")
     logger.info(f"  Detection confidence threshold: {detection_threshold}")
     logger.info(f"  Classification confidence threshold: {classification_threshold}")
     if sample:
-        logger.info(f"  Sample mode: {HF_SAMPLE_LIMIT} images")
-    logger.info(f"  Images repo: {HF_IMAGES_REPO}")
-    logger.info(f"  Dataset repo: {HF_DATASET_REPO}")
+        logger.info(f"  Sample mode: {HF_EXPORT_SAMPLE_LIMIT} images")
+    logger.info(f"  Images repo: {HF_EXPORT_IMAGES_REPO}")
+    logger.info(f"  Dataset repo: {HF_EXPORT_DATASET_REPO}")
 
     # Determine which items this chunk handles
     logger.info(f"{chunk_label}Fetching item IDs...")
@@ -570,7 +570,7 @@ def to_hf(
         my_item_ids = all_item_ids
 
     if sample:
-        my_item_ids = my_item_ids[:HF_SAMPLE_LIMIT]
+        my_item_ids = my_item_ids[:HF_EXPORT_SAMPLE_LIMIT]
 
     del all_item_ids
 
@@ -609,7 +609,7 @@ def to_hf(
             try:
                 _retry(
                     batch_bucket_files,
-                    HF_IMAGES_REPO,
+                    HF_EXPORT_IMAGES_REPO,
                     add=add_pairs,
                     token=hf_token,
                     label=f"upload batch of {len(add_pairs)} images",
@@ -621,7 +621,7 @@ def to_hf(
 
         proc = multiprocessing.Process(target=_worker)
         proc.start()
-        proc.join(timeout=HF_NETWORK_TIMEOUT)
+        proc.join(timeout=HF_EXPORT_NETWORK_TIMEOUT)
         if proc.is_alive():
             proc.kill()
             proc.join()
@@ -657,11 +657,11 @@ def to_hf(
     logger.info(f"  {chunk_label}I/O workers for S3 download+crop: {io_workers}")
 
     with ThreadPoolExecutor(max_workers=io_workers) as crop_executor:
-        for fetch_start in range(0, len(my_item_ids), HF_ITEMS_PER_FETCH):
+        for fetch_start in range(0, len(my_item_ids), HF_EXPORT_ITEMS_PER_FETCH):
             if done:
                 break
 
-            fetch_ids = my_item_ids[fetch_start:fetch_start + HF_ITEMS_PER_FETCH]
+            fetch_ids = my_item_ids[fetch_start:fetch_start + HF_EXPORT_ITEMS_PER_FETCH]
             rows = _fetch_rows_for_items(fetch_ids)
             if not rows:
                 continue
@@ -809,10 +809,10 @@ def to_hf(
 
     # Upload dataset parquet shards to HF dataset repo
     if not skip_parquet_upload:
-        logger.info(f"{chunk_label}Uploading {total_shards} parquet shards to {HF_DATASET_REPO}...")
+        logger.info(f"{chunk_label}Uploading {total_shards} parquet shards to {HF_EXPORT_DATASET_REPO}...")
         _retry(
             api.create_repo,
-            repo_id=HF_DATASET_REPO, repo_type="dataset", private=True, exist_ok=True,
+            repo_id=HF_EXPORT_DATASET_REPO, repo_type="dataset", private=True, exist_ok=True,
             label="create HF dataset repo",
         )
 
@@ -839,13 +839,13 @@ def to_hf(
             try:
                 _retry(
                     api.create_commit,
-                    repo_id=HF_DATASET_REPO,
+                    repo_id=HF_EXPORT_DATASET_REPO,
                     repo_type="dataset",
                     operations=operations,
                     commit_message=f"Upload dataset chunk{chunk_suffix} ({total_records} records, {total_shards} shards)",
                     label="dataset commit upload",
                 )
-                logger.success(f"{chunk_label}Dataset uploaded to {HF_DATASET_REPO}")
+                logger.success(f"{chunk_label}Dataset uploaded to {HF_EXPORT_DATASET_REPO}")
             except Exception as e:
                 logger.error(f"{chunk_label}Failed to upload dataset after retries: {e}")
 
