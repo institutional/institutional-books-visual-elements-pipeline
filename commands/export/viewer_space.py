@@ -1,8 +1,17 @@
 """
-Export a self-contained HuggingFace Space with static data from the pipeline.
+Export a self-contained HuggingFace Space with static volume data for interactive browsing.
 
-Generates a Gradio app + pre-exported volume data (images + JSON metadata)
-ready to push to a HF Space repo.
+Generates a complete Gradio app directory including:
+- app.py - generated from commands/export/templates/viewer_space_app.py
+- static/ - CSS/HTML assets from commands/export/templates/static/
+- Pre-exported volume images (compressed JPEG, max 1400px) and JSON metadata
+- requirements.txt and Space README.md
+
+The generated Space shows bounding box annotations, classifications, and captions
+for a set of demo volumes defined in VOLUME_BARCODES.
+
+When --push is used, images are synced to a HF data bucket and the Space files
+are uploaded to a HF Space repo.
 """
 
 import json

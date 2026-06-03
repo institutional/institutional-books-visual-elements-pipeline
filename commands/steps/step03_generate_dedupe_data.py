@@ -57,6 +57,10 @@ def step03_generate_dedupe_data(id_pipeline_batch: int, cpus_limit: int, cuda_gp
     """
     Computes embeddings (and hashes) for all crops in all volumes with detections in this pipeline batch,
     and saves them to the database, per GPU.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
     """
     model_filepath: Path | None = None
 

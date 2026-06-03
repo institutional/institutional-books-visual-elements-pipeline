@@ -67,6 +67,7 @@ def step04_caption(id_pipeline_batch: int, cpus_limit: int):
     NOTE:
     - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
     - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+    - Adjust CAPTION_MAX_REQUESTS env var based on your OpenAI API tier and usage.
     """
 
     # Concurrency model:

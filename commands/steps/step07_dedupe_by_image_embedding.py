@@ -117,6 +117,10 @@ def step07_dedupe_by_image_embedding(
     Deduplicate embeddings at scale using HNSW index with disk caching.
 
     NOTE: Embeddings are NOT stored in deduped_embedding table (use JOIN with embedding table).
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
     """
 
     logger.info(f"Starting deduplication for pipeline run {id_pipeline_run}")

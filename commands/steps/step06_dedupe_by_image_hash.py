@@ -40,7 +40,24 @@ _parent_arr = None
 @click.option("--workers", type=int, default=HASH_DEDUPE_CPUS_LIMIT)
 def step06_dedupe_by_image_hash(id_pipeline_run, hamming_threshold, workers):
     """
-    New fast dedupe using external-sort LSH + mmap bucket processing.
+    Deduplicate image hashes using external-sort LSH with mmap bucket processing.
+
+    Uses a fixed LSH band structure (6 bands x 24 bits for 144-bit perceptual hashes)
+    to identify candidate pairs, then verifies matches using Hamming distance.
+
+    Processing pipeline:
+    1. Loads all hashes from DB into binary files (hashes.bin, hash_ids.bin, metadata.jsonl)
+    2. Generates band entries (TSV) for all hashes across 6 LSH bands
+    3. External-sorts the band file using GNU sort
+    4. Streams sorted buckets, filters oversized buckets (>20k entries)
+    5. Processes candidate pairs in parallel using ProcessPoolExecutor with fork start method
+    6. Workers read hash data from mmap shared memory (zero-copy via fork inheritance)
+    7. Builds Union-Find clusters and writes dedupe assignments to DB in parallel
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a run-level step, which expects a pipeline_run rather than a pipeline_batch.
+    - Requires GNU sort for the external sort step.
     """
 
     logger.info(f"Starting FAST dedupe for run={id_pipeline_run}")

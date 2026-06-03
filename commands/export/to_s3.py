@@ -378,9 +378,17 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
     """
     Export filtered dataset to S3 as parquet shards with embedded PNG crops.
 
-    Use GNU parallel for parallelism:
+    Reads from the filtered_dataset view, downloads crops from the OUTPUT S3 bucket
+    (tar.gz archives), and writes parquet files with the crop bytes embedded directly
+    in each row. Supports resume (detects existing shards and skips processed records)
+    and multipart upload for large files.
 
-        seq 0 31 | parallel -j8 'python main.py export to-s3 --chunk-index {} --total-chunks 32'
+    Designed for GNU parallel using --chunk-index and --total-chunks to split the item
+    list into non-overlapping ranges:
+
+        seq 0 31 | parallel -j8 'uv run pipeline.py export to-s3 --chunk-index {} --total-chunks 32'
+
+    Each chunk writes shards with a unique prefix (e.g., {prefix}-c05-0001.parquet).
     """
     if (chunk_index is None) != (total_chunks is None):
         logger.error("--chunk-index and --total-chunks must be used together")

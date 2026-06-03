@@ -1,8 +1,8 @@
 """
-Embedding Atlas - Create interactive visualization of image embeddings.
+Create an interactive 2D embedding visualization using Apple's embedding-atlas.
 
-This tool creates an interactive 2D visualization of the filtered dataset embeddings
-using Apple's embedding-atlas library, sampling directly from the database.
+Samples records from filtered_dataset that have embeddings, prepares a parquet file,
+and launches an interactive server (or exports as standalone HTML).
 """
 
 import click

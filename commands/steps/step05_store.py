@@ -28,6 +28,10 @@ def step05_store(
 ):
     """
     Stores cropped detection regions to S3/R2 storage in full resolution PNG format.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
     """
 
     # Concurrency model:

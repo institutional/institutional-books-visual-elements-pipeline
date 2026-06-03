@@ -52,6 +52,14 @@ from const import (
 def step01_detect(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
     Runs the visual elements detection model against a batch of volumes.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+    - Runs X processes per GPU.
+        - Adjust DETECTION_MODEL_PROCESSES_PER_GPU env var based on available resources.
+        - Adjust DETECTION_MODEL_PROCESSES_FORK_DELAY env var to adjust pre-fork delay.
+        This may help prevent processes from blocking each other (HACK).
     """
     model_filepath: Path | None = None
 

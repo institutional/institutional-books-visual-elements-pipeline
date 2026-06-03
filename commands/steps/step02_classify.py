@@ -53,7 +53,15 @@ from const import (
 )
 def step02_classify(id_pipeline_batch: int, cpus_limit: int, cuda_gpus: list[str]):
     """
-    Runs the classification model on the visual elements detected for each volume.
+    Runs the visual elements classification model against a batch of crops.
+
+    NOTE:
+    - This command is intended to be run by the orchestrator. See orchestration/execute.py for details.
+    - This is a batch-level step, which expects to process a batch for which images and text are already cached on disk.
+    - Runs X processes per GPU.
+        - Adjust CLASSIFICATION_MODEL_PROCESSES_PER_GPU env var based on available resources.
+        - Adjust CLASSIFICATION_MODEL_PROCESSES_FORK_DELAY env var to adjust pre-fork delay.
+        This may help prevent processes from blocking each other (HACK).
     """
 
     # Concurrency model:

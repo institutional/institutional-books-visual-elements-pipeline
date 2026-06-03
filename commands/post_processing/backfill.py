@@ -203,8 +203,13 @@ def backfill(batch_size, force, limit, cpus_limit, skip_thesaurus):
     - linear_prob: geometric mean of token probabilities from logprobs
     - thesaurus_matches: ChronAm thesaurus term matches (JSONB) [optional]
 
-    Uses a small process pool (default 4) because lingua holds the GIL.
-    Each worker loads its own lingua model (~200MB each).
+    Uses a process pool (default 4 workers) because lingua holds the GIL.
+    Each worker loads its own lingua model (~200MB each). Runs periodic VACUUM
+    on the caption table.
+
+    NOTE: Run this before exports that need lang_detected, linear_prob, or
+    thesaurus_matches columns. The thesaurus step is optional and can be skipped
+    with --skip-thesaurus.
 
     Examples:
         backfill

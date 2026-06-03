@@ -220,7 +220,10 @@ def _process_page_image(page_data: dict) -> dict:
 )
 def peek(scope, id_pipeline_batch, n, sample_type, output_dir):
     """
-    Visualize pipeline outputs for debugging and validation.
+    Peek at random samples to visually confirm the pipeline is working as expected.
+
+    Supports both batch-level steps (detection, classification, captioning) and
+    run-level steps (embedding, hash deduplication).
 
     Examples:
         peek --scope detection --id-pipeline-batch 123 --n 5

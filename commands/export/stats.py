@@ -1278,9 +1278,9 @@ def save_statistics_json(stats_data: dict, output_path: Path):
 )
 def stats(output_dir, skip_slow):
     """
-    Generate aggregate statistics visualizations from the database.
+    Generate aggregate statistics and visualizations from the database.
 
-    Creates a series of charts showing distributions and summaries of:
+    Creates PNG charts and a JSON summary covering:
     - Table record counts
     - Classification distributions
     - Confidence scores

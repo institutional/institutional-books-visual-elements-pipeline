@@ -42,7 +42,13 @@ def _get_raw_connection():
     help="Number of threads for tokenization (default: CPU count)",
 )
 def count_tokens(encoding_name, output_path, workers):
-    """Count tokens and compute corpus statistics for the filtered_dataset caption_text column."""
+    """
+    Count tokens and compute corpus statistics for the caption_text column
+    in filtered_dataset using tiktoken.
+
+    Outputs statistics including total tokens, mean/median/std/percentile tokens
+    per document. Writes results to a JSON file.
+    """
     enc = tiktoken.get_encoding(encoding_name)
     num_workers = workers
 

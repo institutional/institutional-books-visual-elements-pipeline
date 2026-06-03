@@ -482,14 +482,19 @@ def to_hf(
     skip_existing,
 ):
     """
-    Export filtered dataset to HuggingFace.
+    Export filtered dataset to HuggingFace: crop images to a HF bucket, metadata to a
+    dataset repo as parquet shards split by classification label.
 
-    Processes items sequentially — use GNU parallel for parallelism:
+    Reads from the filtered_dataset view, downloads crops from the OUTPUT S3 bucket,
+    re-encodes as WebP (quality 95), uploads images via batch_bucket_files, and writes
+    parquet shards.
 
-        seq 0 31 | parallel -j8 'python main.py export to-hf --chunk-index {} --total-chunks 32'
+    Designed for GNU parallel using --chunk-index and --total-chunks:
+
+        seq 0 31 | parallel -j8 'uv run pipeline.py export to-hf --chunk-index {} --total-chunks 32'
 
     Each chunk writes its own parquet shards and uploads its own images.
-    Combine shards afterward with a final upload step (--skip-images on a single run).
+    Combine shards afterward with a final upload step.
 
     Images: institutional/institutional-books-hl-visual-elements-images
     Dataset: institutional/institutional-books-hl-visual-elements
