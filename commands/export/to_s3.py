@@ -26,13 +26,13 @@ from const import (
     DETECTION_CONFIDENCE_THRESHOLD,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
     MODEL_CLASS_INDEX_ORDER,
-    S3_ROW_GROUP_SIZE,
-    S3_MULTIPART_THRESHOLD,
-    S3_MULTIPART_CHUNK_SIZE,
-    S3_MULTIPART_PARALLEL_PARTS,
-    S3_SHARD_SIZE,
-    S3_MAX_INFLIGHT,
-    HF_ITEM_IDS_CACHE_PATH,
+    S3_EXPORT_ROW_GROUP_SIZE,
+    S3_EXPORT_MULTIPART_THRESHOLD,
+    S3_EXPORT_MULTIPART_CHUNK_SIZE,
+    S3_EXPORT_MULTIPART_PARALLEL_PARTS,
+    S3_EXPORT_SHARD_SIZE,
+    S3_EXPORT_MAX_INFLIGHT,
+    HF_EXPORT_ITEM_IDS_CACHE_PATH,
 )
 
 
@@ -53,8 +53,8 @@ def _get_raw_connection():
 
 
 def _fetch_item_ids_paginated() -> list[int]:
-    if HF_ITEM_IDS_CACHE_PATH.exists():
-        with open(HF_ITEM_IDS_CACHE_PATH, "r") as f:
+    if HF_EXPORT_ITEM_IDS_CACHE_PATH.exists():
+        with open(HF_EXPORT_ITEM_IDS_CACHE_PATH, "r") as f:
             return json.load(f)
 
     conn = _get_raw_connection()
@@ -73,11 +73,11 @@ def _fetch_item_ids_paginated() -> list[int]:
         except Exception:
             pass
 
-    HF_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = str(HF_ITEM_IDS_CACHE_PATH) + ".tmp"
+    HF_EXPORT_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".tmp"
     with open(tmp_path, "w") as f:
         json.dump(ids, f)
-    os.replace(tmp_path, str(HF_ITEM_IDS_CACHE_PATH))
+    os.replace(tmp_path, str(HF_EXPORT_ITEM_IDS_CACHE_PATH))
     return ids
 
 
@@ -300,7 +300,7 @@ def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name
     try:
         file_size = os.path.getsize(parquet_path)
 
-        if file_size < S3_MULTIPART_THRESHOLD:
+        if file_size < S3_EXPORT_MULTIPART_THRESHOLD:
             with open(parquet_path, "rb") as fh:
                 s3_client.put_object(
                     Bucket=bucket_name,
@@ -309,7 +309,7 @@ def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name
                     ContentType="application/octet-stream",
                 )
         else:
-            total_parts = (file_size + S3_MULTIPART_CHUNK_SIZE - 1) // S3_MULTIPART_CHUNK_SIZE
+            total_parts = (file_size + S3_EXPORT_MULTIPART_CHUNK_SIZE - 1) // S3_EXPORT_MULTIPART_CHUNK_SIZE
             logger.info(f"  Multipart upload {s3_key} ({file_size / 1024 / 1024:.0f} MB, {total_parts} parts)")
             mpu = s3_client.create_multipart_upload(
                 Bucket=bucket_name,
@@ -322,7 +322,7 @@ def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name
                 part_number = 1
                 offset = 0
                 while offset < file_size:
-                    length = min(S3_MULTIPART_CHUNK_SIZE, file_size - offset)
+                    length = min(S3_EXPORT_MULTIPART_CHUNK_SIZE, file_size - offset)
                     part_specs.append((part_number, offset, length))
                     offset += length
                     part_number += 1
@@ -343,7 +343,7 @@ def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name
                     )
                     return pn, resp["ETag"]
 
-                with ThreadPoolExecutor(max_workers=S3_MULTIPART_PARALLEL_PARTS) as part_executor:
+                with ThreadPoolExecutor(max_workers=S3_EXPORT_MULTIPART_PARALLEL_PARTS) as part_executor:
                     for pn, etag in part_executor.map(_upload_one_part, part_specs):
                         parts[pn - 1] = {"ETag": etag, "PartNumber": pn}
 
@@ -373,11 +373,11 @@ ITEMS_PER_FETCH = 50
 
 
 @click.command("to-s3")
-@click.option("--shard-size", type=int, default=S3_SHARD_SIZE, help="Rows per parquet shard")
+@click.option("--shard-size", type=int, default=S3_EXPORT_SHARD_SIZE, help="Rows per parquet shard")
 @click.option("--classification-threshold", type=float, default=CLASSIFICATION_CONFIDENCE_THRESHOLD)
 @click.option("--chunk-index", type=int, default=None, help="Which chunk to process (0-indexed). Use with --total-chunks for GNU parallel.")
 @click.option("--total-chunks", type=int, default=None, help="Total number of chunks. Use with --chunk-index for GNU parallel.")
-@click.option("--io-workers", type=int, default=S3_MAX_INFLIGHT, help="Threads for S3 crop download")
+@click.option("--io-workers", type=int, default=S3_EXPORT_MAX_INFLIGHT, help="Threads for S3 crop download")
 @click.option("--prefix", type=str, default=None, help="S3 key prefix for shard files (default: generated datetime slug)")
 @click.option("--sample", type=int, default=None, help="Limit to N items for testing")
 def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_workers, prefix, sample):
@@ -624,7 +624,7 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
                         row_group_crop_bytes += len(crop_bytes)
                         total_records += 1
 
-                        if len(row_group_buf) >= S3_ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
+                        if len(row_group_buf) >= S3_EXPORT_ROW_GROUP_SIZE or row_group_crop_bytes >= 1_900_000_000:
                             _flush_row_group()
 
                         if shard_record_count + len(row_group_buf) >= shard_size:
