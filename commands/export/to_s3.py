@@ -28,6 +28,7 @@ from const import (
     S3_EXPORT_MULTIPART_PARALLEL_PARTS,
     S3_EXPORT_SHARD_SIZE,
     S3_EXPORT_MAX_INFLIGHT,
+    S3_ITEMS_PER_FETCH,
     HF_EXPORT_ITEM_IDS_CACHE_PATH,
 )
 
@@ -363,10 +364,7 @@ def _upload_parquet_to_s3(s3_client, parquet_path: str, s3_key: str, bucket_name
             os.unlink(parquet_path)
         except OSError:
             pass
-
-
-ITEMS_PER_FETCH = 50
-
+            
 
 @click.command("to-s3")
 @click.option("--shard-size", type=int, default=S3_EXPORT_SHARD_SIZE, help="Rows per parquet shard")
@@ -520,10 +518,10 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
     if records_to_skip > 0:
         logger.info(f"  {chunk_label}Counting items to skip...")
         cumulative = 0
-        for fetch_start in range(0, len(my_item_ids), ITEMS_PER_FETCH):
+        for fetch_start in range(0, len(my_item_ids), S3_ITEMS_PER_FETCH):
             if cumulative >= records_to_skip:
                 break
-            fetch_ids = my_item_ids[fetch_start:fetch_start + ITEMS_PER_FETCH]
+            fetch_ids = my_item_ids[fetch_start:fetch_start + S3_ITEMS_PER_FETCH]
             conn = _get_raw_connection()
             try:
                 cur = conn.cursor()
@@ -543,8 +541,8 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
     active_item_ids = my_item_ids[items_to_skip:]
 
     with ThreadPoolExecutor(max_workers=io_workers) as crop_executor:
-        for fetch_start in range(0, len(active_item_ids), ITEMS_PER_FETCH):
-            fetch_ids = active_item_ids[fetch_start:fetch_start + ITEMS_PER_FETCH]
+        for fetch_start in range(0, len(active_item_ids), S3_ITEMS_PER_FETCH):
+            fetch_ids = active_item_ids[fetch_start:fetch_start + S3_ITEMS_PER_FETCH]
             rows = _fetch_rows_for_items(fetch_ids)
             if not rows:
                 continue
