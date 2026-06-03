@@ -91,7 +91,7 @@ uv run pipeline.py --verbose command options &> run-{date}-{info}.log
   - Running inference against these images at scale
 - The need to scale a pipeline run horizontally if required with as little friction as possible
 
-**As such, it is centered around the following principleds:**
+**As such, it is centered around the following principles:**
 - **Centralized database and object storage**: Allows multiple machines to work on different portions of a pipeline run.
 - **Central orchestration:** A central command orchestrates the execution of a pipeline run, which was prepared ahead of time. This orchestrator:
   - Determines which batches needs to be processed using a locking mechanism.
