@@ -16,6 +16,7 @@ The Institutional Data Initiative's pipeline for extracting, analyzing, and publ
 - [CLI: `orchestration`](#cli-orchestration)
 - [CLI: `steps`](#cli-steps)
 - [CLI: `export`](#cli-export)
+- [CLI: `post-processing`](#cli-post-processing)
 - [About IDI](#about-idi)
 - [Cite](#cite)
 
@@ -67,7 +68,8 @@ uv run pipeline.py --verbose command options # Run command and include debug log
 - **system**: Commands related to system setup.
 - **orchestration**: Commands related to pipeline runs.
 - **steps**: Individual steps. Are meant to be run by the orchestration scripts.
-- **export**: Commands related to the export of both intermediary data and complete datasets. 
+- **export**: Commands related to the export of both intermediary data and complete datasets.
+- **post-processing**: Commands for post-processing operations on pipeline data (backfill, token counting, embedding visualization).
 
 **NOTE:** 
 - All commands come with a `--help` flag to list options.
@@ -196,9 +198,9 @@ Once the pipeline run is complete and the `filtered_dataset` view has been creat
 **Backfill computed columns** (run before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches`):
 
 ```bash
-uv run pipeline.py export backfill
-uv run pipeline.py export backfill --cpus-limit 8
-uv run pipeline.py export backfill --skip-thesaurus  # Skip ChronAm thesaurus (no HF_TOKEN needed)
+uv run pipeline.py post-processing backfill
+uv run pipeline.py post-processing backfill --cpus-limit 8
+uv run pipeline.py post-processing backfill --skip-thesaurus  # Skip ChronAm thesaurus (no HF_TOKEN needed)
 ```
 
 > **Note:** The ChronAm thesaurus matching step is optional. Use `--skip-thesaurus` to skip it if you don't need `thesaurus_matches` or don't have a `HF_TOKEN` configured for the HuggingFce Repo. The `lang_detected` and `linear_prob` columns will still be computed.
@@ -206,14 +208,14 @@ uv run pipeline.py export backfill --skip-thesaurus  # Skip ChronAm thesaurus (n
 **Count tokens** in captions:
 
 ```bash
-uv run pipeline.py export count-tokens
+uv run pipeline.py post-processing count-tokens
 ```
 
 **Peek** at samples to confirm the pipeline is working as expected:
 
 ```bash
-uv run pipeline.py export peek --step run --id-pipeline-batch 1 --n 10
-uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n all
+uv run pipeline.py export peek --scope deduplication --id-pipeline-batch 1 --n 10
+uv run pipeline.py export peek --scope detection --id-pipeline-batch 1 --n all
 ```
 
 **Export to S3** (parquet shards with embedded PNG crops):
@@ -246,7 +248,7 @@ uv run pipeline.py export stats
 uv run pipeline.py export viewer-space --push
 
 # Interactive embedding visualization
-uv run pipeline.py export embedding-atlas --sample 10000
+uv run pipeline.py post-processing embedding-atlas --sample 10000
 ```
 
 
@@ -552,44 +554,6 @@ uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
 > Export commands require the `filtered_dataset` view to exist in PostgreSQL. See [Create the filtered_dataset view](#4-create-the-filtered_dataset-view).
 
 <details>
-<summary><h3>export backfill</h3></summary>
-
-Backfill computed columns on the `caption` table. Computes and stores:
-- `lang_detected`: ISO 639-3 language code via lingua language detection
-- `linear_prob`: Geometric mean of token probabilities from OpenAI logprobs
-- `thesaurus_matches`: ChronAm thesaurus term matches (JSONB) — **optional**, requires `HF_TOKEN`
-
-Uses a process pool (default 4 workers) because lingua holds the GIL. Each worker loads its own lingua model (~200MB each). Runs periodic VACUUM on the caption table.
-
-NOTE: Run this before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches` columns. The thesaurus step is optional and can be skipped with `--skip-thesaurus`.
-
-```bash
-uv run pipeline.py export backfill
-uv run pipeline.py export backfill --force              # Re-compute already-backfilled captions
-uv run pipeline.py export backfill --limit 1000         # Process only 1000 captions (testing)
-uv run pipeline.py export backfill --cpus-limit 8       # Use 8 worker processes
-uv run pipeline.py export backfill --skip-thesaurus     # Skip ChronAm thesaurus
-```
-
-</details>
-
-<details>
-<summary><h3>export count-tokens</h3></summary>
-
-Count tokens and compute corpus statistics for the `caption_text` column in `filtered_dataset` using tiktoken.
-
-Outputs statistics including total tokens, mean/median/std/percentile tokens per document. Writes results to a JSON file.
-
-```bash
-uv run pipeline.py export count-tokens
-uv run pipeline.py export count-tokens --encoding o200k_base   # Default encoding
-uv run pipeline.py export count-tokens --output logs/token_stats.json
-uv run pipeline.py export count-tokens --workers 8
-```
-
-</details>
-
-<details>
 <summary><h3>export to-s3</h3></summary>
 
 Export filtered dataset to S3 as parquet shards with embedded PNG crops.
@@ -667,23 +631,6 @@ When `--push` is used, images are synced to a HF data bucket and the Space files
 </details>
 
 <details>
-<summary><h3>export embedding-atlas</h3></summary>
-
-Create an interactive 2D embedding visualization using [Apple's embedding-atlas](https://github.com/apple/embedding-atlas).
-
-Samples records from `filtered_dataset` that have embeddings, prepares a parquet file, and launches an interactive server (or exports as standalone HTML).
-
-```bash
-uv run pipeline.py export embedding-atlas --sample 10000
-uv run pipeline.py export embedding-atlas --sample 50000 --export-html atlas.html
-uv run pipeline.py export embedding-atlas --port 8080 --host 0.0.0.0
-uv run pipeline.py export embedding-atlas --text-column caption_text
-uv run pipeline.py export embedding-atlas --no-serve  # Prepare data only
-```
-
-</details>
-
-<details>
 <summary><h3>export peek</h3></summary>
 
 Peek at random samples to visually confirm the pipeline is working as expected.
@@ -691,9 +638,9 @@ Peek at random samples to visually confirm the pipeline is working as expected.
 Supports both batch-level steps (detection, classification, captioning) and run-level steps (embedding, hash deduplication).
 
 ```bash
-uv run pipeline.py export peek --step run --id-pipeline-batch 1 --n 10
-uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n all
-uv run pipeline.py export peek --step batch --id-pipeline-batch 1 --n 5 --output-dir peek-5-volumes/
+uv run pipeline.py export peek --scope deduplication --id-pipeline-batch 1 --n 10
+uv run pipeline.py export peek --scope detection --id-pipeline-batch 1 --n all
+uv run pipeline.py export peek --scope detection --id-pipeline-batch 1 --n 5 --output-dir peek-5-volumes/
 ```
 
 </details>
@@ -709,6 +656,69 @@ Creates PNG charts and a JSON summary covering table counts, classification dist
 uv run pipeline.py export stats
 uv run pipeline.py export stats --output-dir ./my_stats
 uv run pipeline.py export stats --skip-slow  # Skip expensive queries
+```
+
+</details>
+
+[👆 Back to the summary](#summary)
+
+---
+
+## CLI: post-processing
+
+> Post-processing commands operate on pipeline data after a run is complete. Some require the `filtered_dataset` view.
+
+<details>
+<summary><h3>post-processing backfill</h3></summary>
+
+Backfill computed columns on the `caption` table. Computes and stores:
+- `lang_detected`: ISO 639-3 language code via lingua language detection
+- `linear_prob`: Geometric mean of token probabilities from OpenAI logprobs
+- `thesaurus_matches`: ChronAm thesaurus term matches (JSONB) — **optional**, requires `HF_TOKEN`
+
+Uses a process pool (default 4 workers) because lingua holds the GIL. Each worker loads its own lingua model (~200MB each). Runs periodic VACUUM on the caption table.
+
+NOTE: Run this before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches` columns. The thesaurus step is optional and can be skipped with `--skip-thesaurus`.
+
+```bash
+uv run pipeline.py post-processing backfill
+uv run pipeline.py post-processing backfill --force              # Re-compute already-backfilled captions
+uv run pipeline.py post-processing backfill --limit 1000         # Process only 1000 captions (testing)
+uv run pipeline.py post-processing backfill --cpus-limit 8       # Use 8 worker processes
+uv run pipeline.py post-processing backfill --skip-thesaurus     # Skip ChronAm thesaurus
+```
+
+</details>
+
+<details>
+<summary><h3>post-processing count-tokens</h3></summary>
+
+Count tokens and compute corpus statistics for the `caption_text` column in `filtered_dataset` using tiktoken.
+
+Outputs statistics including total tokens, mean/median/std/percentile tokens per document. Writes results to a JSON file.
+
+```bash
+uv run pipeline.py post-processing count-tokens
+uv run pipeline.py post-processing count-tokens --encoding o200k_base   # Default encoding
+uv run pipeline.py post-processing count-tokens --output logs/token_stats.json
+uv run pipeline.py post-processing count-tokens --workers 8
+```
+
+</details>
+
+<details>
+<summary><h3>post-processing embedding-atlas</h3></summary>
+
+Create an interactive 2D embedding visualization using [Apple's embedding-atlas](https://github.com/apple/embedding-atlas).
+
+Samples records from `filtered_dataset` that have embeddings, prepares a parquet file, and launches an interactive server (or exports as standalone HTML).
+
+```bash
+uv run pipeline.py post-processing embedding-atlas --sample 10000
+uv run pipeline.py post-processing embedding-atlas --sample 50000 --export-html atlas.html
+uv run pipeline.py post-processing embedding-atlas --port 8080 --host 0.0.0.0
+uv run pipeline.py post-processing embedding-atlas --text-column caption_text
+uv run pipeline.py post-processing embedding-atlas --no-serve  # Prepare data only
 ```
 
 </details>
