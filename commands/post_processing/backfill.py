@@ -10,12 +10,7 @@ from lingua import LanguageDetectorBuilder
 
 from models import Caption
 from utils import get_db, process_db_write_batch
-from const import DEFAULT_DB_BATCH_SIZE
-
-HF_THESAURUS_REPO = "institutional/chronicling-america-thesauri"
-
-BACKFILL_DEFAULT_WORKERS = 4
-VACUUM_EVERY_N_CHUNKS = 100
+from const import DEFAULT_DB_BATCH_SIZE, BACKFILL_DEFAULT_WORKERS, VACUUM_EVERY_N_CHUNKS, HF_THESAURUS_REPO 
 
 
 def load_thesaurus() -> tuple[dict[str, str], re.Pattern | None]:
@@ -267,7 +262,7 @@ def backfill(batch_size, force, limit, cpus_limit, skip_thesaurus):
             chunks_completed += 1
             logger.info(f"  Progress: {processed}/{total} captions")
 
-            if chunks_completed % VACUUM_EVERY_N_CHUNKS == 0:
+            if chunks_completed % BACKFILL_VACUUM_EVERY_N_CHUNKS == 0:
                 _run_vacuum()
 
     _run_vacuum()

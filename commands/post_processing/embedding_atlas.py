@@ -16,7 +16,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from utils import get_db
-from const import ANALYSIS_OUTPUT_DIR, DATETIME_SLUG
+from const import ANALYSIS_OUTPUT_DIR, DATETIME_SLUG, EMBEDDING_ATLAS_SAMPLE, EMBEDDING_ATLAS_PORT
 
 
 def _get_raw_connection():
@@ -260,7 +260,7 @@ def create_atlas_parquet(df: pd.DataFrame, output_path: Path, text_column: str) 
 @click.option(
     "--port",
     type=int,
-    default=5055,
+    default=EMBEDDING_ATLAS_PORT,
     help="Port for the embedding-atlas server (default: 5055)",
 )
 @click.option(
@@ -272,7 +272,7 @@ def create_atlas_parquet(df: pd.DataFrame, output_path: Path, text_column: str) 
 @click.option(
     "--sample",
     type=int,
-    default=10000,
+    default=EMBEDDING_ATLAS_SAMPLE,
     help="Random sample size from the database (default: 10000)",
 )
 @click.option(

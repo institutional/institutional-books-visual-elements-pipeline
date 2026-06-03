@@ -7,7 +7,7 @@ import tiktoken
 from tqdm import tqdm
 from loguru import logger
 from utils import get_db
-from const import SERVER_SIDE_CURSOR_SIZE
+from const import COUNT_TOKENS_SERVER_SIDE_CURSOR_SIZE, COUNT_TOKENS_WORKERS
 
 
 def _get_raw_connection():
@@ -38,7 +38,7 @@ def _get_raw_connection():
 @click.option(
     "--workers",
     type=int,
-    default=4,
+    default=COUNT_TOKENS_WORKERS,
     help="Number of threads for tokenization (default: CPU count)",
 )
 def count_tokens(encoding_name, output_path, workers):
@@ -65,11 +65,11 @@ def count_tokens(encoding_name, output_path, workers):
 
     with ThreadPoolExecutor(max_workers=num_workers) as pool:
         with conn.cursor(name="count_tokens_cursor") as cursor:
-            cursor.itersize = SERVER_SIDE_CURSOR_SIZE
+            cursor.itersize = COUNT_TOKENS_SERVER_SIDE_CURSOR_SIZE
             cursor.execute("SELECT caption_text FROM filtered_dataset")
             with tqdm(total=total_count, unit="rows") as pbar:
                 while True:
-                    rows = cursor.fetchmany(SERVER_SIDE_CURSOR_SIZE)
+                    rows = cursor.fetchmany(COUNT_TOKENS_SERVER_SIDE_CURSOR_SIZE)
                     if not rows:
                         break
                     texts = [text for (text,) in rows if text]

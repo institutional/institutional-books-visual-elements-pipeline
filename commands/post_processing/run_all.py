@@ -1,6 +1,8 @@
 import click
 from loguru import logger
 
+from const import POST_PROCESS_WORKERS
+
 
 @click.command("run-all")
 @click.option(
@@ -11,7 +13,7 @@ from loguru import logger
 @click.option(
     "--cpus-limit",
     type=int,
-    default=4,
+    default=POST_PROCESS_WORKERS,
     help="Number of parallel worker processes for backfill (default: 4)",
 )
 @click.option(
