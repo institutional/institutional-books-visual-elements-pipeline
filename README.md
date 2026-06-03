@@ -198,7 +198,10 @@ Once the pipeline run is complete and the `filtered_dataset` view has been creat
 ```bash
 uv run pipeline.py export backfill
 uv run pipeline.py export backfill --cpus-limit 8
+uv run pipeline.py export backfill --skip-thesaurus  # Skip ChronAm thesaurus (no HF_TOKEN needed)
 ```
+
+> **Note:** The ChronAm thesaurus matching step is optional. Use `--skip-thesaurus` to skip it if you don't need `thesaurus_matches` or don't have a `HF_TOKEN` configured for the HuggingFce Repo. The `lang_detected` and `linear_prob` columns will still be computed.
 
 **Count tokens** in captions:
 
@@ -554,17 +557,18 @@ uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
 Backfill computed columns on the `caption` table. Computes and stores:
 - `lang_detected`: ISO 639-3 language code via lingua language detection
 - `linear_prob`: Geometric mean of token probabilities from OpenAI logprobs
-- `thesaurus_matches`: ChronAm thesaurus term matches (JSONB)
+- `thesaurus_matches`: ChronAm thesaurus term matches (JSONB) — **optional**, requires `HF_TOKEN`
 
 Uses a process pool (default 4 workers) because lingua holds the GIL. Each worker loads its own lingua model (~200MB each). Runs periodic VACUUM on the caption table.
 
-NOTE: Run this before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches` columns.
+NOTE: Run this before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches` columns. The thesaurus step is optional and can be skipped with `--skip-thesaurus`.
 
 ```bash
 uv run pipeline.py export backfill
 uv run pipeline.py export backfill --force              # Re-compute already-backfilled captions
 uv run pipeline.py export backfill --limit 1000         # Process only 1000 captions (testing)
 uv run pipeline.py export backfill --cpus-limit 8       # Use 8 worker processes
+uv run pipeline.py export backfill --skip-thesaurus     # Skip ChronAm thesaurus
 ```
 
 </details>
