@@ -156,40 +156,18 @@ uv run pipeline.py orchestration execute --id-pipeline-run=1 --batch-processing-
 
 ### 4. Create the `filtered_dataset` view
 
-Before running export commands, you must create a `filtered_dataset` PostgreSQL view. This view joins pipeline data into a single queryable surface that all export commands read from.
+Before running export commands, you must create a `filtered_dataset` PostgreSQL view. This view joins pipeline data into a single queryable surface that all export and post-processing commands read from.
 
 The view applies the following filtering logic:
 - Filters detections by detection confidence threshold (0.75)
-- Applies classification confidence thresholding (low-confidence predictions become "Other")
 - Only includes records present in both deduplication groups (hash-based and embedding-based)
 
-**Conceptual structure:**
+The view passes through raw classification data (`pred_class`, `classification_conf`) without reclassification. Classification thresholding (low-confidence predictions → "Other") is applied at export time via the `--classification-threshold` option, allowing different decisions per export run.
 
-```sql
-CREATE VIEW filtered_dataset AS
-SELECT
-    d.id_detection, pbi.id_pipeline_batch_item AS pipeline_batch_item_id,
-    v.barcode, d.scan_filename,
-    d.bbox_xyxy, d.bbox_xywh, d.bbox_conf,
-    c.pred_class, c.classification_conf, c.classification_probs,
-    cap.text AS caption_text, cap.lang AS caption_lang,
-    cap.lang_detected AS caption_lang_detected,
-    cap.linear_prob AS caption_linear_prob,
-    cap.thesaurus_matches AS caption_thesaurus_matches,
-    ih.image_hash, ie.embedding
-FROM detection d
-JOIN pipeline_batch_item pbi ON ...
-JOIN ib_volume v ON ...
-JOIN classification c ON ...
-LEFT JOIN caption cap ON ...
-LEFT JOIN image_hash ih ON ...
-LEFT JOIN image_embedding ie ON ...
-JOIN deduped_hash dh ON ...
-JOIN deduped_embedding de ON ...
-WHERE d.bbox_conf >= 0.75;
+```bash
+uv run pipeline.py post-processing create-view
+uv run pipeline.py post-processing create-view --drop-existing  # Recreate if already exists
 ```
-
-Adapt the exact join conditions and column names to your schema. The view must be created before any export commands can run.
 
 ### 5. Export
 
@@ -552,6 +530,8 @@ uv run pipeline.py steps step07-dedupe-embeddings --id-pipeline-run=1
 ## CLI: export
 
 > Export commands require the `filtered_dataset` view to exist in PostgreSQL. See [Create the filtered_dataset view](#4-create-the-filtered_dataset-view).
+>
+> Classification reclassification (low-confidence predictions → "Other") is applied at export time via `--classification-threshold`, not in the view. This allows different export runs to use different thresholds without recreating the view.
 
 <details>
 <summary><h3>export to-s3</h3></summary>
@@ -667,6 +647,41 @@ uv run pipeline.py export stats --skip-slow  # Skip expensive queries
 ## CLI: post-processing
 
 > Post-processing commands operate on pipeline data after a run is complete. Some require the `filtered_dataset` view.
+
+<details>
+<summary><h3>post-processing run-all</h3></summary>
+
+Run the full post-processing pipeline in sequence: `create-view` → `backfill` → (optional) `count-tokens` → (optional) `embedding-atlas`.
+
+By default only runs `create-view` and `backfill`. Use flags to include the optional steps.
+
+```bash
+uv run pipeline.py post-processing run-all
+uv run pipeline.py post-processing run-all --cpus-limit 8
+uv run pipeline.py post-processing run-all --skip-thesaurus
+uv run pipeline.py post-processing run-all --count-tokens --embedding-atlas
+uv run pipeline.py post-processing run-all --drop-existing-view  # Recreate the view first
+```
+
+</details>
+
+<details>
+<summary><h3>post-processing create-view</h3></summary>
+
+Create the `filtered_dataset` PostgreSQL view. This view joins pipeline data (detections, classifications, captions, hashes, embeddings, deduplication groups) into a single queryable surface that export and post-processing commands read from.
+
+Filtering logic:
+- Detections below the detection confidence threshold (`DETECTION_CONFIDENCE_THRESHOLD = 0.75`) are excluded
+- Only records present in both deduplication groups (hash-based and embedding-based) are included
+
+Raw classification data (`pred_class`, `classification_conf`) is passed through without reclassification — thresholding is applied at export time.
+
+```bash
+uv run pipeline.py post-processing create-view
+uv run pipeline.py post-processing create-view --drop-existing  # Drop and recreate
+```
+
+</details>
 
 <details>
 <summary><h3>post-processing backfill</h3></summary>
