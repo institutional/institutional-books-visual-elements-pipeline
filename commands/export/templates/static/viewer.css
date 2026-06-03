@@ -130,6 +130,11 @@ h1, h2, h3, h4 {
     padding: 0 !important;
 }
 
+.gradio-container.gradio-container-5-33-0 .contain .vol-header > div {
+    flex-direction: column;
+    gap: 0px !important;
+}
+
 .vol-title-link {
     cursor: pointer !important;
     text-decoration: none !important;
