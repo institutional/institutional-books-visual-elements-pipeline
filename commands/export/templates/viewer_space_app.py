@@ -368,6 +368,7 @@ def format_datetime(dt):
 STATIC_DIR = Path(__file__).parent / "static"
 
 _CSS = (STATIC_DIR / "viewer.css").read_text()
+_JS = (STATIC_DIR / "viewer.js").read_text()
 
 
 def create_gui():
@@ -396,7 +397,7 @@ def create_gui():
     if logo_path.exists():
         logo_b64 = base64.b64encode(logo_path.read_bytes()).decode()
 
-    with gr.Blocks(title="Visual Elements Viewer", css=_CSS, theme=theme) as app:
+    with gr.Blocks(title="Visual Elements Viewer", css=_CSS, js=_JS, theme=theme) as app:
         barcode_state = gr.State("")
         page_list_state = gr.State([])
         page_idx_state = gr.State(0)
@@ -451,7 +452,6 @@ def create_gui():
                             show_share_button=False,
                             height=400,
                         )
-                        run_btn = gr.Button("Run Detection + Classification", variant="primary")
                     with gr.Column(scale=1, elem_classes=["try-models-results"]):
                         output_image = gr.Image(
                             label="Results",
@@ -462,7 +462,7 @@ def create_gui():
 
                 output_results = gr.Markdown("")
 
-            run_btn.click(
+            upload_image.change(
                 run_inference,
                 inputs=[upload_image],
                 outputs=[output_image, output_results],
@@ -675,7 +675,7 @@ def create_gui():
                         part += f"\n\n*{lang}*"
                     lp = cap.get("linear_prob")
                     if lp is not None:
-                        part += f"\n\nprob: `{lp:.4f}`"
+                        part += f"\n\nCaption linear logprob: `{lp:.4f}`"
                 else:
                     excluded = cls and cls["pred_class"] in CAPTION_CLASSES_EXCLUDED
                     if excluded:
@@ -734,7 +734,15 @@ def create_gui():
             date = meta.get("date1_src", "") or "n.d."
             topic = meta.get("topic_or_subject_gen") or meta.get("topic_or_subject_src") or ""
 
-            SKIP_META_KEYS = {"text_analysis_gen"}
+            SKIP_META_KEYS = {
+                "text_analysis_gen",
+                "likely_duplicates_barcodes_gen",
+                "identifiers_src",
+                "language_distribution_gen",
+                "topic_or_subject_score_gen",
+                "topic_or_subject_src",
+                "hathitrust_data_ext",
+            }
 
             denom = stats["total_detections"] or 1
             class_parts = []

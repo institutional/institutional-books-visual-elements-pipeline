@@ -14,7 +14,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     background: var(--primary-bg) !important;
     color: var(--primary-text) !important;
-    max-width: 1400px !important;
+    max-width: 1000px !important;
     margin: 0 auto !important;
 }
 
@@ -121,7 +121,8 @@ h1, h2, h3, h4 {
     border-color: var(--accent) !important;
 }
 
-.vol-header {
+.vol-header,
+.vol-header > div {
     display: flex !important;
     align-items: baseline !important;
     gap: 12px !important;
@@ -148,6 +149,7 @@ h1, h2, h3, h4 {
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
     padding: 24px !important;
+    margin-top: 1rem !important;
     max-width: 800px !important;
     width: 90vw !important;
     max-height: 80vh !important;
@@ -193,7 +195,7 @@ h1, h2, h3, h4 {
 
 .vol-info-table th {
     text-align: left !important;
-    padding: 6px 12px 6px 0 !important;
+    padding: 6px 12px !important;
     white-space: nowrap !important;
     color: var(--muted-text) !important;
     font-weight: 500 !important;
@@ -201,7 +203,7 @@ h1, h2, h3, h4 {
 }
 
 .vol-info-table td {
-    padding: 6px 0 !important;
+    padding: 6px 12px !important;
     vertical-align: top !important;
 }
 
