@@ -129,11 +129,15 @@ def classify_orientation(
     ).to(device)
 
     with torch.no_grad():
-        output_ids = model.generate(**inputs, max_new_tokens=50, thinking=False)
+        output_ids = model.generate(**inputs, max_new_tokens=500)
 
     input_len = inputs.input_ids.shape[1]
     generated = output_ids[0][input_len:]
     response = processor.decode(generated, skip_special_tokens=True).strip().lower()
+
+    # Strip thinking blocks if present
+    if "</think>" in response:
+        response = response.split("</think>")[-1].strip()
 
     for label in ORIENTATION_CLASSES:
         if label in response:
@@ -176,7 +180,7 @@ def sample_filenames_from_dataset(sample_size: int) -> list[str]:
 
 def main():
     parser = argparse.ArgumentParser(description="Generate orientation training labels with VLM")
-    parser.add_argument("--sample-size", type=int, default=1000)
+    parser.add_argument("--sample-size", type=int, default=10000)
     parser.add_argument("--output", type=str, default="orientation_tests/training_labels.json")
     parser.add_argument("--batch-download-size", type=int, default=100)
     args = parser.parse_args()
