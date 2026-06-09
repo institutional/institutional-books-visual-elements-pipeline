@@ -37,11 +37,21 @@ BUCKET_REPO = "institutional/institutional-books-hl-visual-elements-images"
 IMAGE_SIZE = 384
 NUM_CLASSES = 4
 CLASS_MAP = {
-    0: "correct",
-    1: "needs_90_cw",
-    2: "needs_180",
-    3: "needs_90_ccw",
+    0: "upright",
+    1: "rotated_90_clockwise",
+    2: "rotated_180",
+    3: "rotated_90_counterclockwise",
 }
+
+VLM_LABEL_TO_QUARTERS = {
+    "upright": 0,
+    "rotated_90_clockwise": 1,
+    "rotated_180": 2,
+    "rotated_90_counterclockwise": 3,
+}
+
+# Correction: rotate by this many quarter-turns CW to make upright
+CORRECTION_QUARTERS = {0: 0, 1: 3, 2: 2, 3: 1}
 
 
 class OrientationDataset(Dataset):
@@ -54,9 +64,10 @@ class OrientationDataset(Dataset):
             path = os.path.join(image_dir, filename)
             if not os.path.exists(path):
                 continue
-            # Create all 4 rotations per image
+            original_orientation = entry["original_orientation"]
+            # Create all 4 rotations from the corrected (upright) image
             for rot_class in range(4):
-                self.samples.append((path, rot_class))
+                self.samples.append((path, original_orientation, rot_class))
 
         random.shuffle(self.samples)
 
@@ -64,9 +75,19 @@ class OrientationDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        path, rot_class = self.samples[idx]
-        img = load_image_safely(path)
-        img = apply_rotation(img, rot_class)
+        path, original_orientation, rot_class = self.samples[idx]
+        try:
+            img = load_image_safely(path)
+        except Exception:
+            # Return a blank image for corrupt files
+            img = Image.new("RGB", (IMAGE_SIZE, IMAGE_SIZE), (128, 128, 128))
+            rot_class = 0
+        else:
+            correction = CORRECTION_QUARTERS[original_orientation]
+            if correction:
+                img = apply_rotation(img, correction)
+            if rot_class:
+                img = apply_rotation(img, rot_class)
         if self.transform:
             img = self.transform(img)
         return img, rot_class
@@ -194,8 +215,8 @@ def main():
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--val-split", type=float, default=0.15)
-    parser.add_argument("--min-agreement", action="store_true", default=True,
-                        help="Only use samples where VLM agreed with applied rotation")
+    parser.add_argument("--max-samples", type=int, default=None,
+                        help="Use only the first N labels")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -204,13 +225,20 @@ def main():
     with open(args.labels) as f:
         data = json.load(f)
 
-    results = data["results"]
-    if args.min_agreement:
-        labels = [r for r in results if "error" not in r and r.get("agrees", False)]
-        logger.info(f"Using {len(labels)} agreed labels out of {len(results)} total")
-    else:
-        labels = [r for r in results if "error" not in r]
-        logger.info(f"Using {len(labels)} labels")
+    results = data["results"][:args.max_samples] if args.max_samples else data["results"]
+    labels = []
+    for r in results:
+        if "error" in r:
+            continue
+        label_field = r.get("vlm_prediction") or r.get("manual_label")
+        if not label_field or label_field not in VLM_LABEL_TO_QUARTERS:
+            continue
+        quarters = VLM_LABEL_TO_QUARTERS[label_field]
+        labels.append({
+            "filename": r["filename"],
+            "original_orientation": quarters,
+        })
+    logger.info(f"Using {len(labels)} labels")
 
     if not labels:
         logger.error("No valid labels found. Run generate_training_labels.py first.")
@@ -248,9 +276,19 @@ def main():
         val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True
     )
 
+    # Compute class weights from label distribution (before 4x rotation augmentation)
+    from collections import Counter
+    orientation_counts = Counter(l["original_orientation"] for l in labels)
+    total_labels = sum(orientation_counts.values())
+    class_weights = torch.tensor(
+        [total_labels / (NUM_CLASSES * orientation_counts.get(i, 1)) for i in range(NUM_CLASSES)],
+        dtype=torch.float32,
+    ).to(device)
+    logger.info(f"Class weights: {class_weights.tolist()}")
+
     # Build model
     model = build_model(device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
 
