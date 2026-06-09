@@ -1,9 +1,8 @@
 """
-Generate a PDF showing before/after orientation corrections based on
-VLM-generated training labels.
+Generate a PDF showing original bucket images alongside VLM-corrected versions.
 
-Shows only images where the VLM detected the applied rotation correctly
-(agreed labels), displaying the rotated image alongside the corrected version.
+Uses the inferred original orientation (from VLM prediction minus applied rotation)
+to show before/after correction on a random sample.
 
 Usage:
     python orientation_tests/generate_correction_pdf.py [--input orientation_tests/training_labels.json] [--output orientation_tests/corrections.pdf]
@@ -13,6 +12,7 @@ import argparse
 import io
 import json
 import os
+import random
 import tempfile
 import time
 from pathlib import Path
@@ -43,12 +43,19 @@ BUCKET_REPO = "institutional/institutional-books-hl-visual-elements-images"
 DOWNLOAD_TIMEOUT = 60
 DOWNLOAD_MAX_RETRIES = 3
 
-CORRECTION_MAP = {
-    "rotated_90_clockwise": 90,
-    "rotated_180": 180,
-    "rotated_90_counterclockwise": -90,
+VLM_LABEL_TO_QUARTERS = {
+    "upright": 0,
+    "rotated_90_clockwise": 1,
+    "rotated_180": 2,
+    "rotated_90_counterclockwise": 3,
 }
 
+QUARTERS_TO_LABEL = {
+    0: "upright",
+    1: "rotated_90_clockwise",
+    2: "rotated_180",
+    3: "rotated_90_counterclockwise",
+}
 
 def load_image_safely(path: str) -> Image.Image:
     with Image.open(path) as img:
@@ -59,16 +66,6 @@ def load_image_safely(path: str) -> Image.Image:
         background = Image.new("RGB", rgba_img.size, (255, 255, 255))
         background.paste(rgba_img, mask=rgba_img)
         return background
-
-
-def apply_rotation(img: Image.Image, rotation_class: int) -> Image.Image:
-    degrees_map = {0: 0, 1: 270, 2: 180, 3: 90}
-    return img.rotate(degrees_map[rotation_class], expand=True)
-
-
-def correct_image(img: Image.Image, vlm_label: str) -> Image.Image:
-    degrees = CORRECTION_MAP[vlm_label]
-    return img.rotate(degrees, expand=True)
 
 
 def image_to_bytesio(img: Image.Image, max_dim: int = 300) -> io.BytesIO:
@@ -94,7 +91,17 @@ def download_with_retry(file_pairs: list) -> bool:
     return False
 
 
-def build_pdf(entries: list, tmp_dir: str, output_path: str):
+def apply_rotation(img: Image.Image, quarters_cw: int) -> Image.Image:
+    """Rotate image by N quarter-turns clockwise."""
+    # PIL .rotate() goes CCW, so 1 quarter CW = rotate(-90) = rotate(270)
+    degrees_map = {0: 0, 1: 270, 2: 180, 3: 90}
+    q = quarters_cw % 4
+    if q == 0:
+        return img
+    return img.rotate(degrees_map[q], expand=True)
+
+
+def build_pdf(entries: list, tmp_dir: str, output_path: str, source: str = "vlm"):
     doc = SimpleDocTemplate(
         output_path,
         pagesize=letter,
@@ -106,9 +113,12 @@ def build_pdf(entries: list, tmp_dir: str, output_path: str):
     styles = getSampleStyleSheet()
     elements = []
 
-    title = Paragraph("Orientation Corrections (VLM-verified)", styles["Title"])
+    if source == "manual":
+        title = Paragraph("Manual Orientation Labels Verification", styles["Title"])
+    else:
+        title = Paragraph("VLM Orientation Labels Verification", styles["Title"])
     subtitle = Paragraph(
-        f"{len(entries)} images where VLM correctly identified the applied rotation",
+        f"{len(entries)} random images: original (bucket) vs corrected",
         styles["Normal"],
     )
     elements.append(title)
@@ -127,25 +137,35 @@ def build_pdf(entries: list, tmp_dir: str, output_path: str):
 
         try:
             original = load_image_safely(local_path)
-            rotated = apply_rotation(original, entry["applied_rotation"])
-            corrected = correct_image(rotated, entry["vlm_prediction"])
 
-            rot_buf = image_to_bytesio(rotated.copy())
+            label = entry["vlm_prediction"]
+            quarters = VLM_LABEL_TO_QUARTERS[label]
+
+            if source == "manual":
+                # Manual label = rotation user applied to make it upright
+                correction = quarters
+            else:
+                # VLM label = how the image is oriented → apply opposite
+                correction = (4 - quarters) % 4
+
+            corrected = apply_rotation(original, correction)
+
+            orig_buf = image_to_bytesio(original.copy())
             cor_buf = image_to_bytesio(corrected.copy())
 
-            rot_img = RLImage(rot_buf, width=img_width, height=img_height, kind="proportional")
+            orig_img = RLImage(orig_buf, width=img_width, height=img_height, kind="proportional")
             cor_img = RLImage(cor_buf, width=img_width, height=img_height, kind="proportional")
 
             header_table = Table(
                 [[
-                    Paragraph("<b>Rotated (input)</b>", styles["Normal"]),
-                    Paragraph("<b>Corrected (output)</b>", styles["Normal"]),
+                    Paragraph("<b>Original</b>", styles["Normal"]),
+                    Paragraph("<b>Corrected</b>", styles["Normal"]),
                 ]],
                 colWidths=[3.5 * inch, 3.5 * inch],
             )
 
             img_table = Table(
-                [[rot_img, cor_img]],
+                [[orig_img, cor_img]],
                 colWidths=[3.5 * inch, 3.5 * inch],
                 rowHeights=[img_height + 0.1 * inch],
             )
@@ -155,8 +175,7 @@ def build_pdf(entries: list, tmp_dir: str, output_path: str):
             ]))
 
             caption = Paragraph(
-                f"<b>{filename}</b> — applied: {entry['applied_label']}, "
-                f"VLM: {entry['vlm_prediction']}",
+                f"<b>{filename}</b> — label: {label}",
                 styles["Normal"],
             )
 
@@ -180,30 +199,29 @@ def main():
     parser = argparse.ArgumentParser(description="Generate correction PDF from VLM labels")
     parser.add_argument("--input", type=str, default="orientation_tests/training_labels.json")
     parser.add_argument("--output", type=str, default="orientation_tests/corrections.pdf")
-    parser.add_argument("--max-pages", type=int, default=50,
-                        help="Max number of images to include in PDF")
+    parser.add_argument("--num-samples", type=int, default=50)
     args = parser.parse_args()
 
     with open(args.input) as f:
         data = json.load(f)
 
     results = data["results"]
-    # Only show agreed results where correction was needed (not "upright")
-    needs_correction = [
-        r for r in results
-        if "error" not in r
-        and r.get("agrees", False)
-        and r["vlm_prediction"] != "upright"
-    ]
-    logger.info(
-        f"Found {len(needs_correction)} agreed corrections out of {len(results)} total"
-    )
+    valid = [r for r in results if "error" not in r]
 
-    if not needs_correction:
-        logger.info("No agreed corrections found. Exiting.")
-        return
+    # Detect source type
+    source = "manual" if valid and "manual_label" in valid[0] else "vlm"
 
-    entries = needs_correction[: args.max_pages]
+    # Normalize to vlm_prediction field for downstream
+    for r in valid:
+        if "vlm_prediction" not in r and "manual_label" in r:
+            r["vlm_prediction"] = r["manual_label"]
+
+    # Filter to those needing correction
+    needs_correction = [r for r in valid if r["vlm_prediction"] != "upright"]
+    logger.info(f"Found {len(needs_correction)} images needing correction out of {len(valid)} total")
+
+    # Random sample
+    entries = random.sample(needs_correction, min(args.num_samples, len(needs_correction)))
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         filenames = [r["filename"] for r in entries]
@@ -218,7 +236,7 @@ def main():
 
         output_path = Path(args.output)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        build_pdf(entries, tmp_dir, str(output_path))
+        build_pdf(entries, tmp_dir, str(output_path), source=source)
 
 
 if __name__ == "__main__":

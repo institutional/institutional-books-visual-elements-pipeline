@@ -1,24 +1,11 @@
 """
-Generate orientation training labels using Qwen2.5-VL-7B.
+Generate orientation training labels using Qwen3-VL-32B.
 
-For each sampled image, rotates it by a random known amount, then asks the VLM
-what rotation was applied. This creates ground-truth labels from intentionally
-rotated images rather than relying on the VLM to assess "natural" orientation
-(which is ambiguous for many book elements).
-
-Strategy:
-  1. Sample images from the HF bucket
-  2. For each image, randomly rotate by 0°, 90°, 180°, or 270°
-  3. Ask the VLM: "What rotation does this image need to be corrected?"
-  4. Save (filename, applied_rotation, vlm_prediction) as the training set
-
-Images where the VLM agrees with the known rotation become high-quality labels.
-Images where it's ambiguous (e.g. symmetric patterns) and the VLM says "correct"
-regardless of rotation get labeled as "correct" — teaching the EfficientNet to
-not flag them.
+Asks the VLM directly whether each bucket image is upright or rotated.
+The VLM's prediction becomes the training label.
 
 Usage:
-    python orientation_tests/generate_training_labels.py [--sample-size 5000] [--output orientation_tests/training_labels.json]
+    python orientation_tests/generate_training_labels.py [--sample-size 10000] [--output orientation_tests/training_labels.json]
 """
 
 import argparse
@@ -27,6 +14,7 @@ import os
 import random
 import tempfile
 import time
+from collections import Counter
 from pathlib import Path
 
 import torch
@@ -51,7 +39,6 @@ ALLOWED_SPLITS = ["image_illustration", "chart_graph"]
 ORIENTATION_CLASSES = ["upright", "rotated_90_clockwise", "rotated_180", "rotated_90_counterclockwise"]
 
 PROMPT = "Is this image upright or rotated? Reply with one word: upright, rotated_90_clockwise, rotated_180, or rotated_90_counterclockwise."
-
 
 DOWNLOAD_TIMEOUT = 60
 DOWNLOAD_MAX_RETRIES = 3
@@ -98,11 +85,6 @@ def load_image_safely(path: str) -> Image.Image:
         background = Image.new("RGB", rgba_img.size, (255, 255, 255))
         background.paste(rgba_img, mask=rgba_img)
         return background
-
-
-def apply_rotation(img: Image.Image, rotation_class: int) -> Image.Image:
-    degrees_map = {0: 0, 1: 270, 2: 180, 3: 90}
-    return img.rotate(degrees_map[rotation_class], expand=True)
 
 
 def classify_orientation(
@@ -180,9 +162,9 @@ def sample_filenames_from_dataset(sample_size: int) -> list[str]:
 
 def main():
     parser = argparse.ArgumentParser(description="Generate orientation training labels with VLM")
-    parser.add_argument("--sample-size", type=int, default=10000)
+    parser.add_argument("--sample-size", type=int, default=1000)
     parser.add_argument("--output", type=str, default="orientation_tests/training_labels.json")
-    parser.add_argument("--batch-download-size", type=int, default=100)
+    parser.add_argument("--batch-download-size", type=int, default=500)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -208,44 +190,19 @@ def main():
                 logger.error(f"Skipping batch at {batch_start} after {DOWNLOAD_MAX_RETRIES} retries")
                 continue
 
-            # Prepare all rotated images for this download batch
-            inference_items = []
-            for filename, local_path in file_pairs:
+            for filename, local_path in tqdm(file_pairs, desc="VLM inference", leave=False):
                 try:
-                    original = load_image_safely(local_path)
-                    applied_rotation = random.randint(0, 3)
-                    rotated = apply_rotation(original, applied_rotation)
-                    rotated_path = os.path.join(tmp_dir, f"rotated_{filename}")
-                    rotated.save(rotated_path, format="PNG")
-                    inference_items.append({
+                    vlm_label = classify_orientation(model, processor, local_path, device)
+                    results.append({
                         "filename": filename,
-                        "rotated_path": rotated_path,
-                        "applied_rotation": applied_rotation,
+                        "vlm_prediction": vlm_label,
                     })
                 except Exception as e:
-                    logger.warning(f"Failed to prepare {filename}: {e}")
+                    logger.warning(f"Inference failed for {filename}: {e}")
                     results.append({"filename": filename, "error": str(e)})
                 finally:
                     if os.path.exists(local_path):
                         os.remove(local_path)
-
-            # Run VLM inference one image at a time
-            for item in tqdm(inference_items, desc="VLM inference", leave=False):
-                try:
-                    vlm_label = classify_orientation(model, processor, item["rotated_path"], device)
-                except Exception as e:
-                    logger.warning(f"Inference failed for {item['filename']}: {e}")
-                    vlm_label = "correct"
-
-                expected_label = ORIENTATION_CLASSES[item["applied_rotation"]]
-                results.append({
-                    "filename": item["filename"],
-                    "applied_rotation": item["applied_rotation"],
-                    "applied_label": expected_label,
-                    "vlm_prediction": vlm_label,
-                    "agrees": vlm_label == expected_label,
-                })
-                os.remove(item["rotated_path"])
 
             if batch_start % 500 == 0 and results:
                 save_results(results, args.output)
@@ -259,12 +216,12 @@ def save_results(results: list, output_path: str):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     successful = [r for r in results if "error" not in r]
-    agreement = sum(1 for r in successful if r["agrees"])
+    preds = Counter(r["vlm_prediction"] for r in successful)
     summary = {
         "total_processed": len(results),
         "successful": len(successful),
         "failed": len(results) - len(successful),
-        "agreement_rate": round(agreement / len(successful) * 100, 2) if successful else 0,
+        "orientation_distribution": dict(preds),
     }
 
     with open(output_path, "w") as f:
@@ -273,21 +230,11 @@ def save_results(results: list, output_path: str):
 
 def print_summary(results: list):
     successful = [r for r in results if "error" not in r]
-    agreement = sum(1 for r in successful if r["agrees"])
+    preds = Counter(r["vlm_prediction"] for r in successful)
     logger.info(f"Total: {len(results)}, Successful: {len(successful)}")
-    logger.info(f"VLM agreement with known rotation: {agreement}/{len(successful)} ({agreement/len(successful)*100:.1f}%)")
-
-    by_class = {}
-    for r in successful:
-        label = r["applied_label"]
-        by_class.setdefault(label, {"total": 0, "agree": 0})
-        by_class[label]["total"] += 1
-        if r["agrees"]:
-            by_class[label]["agree"] += 1
-
-    for label, counts in by_class.items():
-        rate = counts["agree"] / counts["total"] * 100
-        logger.info(f"  {label}: {counts['agree']}/{counts['total']} ({rate:.1f}%)")
+    logger.info(f"Orientation distribution:")
+    for label, count in preds.most_common():
+        logger.info(f"  {label}: {count} ({count/len(successful)*100:.1f}%)")
 
 
 if __name__ == "__main__":
