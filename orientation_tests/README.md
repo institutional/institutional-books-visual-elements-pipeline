@@ -30,11 +30,16 @@ python orientation_tests/manual_labeler.py --sample-size 200 --resume
 4. The rotation you applied becomes the label (the correction needed)
 5. Results save incrementally to `manual_labels.json`
 
-**The `--resume` flag:**
-- Loads the existing output file and skips already-labeled images
+**The `--resume` flag (recommended):**
+- Loads the existing output file and pre-populates the results list
+- Skips already-labeled images and starts from the first unlabeled one
 - New labels are appended to the existing results
-- Without `--resume`, already-labeled images are still excluded from the session but previous results are preserved in the file
-- Labels are never overwritten — the file accumulates results across sessions
+- The file always contains the full accumulated set of labels
+
+**Without `--resume`:**
+- Already-labeled filenames are excluded from the session (won't be shown again)
+- However, the results list starts empty — when you save, the file is **overwritten** with only the new session's labels
+- Always use `--resume` if you want to keep previous labels
 
 **Controls:**
 - Right arrow / D: Rotate 90 degrees clockwise
