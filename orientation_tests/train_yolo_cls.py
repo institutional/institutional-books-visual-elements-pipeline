@@ -1,8 +1,8 @@
 """
-Train a YOLO26m-cls orientation classifier.
+Train a YOLO classification orientation model.
 
 Reads manual_labels.json, organizes images into class folders, and fine-tunes
-YOLO26m-cls for 4-class orientation prediction. Predictions represent the
+a YOLO-cls model for 4-class orientation prediction. Predictions represent the
 correction needed to make an image upright.
 
 Data is split into train/val/test (80/10/10). The test set is never used during
@@ -10,7 +10,8 @@ training and is used for evaluation PDF generation.
 
 Usage:
     python orientation_tests/train_yolo_cls.py [--labels orientation_tests/manual_labels.json] [--epochs 50]
-    python orientation_tests/train_yolo_cls.py --no-synthetic --eval-pdf orientation_tests/eval_yolo.pdf
+    python orientation_tests/train_yolo_cls.py --model yolo26n-cls --epochs 30
+    python orientation_tests/train_yolo_cls.py --model yolo26l-cls --no-synthetic --eval-pdf orientation_tests/eval_yolo.pdf
 """
 
 import argparse
@@ -253,6 +254,8 @@ def main():
     parser.add_argument("--max-samples", type=int, default=None)
     parser.add_argument("--train-split", type=float, default=0.8)
     parser.add_argument("--val-split", type=float, default=0.1)
+    parser.add_argument("--model", type=str, default="yolo26m-cls",
+                        help="YOLO model variant (e.g. yolo26n-cls, yolo26s-cls, yolo26m-cls, yolo26l-cls)")
     parser.add_argument("--no-synthetic", action="store_true",
                         help="Train on raw images with their labels as-is, no correction + 4-rotation augmentation")
     parser.add_argument("--eval-pdf", type=str, default=None,
@@ -312,14 +315,16 @@ def main():
     build_dataset(val_labels, image_dir, dataset_dir, "val", no_synthetic=args.no_synthetic)
 
     # Train
-    model = YOLO("yolo26m-cls.pt")
+    model_file = args.model if args.model.endswith(".pt") else f"{args.model}.pt"
+    run_name = f"{args.model.replace('.pt', '')}_orientation"
+    model = YOLO(model_file)
     train_results = model.train(
         data=dataset_dir,
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch_size,
         project=args.output_dir,
-        name="yolo26m_orientation",
+        name=run_name,
         exist_ok=True,
         pretrained=True,
         optimizer="AdamW",
@@ -328,7 +333,7 @@ def main():
         workers=4,
     )
 
-    best_model_path = os.path.join(args.output_dir, "yolo26m_orientation", "weights", "best.pt")
+    best_model_path = os.path.join(args.output_dir, run_name, "weights", "best.pt")
     logger.info(f"Training complete. Best model: {best_model_path}")
 
     # Generate eval PDF if requested

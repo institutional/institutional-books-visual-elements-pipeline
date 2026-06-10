@@ -1,5 +1,5 @@
 """
-Train an EfficientNet-V2-S orientation classifier.
+Train an EfficientNet orientation classifier.
 
 Reads manual_labels.json, downloads the images, and trains a 4-class orientation
 model. Predictions represent the correction needed to make an image upright.
@@ -9,7 +9,8 @@ training and is used for evaluation PDF generation.
 
 Usage:
     python orientation_tests/train_orientation_model.py [--labels orientation_tests/manual_labels.json] [--epochs 20]
-    python orientation_tests/train_orientation_model.py --no-synthetic --eval-pdf orientation_tests/eval.pdf
+    python orientation_tests/train_orientation_model.py --model efficientnet_v2_m --epochs 30
+    python orientation_tests/train_orientation_model.py --model efficientnet_b4 --no-synthetic --eval-pdf orientation_tests/eval.pdf
 """
 
 import argparse
@@ -136,8 +137,26 @@ def get_val_transform():
     ])
 
 
-def build_model(device: torch.device) -> nn.Module:
-    model = models.efficientnet_v2_s(weights=models.EfficientNet_V2_S_Weights.DEFAULT)
+EFFICIENTNET_CONFIGS = {
+    "efficientnet_v2_s": (models.efficientnet_v2_s, models.EfficientNet_V2_S_Weights.DEFAULT),
+    "efficientnet_v2_m": (models.efficientnet_v2_m, models.EfficientNet_V2_M_Weights.DEFAULT),
+    "efficientnet_v2_l": (models.efficientnet_v2_l, models.EfficientNet_V2_L_Weights.DEFAULT),
+    "efficientnet_b0": (models.efficientnet_b0, models.EfficientNet_B0_Weights.DEFAULT),
+    "efficientnet_b1": (models.efficientnet_b1, models.EfficientNet_B1_Weights.DEFAULT),
+    "efficientnet_b2": (models.efficientnet_b2, models.EfficientNet_B2_Weights.DEFAULT),
+    "efficientnet_b3": (models.efficientnet_b3, models.EfficientNet_B3_Weights.DEFAULT),
+    "efficientnet_b4": (models.efficientnet_b4, models.EfficientNet_B4_Weights.DEFAULT),
+    "efficientnet_b5": (models.efficientnet_b5, models.EfficientNet_B5_Weights.DEFAULT),
+    "efficientnet_b6": (models.efficientnet_b6, models.EfficientNet_B6_Weights.DEFAULT),
+    "efficientnet_b7": (models.efficientnet_b7, models.EfficientNet_B7_Weights.DEFAULT),
+}
+
+
+def build_model(device: torch.device, model_name: str = "efficientnet_v2_s") -> nn.Module:
+    if model_name not in EFFICIENTNET_CONFIGS:
+        raise ValueError(f"Unknown model: {model_name}. Choose from: {list(EFFICIENTNET_CONFIGS.keys())}")
+    factory, weights = EFFICIENTNET_CONFIGS[model_name]
+    model = factory(weights=weights)
     num_features = model.classifier[1].in_features
     model.classifier = nn.Sequential(
         nn.Dropout(p=0.3, inplace=True),
@@ -332,6 +351,9 @@ def main():
     parser.add_argument("--val-split", type=float, default=0.1)
     parser.add_argument("--max-samples", type=int, default=None,
                         help="Use only the first N labels")
+    parser.add_argument("--model", type=str, default="efficientnet_v2_s",
+                        help="Model variant: efficientnet_v2_s, efficientnet_v2_m, efficientnet_v2_l, "
+                             "efficientnet_b0, efficientnet_b1, ..., efficientnet_b7")
     parser.add_argument("--no-synthetic", action="store_true",
                         help="Train on raw images with their labels as-is, no correction + 4-rotation augmentation")
     parser.add_argument("--eval-pdf", type=str, default=None,
@@ -396,7 +418,8 @@ def main():
     )
 
     # Build model
-    model = build_model(device)
+    logger.info(f"Using model: {args.model}")
+    model = build_model(device, args.model)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
@@ -420,7 +443,7 @@ def main():
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            best_model_path = output_dir / f"orientation_model_best_{val_acc:.4f}.pth"
+            best_model_path = output_dir / f"orientation_{args.model}_best_{val_acc:.4f}.pth"
             torch.save(model.state_dict(), best_model_path)
             logger.info(f"  New best model saved: {best_model_path}")
 
