@@ -1,10 +1,10 @@
 {
   "summary": {
-    "total_labeled": 6284,
+    "total_labeled": 7896,
     "orientation_distribution": {
-      "upright": 5802,
-      "rotated_90_clockwise": 390,
-      "rotated_90_counterclockwise": 90,
+      "upright": 7346,
+      "rotated_90_clockwise": 444,
+      "rotated_90_counterclockwise": 104,
       "rotated_180": 2
     }
   },
@@ -25143,6 +25143,6454 @@
     },
     {
       "filename": "32044000194456_00000125_7319404.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000051_7345988.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000096_7344234.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000092_7337806.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028571_00000079_7353370.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000258_7338020.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000194_7337971.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000090_7337786.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000049_7351132.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000294_7338050.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000055715_00000186_7354267.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000303_7351355.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000289_7351410.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000383_7338062.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000128_7333248.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000440_7344440.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000045_7333166.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000191_7337890.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000064_7337818.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000101_7333242.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000058636_00000014_7330714.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028571_00000491_7353481.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000257_7346066.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000084_7332110.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000260_7338006.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000091_7351152.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000478_7351643.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000059_7333174.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000429_7351539.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000140_7344256.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000331_7351399.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000141_7337872.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000056234_00000071_7342587.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000035_7337755.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000213_7344320.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000291_7338028.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000143_7351213.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000033_7337736.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000032_7337746.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000041_7351034.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000139_7333238.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000112_7346026.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000214_7351300.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000424_7344394.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000197_7351277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000119_7351177.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000420_7334718.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000101_7346024.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000063263_00000101_7336543.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000093_7345984.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000034_7337767.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000365_7344371.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000050_7346007.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000117_7333216.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000045_7344231.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000309_7344369.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000253_7346087.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000524_7351669.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000162_7348983.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000377_7344382.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000021_7333138.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000323_7338051.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000411_7344391.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000044_7333143.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000080_7337789.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000158_7337922.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000301_7351369.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000416_7344400.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000083_7346009.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000184_7337932.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000343_7351460.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000008_7344219.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000231_7348997.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000128_7344260.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000492_7351688.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000000018_00000239_7329595.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000097_7334582.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000365_7338069.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000100_7337854.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000055715_00000098_7354262.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000317_7338038.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000373_7327756.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000046_7328823.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000192_7344297.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000429_7327224.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000281_7352420.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000241_7354865.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004345641_00000287_7337330.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000188_7319867.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000054_7319789.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004576500_00000309_7414894.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000353_7343008.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000120_7344835.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000080_7332105.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218859_00000042_7333290.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000255_7349355.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000209_7341122.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000214_7334925.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000087_7327615.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000225_7318144.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000408_7325823.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004791059_00000320_7293042.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000065_7337823.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000241_7349353.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000113_7325758.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001266287_00000025_7336754.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000272_7319631.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000238_7354827.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000112_7354439.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000419_7349567.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000019_7355177.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004993655_00000136_7441166.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000159_7354795.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000159_7354796.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000162_7354517.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000113_7349226.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000257_7320199.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000154_7324164.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000475_7357436.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000307_7320290.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005003538_00000049_7431730.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000170_7322946.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000047_7324115.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000239_7335268.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000354_7349039.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000383_7327773.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000299_7320305.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000537_7341405.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000029_7326935.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000121_7326021.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000292235_00000021_7323296.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000064_7354420.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000562_7298647.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000065_7352041.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001669738_00000195_7338500.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000117_7326882.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000318_7351396.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000195_7328466.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000991_7357576.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000456_7328579.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000092_7326875.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000401_7344409.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004559613_00000253_7423276.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000347_7338065.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000267_7338014.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000243_7325793.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000227_7354629.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000233_7335260.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002020410_00000008_7350099.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000268_7346399.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000837_7357537.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000296_7351380.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000647_7349875.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000404_7338195.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000507_7357448.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004997219_00000659_7431601.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000420_7344738.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000580_7349791.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004385530_00000132_7386688.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004485355_00001107_7384924.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004563235_00000114_7420583.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000097_7353591.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004825931_00000222_7285459.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000082_7332295.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004485355_00001309_7384934.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000364_7336945.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000208_7344908.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000308_7352184.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000093_7328863.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000489_7351673.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000777961_00000023_7349970.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000258756_00000113_7329715.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000225_7375516.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196873_00000002_7339579.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004981775_00000335_7431164.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000106_7321770.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000114_7325661.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000041_7351033.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000063263_00000065_7336534.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000402_7453774.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004808515_00000107_7301277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002827095_00000169_7346699.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000054_7319785.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000165_7328345.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000045_7324108.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000069_7354413.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000264_7342957.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000185_7327392.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000305_7340219.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000364_7354702.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000067_7379664.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000523_7351662.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000256_7375716.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000079_7346452.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000441_7352254.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000318_7329943.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000186_7354774.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002464899_00000193_7338626.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000028_7319733.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000239_7335267.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000049_7319295.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000856_7357535.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000063_7355198.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000071_7327277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000352_7351452.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004474326_00000195_7392304.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000265_7352419.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000777961_00000037_7349977.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000307_7352176.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000032_7350056.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000039_7350046.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002827095_00000478_7346936.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000314_7353611.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000075_7326862.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00001041_7357589.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000418_7344722.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000623_7349825.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000249_7346378.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000117_7325989.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570073_00000153_7413631.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000610_7351825.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000365_7349506.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000148_7346341.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000262527_00000271_7342960.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000185_7354543.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000254_7346082.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000089_7337829.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000111_7354424.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000061_7334874.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000453_7412142.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000084_7337797.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000178_7320115.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000390_7357420.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000267_7327697.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000241_7324222.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000424_7344392.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000191_7337891.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000198_7423756.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000076_7335202.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000117_7326017.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000082_7344816.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004385530_00000243_7386914.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186148_00000232_7344489.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052553_00000007_7345030.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000125_7325958.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000293_7349418.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000137_7318124.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000275_7453665.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000289_7344712.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000256_7375714.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000419_7343039.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000590_7341435.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000223_7319958.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000135_7346293.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002256626_00000239_7328918.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000230_7349313.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000187_7327047.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000121_7326026.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395307_00000220_7370583.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000099_7320074.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002104842_00000025_7355120.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000194_7340160.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000570_7325847.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001256700_00000720_7333382.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000245_7346382.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000286_7341190.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004975835_00000329_7455289.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000009_7325950.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000144_7337877.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000097_7344597.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000208_7394074.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000366_7338072.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000369_7334998.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000134_7318109.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000096_7346448.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000123_7326065.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004802518_00000359_7296006.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000354_7314777.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000359_7328502.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000494_7394279.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000204_7354818.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004462552_00000423_7369667.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000984_7357571.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000082_7332293.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000337_7344385.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001266287_00000042_7336760.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000446_7352249.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004336665_00000033_7325270.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000243_7354838.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000078_7346004.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004681268_00000112_7311754.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000547_7351821.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000803270_00000075_7333356.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000599_7351869.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000196_7352110.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000194_7337969.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000318_7323144.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000181_7346516.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000075_7320022.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000048_7348929.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000049_7357342.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000105_7336601.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189993_00000263_7340784.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004574638_00000618_7401491.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000108_7351203.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000325_7329942.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000145_7321774.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001271097_00000008_7344965.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004508636_00000055_7393893.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000096_7326988.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000232_7335245.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000561_7349781.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000097_7354754.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000580_7349790.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000239_7412125.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000129_7327645.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000534_7349767.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000075_7351104.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000610_7357495.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000150_7344627.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004467262_00000293_7369743.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000075_7346449.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000233_7349334.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000501_7394271.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000048_7354334.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000189_7337908.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004349783_00000072_7321502.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004385530_00000074_7386592.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000205_7324218.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000563_7352307.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002597722_00000020_7355249.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000216_7327070.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004466629_00000543_7388883.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000097_7327657.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044003822673_00000357_7331195.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004385530_00000118_7386671.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000435_7354970.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000028_7337744.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000437_7344419.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000024_7350062.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000171_7340123.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000777961_00000053_7349992.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052553_00000312_7345044.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002076412_00000147_7335220.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000573_7325848.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000029_7342624.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000277_7341250.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000159_7379705.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000070_7333196.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000067_7344243.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004801148_00000047_7300950.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004460960_00000406_7378171.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000191_7336875.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000233114_00000096_7336651.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000427_7349533.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000091_7327634.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000209_7338616.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000221_7346364.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005003538_00000296_7431782.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004508636_00000229_7394061.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004993655_00000150_7441173.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000267_7327444.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000224_7337967.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004483095_00000042_7359486.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000147_7327038.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000429_7328553.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570875_00000593_7400516.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004511895_00000219_7417137.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000238_7335303.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000143_7329915.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004452132_00000227_7379721.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000832_7357545.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000684_7349950.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004378279_00000245_7372126.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004550976_00000301_7404772.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001436864_00000327_7355085.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274423_00000127_7325879.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508941_00000043_7409529.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000355_7354917.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000222_7354606.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000244_7357382.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000351_7327497.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000520_7394301.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000195_7346047.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000369_7357416.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000101_7423731.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000603_7349813.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000438_7341023.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000173_7348986.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004744157_00000066_7308754.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044002025526_00000117_7326016.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000467_7328583.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000344_7349473.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000048_7350077.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002073740_00000050_7346625.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000110_7357351.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000040_7345206.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000274_7319988.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004375903_00000318_7364175.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000423_7376245.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000033_7355165.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001271097_00000255_7345007.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000231_7324217.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000081_7336839.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000262527_00000363_7343019.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044000080861_00000287_7351303.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001436864_00000154_7355069.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000351_7328955.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004985198_00000438_7452256.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000092_7344567.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000377_7328514.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004805958_00000632_7312267.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000271_7328945.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000227_7423760.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000264_7320270.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000089_7354356.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000369_7338080.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000198291_00000165_7329656.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000339_7338077.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000273_7328379.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000192_7327042.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000045_7328817.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004795845_00000259_7305139.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000159731_00000360_7334804.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000116_7319357.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004810859_00000013_7304516.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004468336_00000028_7381293.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000041_7345221.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004819728_00000198_7291236.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001271097_00000044_7344972.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000462_7341030.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000104_7333231.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000195_7394068.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000080_7354421.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000258_7349367.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002518785_00000103_7353687.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000061_7342856.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000117_7319390.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000565_7351817.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395612_00000659_7390478.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000055715_00000098_7354263.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186148_00000215_7344476.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000089_7344814.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000195_7338586.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000050_7328433.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000669_7351917.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004825931_00000237_7285457.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000324_7338046.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000231_7349328.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004510780_00000429_7422269.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004531547_00000023_7406212.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004975835_00000482_7455478.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000310_7354673.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000634_7351933.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000031_7350037.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000046_7328333.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004439808_00000232_7367430.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000289_7351411.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000194_7354607.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000144_7354460.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000053_7319176.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004543807_00000040_7409715.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004975835_00000479_7455389.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000446_7336955.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000405_7451992.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004488250_00000315_7388054.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000228_7337974.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000407_7344410.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000068_7344562.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000486_7351666.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004376034_00000073_7375047.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000186_7423743.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004829883_00000268_7318016.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052553_00000134_7345036.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004329033_00000019_7345197.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000532_7351768.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000109_7357345.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000285_7320001.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000264_7321788.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000154_7453570.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002444958_00000007_7341039.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000248_7319999.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000276_7335360.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000231_7320165.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000288_7320243.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002827095_00000477_7346917.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000366_7321798.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000264_7344673.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000234_7341002.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000319_7341279.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000361_7327739.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004441648_00000324_7383004.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000483_7351698.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000227_7335274.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000235_7344302.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000230_7320183.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004536496_00000133_7397292.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000225_7351298.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000143_7327018.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000245_7344925.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000825_7357538.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000274_7344936.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000260679_00000461_7335027.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000134_7453518.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004375903_00000352_7364199.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000138_7325647.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000066449_00000326_7328316.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000190_7379702.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052694_00000321_7328801.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004975835_00000316_7455280.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004979787_00000120_7453507.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000484_7357454.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004608915_00000130_7293804.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189993_00000188_7340743.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004463063_00000140_7392075.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000281_7320212.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000389_7325836.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000253_7375746.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000106_7323383.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000317_7322977.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000127_7345294.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004437091_00000106_7387108.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395299_00000410_7368270.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191734_00000079_7338140.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000216_7423762.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000376_7394164.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000091_7327311.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000568_7352287.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000296_7327080.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004510780_00000428_7422259.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000243_7354653.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000085_7354743.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044000160259_00000369_7353566.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000116_7354467.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000512_7357449.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189076_00000128_7332185.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000258756_00000190_7329720.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000256_7328487.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000160_7298603.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000250_7453638.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004502092_00000209_7417921.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000648_7338234.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000014_7350074.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000292235_00000017_7323262.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000322_7319664.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000042_7346428.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005029038_00000685_7433430.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002020410_00000010_7350095.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000047_7355171.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000155_7336860.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000278622_00000257_7344915.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000022_7355180.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000182_7325681.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598678_00000031_7302278.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000092_7326981.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000243_7329936.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000243618_00000061_7319755.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000043_7344765.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000045_7352014.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000292235_00000046_7323279.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000251_7329934.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002443190_00000072_7336842.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000231_7335276.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002435667_00000035_7330879.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000580_7351846.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000846_7357551.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000205_7338629.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000059_7323362.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000199976_00000391_7324427.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004563235_00000149_7420593.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000166546_00000088_7354369.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000123_7326055.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000338_7343012.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598678_00000217_7302346.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001373398_00000190_7329844.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570875_00000339_7400444.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004562229_00000072_7411086.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000078_7342861.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000119_7326093.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004784955_00000091_7298078.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000275420_00000024_7336676.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000008_7324127.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000518_7349665.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000424_7344393.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000078_7453491.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000240_7346049.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000131_7326893.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000257_7352141.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000275420_00000115_7336709.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000174_7319431.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000115_7453529.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000492_7351690.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002083871_00000197_7350112.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000535_7351776.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000316_7323162.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000201_7319546.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000198291_00000401_7329695.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004781639_00000113_7292154.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044004385530_00000110_7386676.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598678_00000056_7302289.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004805222_00000085_7306450.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000067_7332238.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004538518_00000200_7409026.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000171_7298614.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000121_7326036.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004489506_00000397_7405868.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000023_7328833.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000249_7346379.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000479_7338203.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000149_7346525.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000301_7334992.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004832242_00000033_7444379.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005003538_00000072_7431711.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000390_7327522.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000165_7342908.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000207_7329928.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004979787_00000409_7453755.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000122_7353592.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000392_7328557.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000168_7423747.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000159_7344880.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000227_7342942.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218859_00000045_7333288.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000633_7349878.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004376604_00000129_7366290.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000160_7328351.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000143_7319329.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001967272_00000201_7357303.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004452132_00000346_7379750.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000201_7335287.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044001325414_00000622_7338458.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000141_7375315.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000257_7329938.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000261891_00000590_7349810.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000047_7344220.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000091_7451949.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004356234_00000371_7357937.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000102_7324151.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598678_00000350_7302425.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000478_7357446.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000054_7340069.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000148007_00000493_7339573.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005030382_00000619_7442903.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000391_7354719.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000253_7319618.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000383_7344715.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000129_7327647.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001436864_00000097_7355052.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052694_00000009_7328783.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001372929_00000655_7357197.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004565438_00000086_7398618.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000309450_00000250_7320258.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000117_7325987.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000036_7451938.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000186_7337893.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000204008_00000042_7330758.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000239_7319503.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000225_7319935.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000143_7337863.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000262_7375762.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000159_7320098.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002597722_00000016_7355250.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000226290_00000071_7321725.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000237_7353601.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000038_7346425.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000361_7323017.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000049_7326975.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000117_7326003.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004971537_00000095_7454940.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000330_7354679.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000197_7336629.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000640_7357498.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000248_7320247.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000134_7354433.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000018_7354283.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000874743_00001235_7344954.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000300_7351422.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000599_7351866.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000191_7327059.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000207_7327172.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002060523_00000146_7338546.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000336_7338374.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286310_00000126_7340887.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004339206_00000325_7338725.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000481_7452002.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000287_7319601.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000187_7319439.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000369_7357417.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286310_00000107_7340894.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001967272_00000305_7357306.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000034_7344221.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000187_7342919.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044000309450_00000248_7320246.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000033_7324131.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000018_7337739.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001595743_00000193_7332393.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000131_7379688.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000586_7338229.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000085_7345991.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000154_7354532.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004514444_00000542_7403673.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000119_7328888.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000777961_00000043_7349979.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000104_7323076.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000267_7340185.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000041_7342808.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000454_7394255.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000059_7319209.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000030_7337771.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000035_7350033.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000554_7351807.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000296_7354878.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000454_7352246.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000457_7394253.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000127_7352403.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000405_7327806.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000485_7394292.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000434_7334729.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002623940_00000128_7336989.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000169_7328355.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000035_7346434.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000144_7342690.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000365_7349503.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000411_7341011.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000238_7328930.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000235_7351273.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000204_7354816.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002827095_00000533_7346985.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000471_7349588.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191734_00000019_7338122.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000214_7352121.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000156_7319468.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000166_7336877.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000239988_00000519_7340857.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000222_7319924.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000035_7328838.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000281_7323130.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000045_7326965.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000078_7323361.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000028563_00000107_7334580.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000082_7332294.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000121_7354751.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001967272_00000389_7357313.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044001940543_00000053_7327626.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000107_7334581.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000680_7349932.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004681268_00000218_7311768.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004822730_00000410_7297571.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000207_7325734.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000220_7337976.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005030382_00000385_7442881.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004358636_00000043_7325494.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000253_7335350.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000160259_00000030_7353554.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000203_7346057.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218859_00000037_7333308.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000039_7328424.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000128_7345291.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000211_7335294.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000216_7319530.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000132_7319343.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000687_7349910.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000577_7351888.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000418_7354963.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000488163_00000534_7335065.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000178_7342924.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000377_7349043.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000264_7453662.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000000018_00000124_7329591.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004617908_00000071_7317311.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189993_00000226_7340775.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000337_7327207.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000150003_00000017_7357087.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000502_7321815.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004497913_00000072_7422141.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000301_7344692.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000051_7345258.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000140_7318101.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000104_7327142.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000084_7346468.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000268_7324370.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000129_7353593.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000036_7336572.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000261_7319593.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000047_7350040.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000539_7338430.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000041_7351038.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004993010_00000035_7433878.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000309_7320288.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004509261_00000259_7402265.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000226290_00000095_7321716.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000143_7346492.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189993_00000216_7340761.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000103_7318097.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000192_7327043.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000551_7338214.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004345641_00000366_7337341.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000073_7354371.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000554_7351805.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000217_7320140.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004462552_00000398_7369687.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004999942_00000036_7456874.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001595743_00000197_7332395.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000049_7354409.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000160_7349268.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000382_7341307.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000125_7319402.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000087_7327611.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000018_7323357.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002020428_00000011_7355106.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000323_7320296.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000220_7354836.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000508_7394299.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002944924_00000075_7333469.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000168_7324168.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025880_00000103_7321867.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002256626_00000176_7328912.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000088_7337821.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000076_7335203.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004781050_00000059_7300763.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000273_7319611.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000568_7349722.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000045_7332199.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004467262_00000295_7369745.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000108_7332246.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004461000_00000241_7386064.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000198291_00000101_7329650.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000656_7349864.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000484_7334757.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000145_7349251.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000197_7325783.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000133_7327141.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004464640_00000193_7359308.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000063_7319297.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000361_7349464.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000139_7349177.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000304_7351402.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000250_7324243.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000576_7328657.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000079_7335209.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000208_7354619.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000133_7352056.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000634_7351931.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000311_7323188.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004460960_00000505_7378276.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001967272_00000401_7357314.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000212_7338344.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000542_7349763.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000687_7351958.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000046_7337748.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000125_7336617.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000317_7357391.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002105773_00000169_7343113.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000991_7357577.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000175_7342904.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044000089094_00000028_7337745.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000297_7325800.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000179_7354803.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004511895_00000031_7417122.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000175_7337902.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000967968_00000013_7340930.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000232_7346365.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000057_7451951.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004600581_00000559_7318212.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000185_7354544.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004566337_00000147_7409864.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000239988_00000523_7340846.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000156_7354507.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000082_7337831.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000361_7351477.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000078_7332231.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000027_7344769.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004467262_00000422_7369754.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000551_7349720.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000311_7354894.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000075_7344232.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000040_7344230.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000072_7332088.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000095_7319762.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000271_7346408.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000586_7349833.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000245_7354656.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004454575_00000039_7387316.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002464899_00000207_7338608.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000288_7335317.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004509261_00000505_7402606.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000393_7338092.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000137_7346477.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000424_7354950.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000777961_00000052_7349993.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000205_7319954.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000085_7319229.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000488_7323235.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395299_00000246_7368258.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000288_7453646.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000045_7325611.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000159_7352410.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000582_7352324.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004510780_00000363_7422252.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000042_7336556.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000590_7349807.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000343_7412137.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000092_7319758.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000090_7345285.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000300_7323153.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000115_7326110.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000273_7342978.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000102_7349238.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000620_7412156.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000006_7349144.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000289_7335368.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000486_7327237.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000081_7332299.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000288_7336899.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044001271097_00000209_7345006.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000063263_00000084_7336524.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000577_7351897.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000086_7337802.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000307_7327735.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000160_7298604.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001093053_00000011_7338254.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004825931_00000160_7285455.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000118_7352066.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000071_7344787.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000413_7351522.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000100_7354472.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000243_7337999.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000657_7351911.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000042_7349139.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000361_7327741.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000290_7335366.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000173_7325705.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000263_7346062.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000277_7324372.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000233_7349330.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000084_7332290.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000208_7354618.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000401_7349513.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000282_7319625.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000076_7352034.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004713822_00000168_7299077.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000040_7336568.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000236_7319567.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000375_7341322.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000515_7394268.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000200_7342753.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000245_7346571.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000387_7349520.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000391_7357427.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000486_7357463.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004825931_00000301_7285476.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004510780_00000386_7422272.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000195_7338583.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004385530_00000091_7386561.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000047_7352019.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000172_7342898.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004452132_00000062_7379679.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000160259_00000376_7353567.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000321_7342986.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044002388155_00000638_7357501.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000111_7327019.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004822730_00000395_7297573.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000072_7345253.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000222_7319926.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000081_7346214.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000657_7338233.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000613_7349844.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570081_00000580_7421095.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000265_7320285.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000232_7335240.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000262_7320206.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000483_7351700.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005030382_00000117_7442866.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185348_00000146_7321683.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000238_7453598.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001436864_00000061_7355045.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000334_7351345.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000515_7394269.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000312_7328948.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000089_7344579.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000140_7321764.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004780441_00000592_7303866.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004551990_00000403_7393051.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000440_7341017.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000378_7354934.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000476_7349616.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000557_7349712.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000158_7325778.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000121_7326035.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000234_7375547.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000105_7337850.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000115_7393928.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000365_7338068.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004525101_00000285_7398281.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004691937_00000218_7307332.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000068_7351088.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000390_7324423.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004975835_00000138_7455134.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000803270_00000117_7333362.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000184_7342910.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004433090_00000178_7375383.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000204008_00000038_7330752.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001062884_00000008_7323335.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004598678_00000329_7302396.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000266_7344927.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000394_7349561.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004969713_00000123_7442560.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044004589644_00000092_7416680.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004576500_00000096_7414867.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000252_7346564.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000196_7319516.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000088_7344574.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000386_7349518.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000379_7351490.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002944924_00000086_7333462.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004681268_00000106_7311753.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000377_7394166.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598678_00000366_7302441.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000010_7346187.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000084_7319193.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000489_7357453.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004975835_00000102_7455160.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000401_7357429.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000307_7349402.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000033_7323354.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000369_7351444.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000271_7344945.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004538518_00000159_7409010.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261123_00000376_7353615.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000207_7324187.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004831095_00000076_7438934.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000853_7357532.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000067_7327305.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000376_7336947.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000166_7354558.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000777961_00000056_7349994.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000669_7351918.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001436864_00000309_7355081.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000034_7332277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004681268_00000288_7311791.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004543526_00000338_7415251.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001595743_00000183_7332370.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000387_7338395.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004563235_00000109_7420554.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000043_7345977.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004979787_00000350_7453737.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025880_00000077_7321866.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000188_7342727.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000052_7326871.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000335_7453706.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000047_7351055.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000198_7346053.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395612_00000821_7390695.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000086_7345277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000265_7340186.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000803270_00000075_7333357.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000055715_00000137_7354258.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000276_7453643.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004829883_00000387_7318036.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000119_7327638.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00001048_7357597.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000211_7344317.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000063_7334864.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000226290_00000152_7321743.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000201_7324212.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000158_7349292.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002256626_00000030_7328826.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000769_7316449.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002065373_00000339_7329950.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002668291_00000389_7341336.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000424_7354948.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000309559_00000106_7327361.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000079_7332115.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000347_7327208.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000129_7342701.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000549_7349726.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000290_7324382.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000130_7345304.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000402_7338099.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000047_7326945.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000167_7328464.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000263_7336906.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000404_7327106.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000060_7325638.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000076_7379680.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000267_7346403.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000239988_00000517_7340845.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004480455_00000137_7392517.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000373_7338381.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000079_7319183.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000210_7349300.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000465_7352264.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000350_7349470.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000301_7334993.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000405_7327105.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000275420_00000099_7336713.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004562229_00000016_7411077.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000357_7343014.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000037_7319121.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000264_7346569.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000139_7333239.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000243_7338356.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044004385530_00000202_7386868.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000262_7453672.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000081_7349153.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000430_7453771.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004597050_00000420_7317144.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004635462_00000971_7305761.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000065_7346461.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000624_7351862.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000441_7349605.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004550976_00000291_7404664.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000594_7338452.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000128_7346487.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000478_7357445.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000069_7319172.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189993_00000099_7340738.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000114_7342669.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395307_00000067_7370561.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452249_00000101_7365734.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000132_7352058.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000207_7352416.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000069_7327291.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004821021_00000069_7298439.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000059_7344776.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000380_7349511.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000194_7336632.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000086_7354368.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000033_7354331.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000409_7412139.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002388155_00000992_7357583.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000497_7394295.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000142_7354426.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000195_7346546.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000118_7354485.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000782_7316312.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004435038_00000190_7369392.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000116_7326890.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001271097_00000079_7344985.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000183_7320120.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000329_7327699.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000270_7319602.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001450881_00000008_7333414.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000025_7349112.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000065_7324285.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001993385_00000091_7329874.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000607_7349806.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000361_7357415.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000169_7336866.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000089094_00000143_7337862.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004468336_00000083_7381309.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000443_7453791.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000229_7346539.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000310_7319672.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000184_7298596.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000122_7423729.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000581_7338228.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000204_7423771.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004510780_00000331_7422250.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004562229_00000070_7411089.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004462826_00000053_7371565.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004474326_00000177_7392296.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005008511_00000584_7452882.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000426_7376284.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000533_7351747.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000194_7337970.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004479440_00000413_7366091.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044002056356_00000027_7352389.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000198291_00000316_7329679.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000240_7375479.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000157_7344873.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000083_7319301.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000331_7327472.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000640_7351941.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000128_7344863.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000033_7323356.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000148_7325701.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000082_7342646.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000526_7349656.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000117_7325666.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261461_00000137_7324479.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000032_7350055.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000101_7344866.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000477_7451997.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002105773_00000171_7343114.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000299_7323161.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000337_7327751.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000115_7326148.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001271097_00000206_7345000.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000502_7349685.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001611565_00000015_7340946.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000280_7320215.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004379988_00000308_7372213.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000235_7346550.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000301_7324379.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000120_7318129.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000385_7327104.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000405_7352229.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000852_7357550.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000379_7338189.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000612_7357493.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004466850_00000387_7378868.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004992400_00000290_7448317.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000272_7346099.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005030382_00000617_7442910.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000027_7326854.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001611565_00000459_7340961.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000385_7349569.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002052553_00000275_7345042.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044000196717_00000042_7326964.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004598603_00000136_7309540.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000077_7318083.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000424_7351569.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000284_7349336.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005003538_00000138_7431739.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000053_7327622.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000226290_00000173_7321738.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000120_7337838.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004805958_00000627_7312272.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004460960_00000615_7378367.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000694_7351953.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000139_7344263.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004538518_00000120_7408998.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000674_7349925.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000333_7354678.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000323_7323005.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000471_7349589.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004588109_00000085_7412107.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000292235_00000018_7323274.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000115_7326127.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002076412_00000240_7335235.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000128_7319324.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000322_7338034.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000291_7323174.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000221_7320148.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000063_7354377.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000327_7357398.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000598_7338222.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004997219_00000596_7431545.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000355_7352215.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028571_00000263_7353430.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000039_7350045.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000084_7354403.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000210_7340149.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000022_7334854.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000087_7332086.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000580_7351842.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000468_7336952.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000092_7351139.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000331_7322992.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000226290_00000147_7321741.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000315_7327707.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000315_7352432.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000163_7354552.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000159_7324162.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000514_7323240.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000157_7393968.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000490_7357466.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005008511_00000211_7452879.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570073_00000127_7413606.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004985404_00000100_7445730.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000205_7319550.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000147_7349272.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000294_7349408.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000461_7341028.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000967968_00000010_7340934.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004965273_00000083_7443647.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000267_7344929.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004550976_00000470_7405184.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004801148_00000082_7301039.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000207_7320159.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000115_7423726.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000509_7394288.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000421_7335016.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002065373_00000173_7329924.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004588109_00000103_7412116.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002076412_00000225_7335297.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000269_7319619.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000040_7350047.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000223_7354582.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000150003_00000045_7357079.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000329_7344354.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000243_7453653.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000769_7316448.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004531547_00000052_7406257.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000141_7354455.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000430_7351529.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000575_7349756.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000345_7338071.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000475_7451994.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000969_7357572.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979605_00000110_7423739.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000153_7349277.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004570081_00000542_7421090.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000361_7327740.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004832242_00000471_7444855.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004617908_00000039_7317278.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000248_7319606.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000145_7322944.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000532_7351770.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004473294_00000227_7363913.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004462826_00000283_7371581.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000094_7352038.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000063263_00000102_7336539.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000431_7349551.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000373_7394131.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000022_7324272.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004805222_00000089_7306461.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000185_7327040.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000370_7349496.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000536_7315378.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000056_7346003.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004801148_00000095_7301047.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000471_7341019.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000301_7327718.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000400_7341012.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000043_7333150.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028571_00000494_7353503.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000221_7323096.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000327_7324375.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004502092_00000263_7417932.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000045_7319150.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005034970_00000298_7438671.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000497_7453810.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000286_7351319.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000201_7327411.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000230_7375521.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000355_7327215.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000244251_00000285_7327179.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000079_7453484.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000150_7337913.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005014113_00000335_7435566.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000537_7349735.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000564_7351788.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004801148_00000029_7300948.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000257_7320198.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000170_7342704.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000050_7325625.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004981775_00000335_7431165.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004345666_00000136_7345578.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004433090_00000312_7375836.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000438_7344414.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000189_7327033.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000329_7328396.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002623940_00000123_7336993.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000467_7341033.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000063_7338305.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002430791_00000076_7355237.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004635462_00000303_7305657.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000577_7351892.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002256626_00000269_7328944.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000110_7351187.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004454575_00000129_7387327.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004502092_00000201_7417923.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000123_7349215.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000030_7319135.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001738913_00000486_7346609.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000319_7344363.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000123_7453523.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000030_7326956.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000635_7351921.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000115_7326136.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004567657_00000192_7415502.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004544060_00000403_7406754.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186148_00000450_7344520.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218859_00000041_7333297.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000065_7319256.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000119_7351178.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000231_7319501.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002104842_00000065_7355128.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000171_7337894.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000079_7332113.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004779344_00000619_7315629.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000803270_00000125_7333363.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002076412_00000240_7335238.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000043_7328428.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000218_7337955.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000031_7350036.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000159_7325692.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000189_7319484.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000242_7344336.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000436_7318192.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000076_7346242.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286310_00000083_7340883.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004576500_00000306_7414898.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000132_7345293.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000307_7322996.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000092_7345266.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004460960_00000403_7378189.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000040_7334859.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004395307_00000055_7370562.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000197_7338605.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000138_7345308.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000454_7341032.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000143_7352070.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000158_7332269.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000274845_00000165_7321775.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000198291_00000290_7329673.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000159_7320101.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000437_7453796.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000728_7341468.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000098_7336852.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000186171_00000178_7328364.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000195_7344672.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000202_7352133.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000052_7341058.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000125_7325978.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000257_7346407.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004329033_00000071_7345262.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000065_7346253.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000249_7319990.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000161315_00000201_7324213.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000500_7349689.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199091_00000310_7334953.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004345666_00000036_7345559.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000526_7328625.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004985396_00000111_7450803.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000284_7319633.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004467254_00000340_7382284.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005008511_00000588_7452883.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000291_7352434.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000655_7338238.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004363917_00000200_7345744.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044004831228_00000375_7430657.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000041_7349128.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000337_7351514.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000602_7328671.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243055_00000551_7338215.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025880_00000077_7321865.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000535_7357472.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000203_7338595.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000573_7349760.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000086_7336590.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605580_00000082_7306681.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004502092_00000117_7417908.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000365_7349504.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000052_7333187.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000354_7343016.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000063263_00000114_7336538.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000199_7346052.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004801437_00000015_7295974.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000131_7351196.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000300_7349388.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000106_7323381.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000382_7344716.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000123_7326070.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000143_7349188.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000052_7346000.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000517_7328619.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000218_7324351.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004488490_00000187_7369001.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004562112_00000155_7412473.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004566337_00000196_7409875.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185348_00000077_7321666.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000560979_00000121_7353632.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044005030382_00000385_7442882.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000149_7342723.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000507_7453823.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002056356_00000285_7352426.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000173_7298600.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000379_7325820.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004345641_00000098_7337302.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000258_7346104.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000400_7394196.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185348_00000146_7321686.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000116_7327022.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000253_7332324.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000238840_00000035_7332200.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185348_00000146_7321684.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000091_7318090.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000199_7327683.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000109157_00000161_7326921.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004538518_00000149_7409015.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000513_7349630.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001266287_00000060_7336774.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028571_00000530_7353521.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000182_7357356.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004495081_00000214_7411483.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001343524_00000223_7327595.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000242677_00000327_7323166.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000126_7319388.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001336965_00000181_7320368.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000179499_00000071_7342661.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000185801_00000090_7336579.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000189076_00000142_7332184.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000286187_00000231_7332318.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000153_7349278.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000123_7326061.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001336965_00000281_7320372.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000216_7349329.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004332011_00000112_7340105.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000143_7325761.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001325414_00000648_7338480.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000204_7320127.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002443190_00000188_7336867.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001646264_00000077_7323363.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000194456_00000086_7319226.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000061_7354395.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000450_7453795.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000067_7334967.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000275420_00000096_7336691.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000367_7327097.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000039_7319111.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000258756_00000147_7329735.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000349_7323020.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028530_00000249_7346080.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000159731_00000515_7334836.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000323_7320295.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000472_7328597.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000261891_00000637_7349904.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001768415_00000595_7330855.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004497913_00000078_7422134.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000308_7324392.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002242022_00000175_7345068.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000182964_00000046_7325608.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000378_7349444.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000245_7342958.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044002668291_00000265_7341184.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000490_7328617.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000241034_00000349_7352196.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000236_7319566.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000391_7327785.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000265_7319582.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001993385_00000107_7329886.webp",
+      "manual_label": "rotated_90_counterclockwise"
+    },
+    {
+      "filename": "32044004823555_00000279_7302231.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004775284_00000262_7285026.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000068_7322915.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000075_7351106.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004805958_00000690_7312274.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000288_7338019.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000313_7349426.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000179499_00000252_7342756.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000186_7354513.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000159731_00000515_7334828.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261461_00000094_7324468.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000469_7351655.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000047_7350041.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000193_7328475.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000077_7327304.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000155_7319853.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002668291_00000593_7341421.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000278622_00000108_7344851.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262527_00000289_7342993.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000191726_00000024_7322897.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000065706_00000243_7344335.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000309_7349393.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000227_7394109.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000131_7354749.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309559_00000464_7327547.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004691507_00000151_7303399.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000335_7349410.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000147_7346518.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004460960_00000548_7378315.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000309450_00000257_7320201.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000118_7318112.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000292_7319657.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000700_7349951.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000342_7349498.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000284836_00000341_7328511.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004781050_00000059_7300764.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000354_7354928.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004452132_00000048_7379662.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000141_7346478.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000035_7357339.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004869285_00000063_7451946.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000445_7335029.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002025526_00000064_7325952.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004463022_00000661_7383388.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000331_7349429.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000467_7327843.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000167_7453555.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261461_00000043_7324446.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004600581_00000029_7318068.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000089_7346457.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000243618_00000180_7319881.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000660_7349851.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002464899_00000191_7338576.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000369_7349499.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000218917_00000330_7325803.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004825931_00000151_7285454.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004508636_00000482_7394284.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000260679_00000285_7334987.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001749522_00000032_7350054.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000496_7349672.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000041_7351043.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002388155_00000486_7357459.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000069906_00000074_7332120.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044001940543_00000227_7327676.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000669_7349882.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000400051_00000171_7346512.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004562229_00000098_7411098.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000199976_00000124_7324322.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000194456_00000183_7319474.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000329_7354682.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000663_7349857.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000233_7346358.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044002064343_00000008_7327846.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000262238_00000120_7354759.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000176_7354553.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000261891_00000576_7349768.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000237628_00000417_7344724.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000259002_00000165_7346319.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004358933_00000127_7356034.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000067_7337808.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000166546_00000178_7354564.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004497913_00000078_7422135.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004979787_00000121_7453515.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000275420_00000038_7336677.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002325124_00000440_7341018.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044002827095_00000673_7347059.webp",
+      "manual_label": "rotated_90_clockwise"
+    },
+    {
+      "filename": "32044000199091_00000153_7334909.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000196717_00000123_7327007.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044004605846_00000401_7298632.webp",
       "manual_label": "upright"
     }
   ]

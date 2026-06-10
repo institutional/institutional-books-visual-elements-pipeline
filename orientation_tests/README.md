@@ -47,6 +47,7 @@ python orientation_tests/manual_labeler.py --sample-size 200 --resume
 - Down arrow / S: Rotate 180 degrees
 - Enter / Space: Confirm as upright (save label)
 - U: Undo rotation (reset to original)
+- Back button: Go to the previous image — removes its label so you can re-classify it. Can be pressed multiple times to undo several labels in sequence.
 
 ## Training
 
@@ -84,13 +85,22 @@ python orientation_tests/train_yolo_cls.py \
 
 Both modes produce models with identical prediction semantics: output = correction to apply.
 
+### Data Split
+
+By default, labeled data is split 80/10/10 into train, val, and test sets:
+- **Train (80%):** Used for training
+- **Val (10%):** Used to select the best checkpoint
+- **Test (10%):** Held out entirely — only used for eval PDF generation
+
+Configurable via `--train-split` and `--val-split` (test = remainder).
+
 ### `--eval-pdf`
 
 When provided, the training script generates a PDF after training completes:
-- Samples ~500 images not in the training set
-- Runs the best model checkpoint on them
+- Runs the best model checkpoint on the held-out **test set**
 - Shows only images where a correction was predicted (non-upright)
-- PDF displays original alongside the model-corrected version
+- Each entry shows original and corrected side-by-side with the model's confidence score
+- Confidence = softmax probability of predicted class (EfficientNet) or `probs.top1conf` (YOLO)
 
 ## Model Files
 

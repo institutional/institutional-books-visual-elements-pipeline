@@ -4,6 +4,9 @@ Train an EfficientNet-V2-S orientation classifier.
 Reads manual_labels.json, downloads the images, and trains a 4-class orientation
 model. Predictions represent the correction needed to make an image upright.
 
+Data is split into train/val/test (80/10/10). The test set is never used during
+training and is used for evaluation PDF generation.
+
 Usage:
     python orientation_tests/train_orientation_model.py [--labels orientation_tests/manual_labels.json] [--epochs 20]
     python orientation_tests/train_orientation_model.py --no-synthetic --eval-pdf orientation_tests/eval.pdf
@@ -14,7 +17,6 @@ import io
 import json
 import os
 import random
-import tempfile
 import time
 from pathlib import Path
 
@@ -24,7 +26,6 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import torchvision.models as models
 import torchvision.transforms as transforms
-from datasets import load_dataset
 from dotenv import load_dotenv
 from huggingface_hub import download_bucket_files
 from loguru import logger
@@ -35,8 +36,6 @@ load_dotenv()
 
 HF_TOKEN = os.environ["HF_TOKEN"]
 BUCKET_REPO = "institutional/institutional-books-hl-visual-elements-images"
-DATASET_REPO = "institutional/institutional-books-hl-visual-elements"
-ALLOWED_SPLITS = ["image_illustration", "chart_graph"]
 
 IMAGE_SIZE = 384
 NUM_CLASSES = 4
@@ -214,35 +213,6 @@ def evaluate(model, dataloader, criterion, device):
 
 # --- Eval PDF generation ---
 
-def sample_eval_filenames(sample_size: int, exclude: set) -> list[str]:
-    logger.info(f"Sampling {sample_size} eval filenames (excluding {len(exclude)} known)...")
-    per_split = sample_size // len(ALLOWED_SPLITS)
-    filenames = []
-
-    for split in ALLOWED_SPLITS:
-        ds = load_dataset(DATASET_REPO, split=split, streaming=True, token=HF_TOKEN)
-        reservoir = []
-        seen = 0
-        for row in ds:
-            stem = Path(row["page_filename_src"]).stem
-            fn = f"{row['barcode_src']}_{stem}_{row['id']}.webp"
-            if fn in exclude:
-                continue
-            seen += 1
-            if seen <= per_split:
-                reservoir.append(fn)
-            else:
-                j = random.randint(0, seen - 1)
-                if j < per_split:
-                    reservoir[j] = fn
-            if seen >= per_split * 10:
-                break
-        filenames.extend(reservoir)
-
-    random.shuffle(filenames)
-    return filenames[:sample_size]
-
-
 def image_to_bytesio(img: Image.Image, max_dim: int = 300) -> io.BytesIO:
     img.thumbnail((max_dim, max_dim), Image.LANCZOS)
     buf = io.BytesIO()
@@ -251,7 +221,7 @@ def image_to_bytesio(img: Image.Image, max_dim: int = 300) -> io.BytesIO:
     return buf
 
 
-def generate_eval_pdf(model, device, labels_file: str, output_path: str, num_samples: int = 500):
+def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_path: str):
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.platypus import (
@@ -260,110 +230,95 @@ def generate_eval_pdf(model, device, labels_file: str, output_path: str, num_sam
     )
     from reportlab.lib.styles import getSampleStyleSheet
 
-    # Build exclusion set from training labels
-    exclude = set()
-    if os.path.exists(labels_file):
-        with open(labels_file) as f:
-            data = json.load(f)
-        for r in data.get("results", []):
-            exclude.add(r["filename"])
+    transform = get_val_transform()
+    results = []
+    model.eval()
 
-    filenames = sample_eval_filenames(num_samples, exclude)
-    logger.info(f"Eval: sampled {len(filenames)} held-out images")
+    for entry in tqdm(test_labels, desc="Running eval on test set"):
+        path = os.path.join(image_dir, entry["filename"])
+        if not os.path.exists(path):
+            continue
+        try:
+            img = load_image_safely(path)
+            tensor = transform(img).unsqueeze(0).to(device)
+            with torch.no_grad():
+                output = model(tensor)
+            probs = torch.softmax(output, dim=1)[0]
+            pred = probs.argmax().item()
+            confidence = probs[pred].item()
+            if pred != 0:
+                results.append({
+                    "filename": entry["filename"],
+                    "prediction": pred,
+                    "confidence": confidence,
+                    "image": img,
+                })
+        except Exception as e:
+            logger.warning(f"Eval failed on {entry['filename']}: {e}")
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        # Download
-        file_pairs = [(fn, os.path.join(tmp_dir, fn)) for fn in filenames]
-        batch_size = 50
-        for i in tqdm(range(0, len(file_pairs), batch_size), desc="Downloading eval images"):
-            batch = file_pairs[i : i + batch_size]
-            for attempt in range(3):
-                try:
-                    download_bucket_files(BUCKET_REPO, files=batch, token=HF_TOKEN)
-                    break
-                except Exception as e:
-                    logger.warning(f"Download attempt {attempt+1}/3 failed: {e}")
-                    time.sleep(2 ** attempt)
+    logger.info(f"Eval: {len(results)} corrections out of {len(test_labels)} test images")
 
-        # Run inference
-        transform = get_val_transform()
-        results = []
-        model.eval()
+    # Build PDF
+    doc = SimpleDocTemplate(
+        output_path, pagesize=letter,
+        leftMargin=0.5 * inch, rightMargin=0.5 * inch,
+        topMargin=0.5 * inch, bottomMargin=0.5 * inch,
+    )
+    styles = getSampleStyleSheet()
+    elements = []
 
-        for fn in tqdm(filenames, desc="Running eval"):
-            path = os.path.join(tmp_dir, fn)
-            if not os.path.exists(path):
-                continue
-            try:
-                img = load_image_safely(path)
-                tensor = transform(img).unsqueeze(0).to(device)
-                with torch.no_grad():
-                    output = model(tensor)
-                pred = output.argmax(dim=1).item()
-                if pred != 0:
-                    results.append({"filename": fn, "prediction": pred, "image": img})
-            except Exception as e:
-                logger.warning(f"Eval failed on {fn}: {e}")
+    elements.append(Paragraph("Model Orientation Predictions (Test Set)", styles["Title"]))
+    elements.append(Paragraph(
+        f"{len(results)} corrected images from {len(test_labels)} test samples",
+        styles["Normal"],
+    ))
+    elements.append(Spacer(1, 0.3 * inch))
 
-        logger.info(f"Eval: {len(results)} images with corrections out of {len(filenames)}")
+    img_width = 2.8 * inch
+    img_height = 2.8 * inch
 
-        # Build PDF
-        doc = SimpleDocTemplate(
-            output_path, pagesize=letter,
-            leftMargin=0.5 * inch, rightMargin=0.5 * inch,
-            topMargin=0.5 * inch, bottomMargin=0.5 * inch,
-        )
-        styles = getSampleStyleSheet()
-        elements = []
+    for entry in results:
+        try:
+            original = entry["image"]
+            pred_class = entry["prediction"]
+            label = CLASS_MAP[pred_class]
+            confidence = entry["confidence"]
+            corrected = apply_rotation(original, pred_class)
 
-        elements.append(Paragraph("Model Orientation Predictions (Held-Out Images)", styles["Title"]))
-        elements.append(Paragraph(
-            f"{len(results)} corrected images from {len(filenames)} held-out samples",
-            styles["Normal"],
-        ))
-        elements.append(Spacer(1, 0.3 * inch))
+            orig_buf = image_to_bytesio(original.copy())
+            cor_buf = image_to_bytesio(corrected.copy())
 
-        img_width = 2.8 * inch
-        img_height = 2.8 * inch
+            orig_img = RLImage(orig_buf, width=img_width, height=img_height, kind="proportional")
+            cor_img = RLImage(cor_buf, width=img_width, height=img_height, kind="proportional")
 
-        for entry in results:
-            try:
-                original = entry["image"]
-                pred_class = entry["prediction"]
-                label = CLASS_MAP[pred_class]
-                corrected = apply_rotation(original, pred_class)
+            header_table = Table(
+                [[Paragraph("<b>Original</b>", styles["Normal"]),
+                  Paragraph("<b>Corrected</b>", styles["Normal"])]],
+                colWidths=[3.5 * inch, 3.5 * inch],
+            )
+            img_table = Table(
+                [[orig_img, cor_img]],
+                colWidths=[3.5 * inch, 3.5 * inch],
+                rowHeights=[img_height + 0.1 * inch],
+            )
+            img_table.setStyle(TableStyle([
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]))
 
-                orig_buf = image_to_bytesio(original.copy())
-                cor_buf = image_to_bytesio(corrected.copy())
+            caption = Paragraph(
+                f"<b>{entry['filename']}</b> — correction: {label} (confidence: {confidence:.1%})",
+                styles["Normal"],
+            )
+            block = KeepTogether([
+                caption, Spacer(1, 0.1 * inch), header_table, img_table, Spacer(1, 0.3 * inch),
+            ])
+            elements.append(block)
+        except Exception as e:
+            logger.warning(f"PDF: failed to add {entry.get('filename', '?')}: {e}")
 
-                orig_img = RLImage(orig_buf, width=img_width, height=img_height, kind="proportional")
-                cor_img = RLImage(cor_buf, width=img_width, height=img_height, kind="proportional")
-
-                header_table = Table(
-                    [[Paragraph("<b>Original</b>", styles["Normal"]),
-                      Paragraph("<b>Corrected</b>", styles["Normal"])]],
-                    colWidths=[3.5 * inch, 3.5 * inch],
-                )
-                img_table = Table(
-                    [[orig_img, cor_img]],
-                    colWidths=[3.5 * inch, 3.5 * inch],
-                    rowHeights=[img_height + 0.1 * inch],
-                )
-                img_table.setStyle(TableStyle([
-                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ]))
-
-                caption = Paragraph(f"<b>{entry['filename']}</b> — correction: {label}", styles["Normal"])
-                block = KeepTogether([
-                    caption, Spacer(1, 0.1 * inch), header_table, img_table, Spacer(1, 0.3 * inch),
-                ])
-                elements.append(block)
-            except Exception as e:
-                logger.warning(f"PDF: failed to add {entry.get('filename', '?')}: {e}")
-
-        doc.build(elements)
-        logger.info(f"Eval PDF saved to {output_path}")
+    doc.build(elements)
+    logger.info(f"Eval PDF saved to {output_path}")
 
 
 def main():
@@ -373,7 +328,8 @@ def main():
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--val-split", type=float, default=0.15)
+    parser.add_argument("--train-split", type=float, default=0.8)
+    parser.add_argument("--val-split", type=float, default=0.1)
     parser.add_argument("--max-samples", type=int, default=None,
                         help="Use only the first N labels")
     parser.add_argument("--no-synthetic", action="store_true",
@@ -406,12 +362,14 @@ def main():
         logger.error("No valid labels found.")
         return
 
-    # Split into train/val
+    # Split into train/val/test
     random.shuffle(labels)
+    train_size = int(len(labels) * args.train_split)
     val_size = int(len(labels) * args.val_split)
-    val_labels = labels[:val_size]
-    train_labels = labels[val_size:]
-    logger.info(f"Train: {len(train_labels)}, Val: {len(val_labels)}")
+    train_labels = labels[:train_size]
+    val_labels = labels[train_size:train_size + val_size]
+    test_labels = labels[train_size + val_size:]
+    logger.info(f"Train: {len(train_labels)}, Val: {len(val_labels)}, Test: {len(test_labels)}")
 
     # Download images
     all_filenames = list(set(r["filename"] for r in labels))
@@ -471,7 +429,7 @@ def main():
     # Generate eval PDF if requested
     if args.eval_pdf and best_model_path:
         model.load_state_dict(torch.load(best_model_path, map_location=device, weights_only=True))
-        generate_eval_pdf(model, device, args.labels, args.eval_pdf)
+        generate_eval_pdf(model, device, test_labels, image_dir, args.eval_pdf)
 
 
 if __name__ == "__main__":
