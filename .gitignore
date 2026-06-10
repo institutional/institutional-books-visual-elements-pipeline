@@ -15,3 +15,4 @@ embedding_cache/
 hash_cache/
 stats_outputs/
 space_output/
+orientation_tests/model/
