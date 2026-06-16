@@ -3,9 +3,9 @@
     "total_labeled": 7904,
     "orientation_distribution": {
       "upright": 7354,
-      "rotated_90_clockwise": 444,
-      "rotated_90_counterclockwise": 104,
-      "rotated_180": 2
+      "rotate_90_clockwise": 444,
+      "rotate_90_counterclockwise": 104,
+      "rotate_180": 2
     }
   },
   "results": [
@@ -23,7 +23,7 @@
     },
     {
       "filename": "32044004487302_00000027_7379238.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014727572_00000037_1075634.webp",
@@ -55,15 +55,15 @@
     },
     {
       "filename": "32044021241724_00000073_2181899.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000283_7366869.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000241034_00000213_7352119.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002623940_00000031_7336969.webp",
@@ -391,7 +391,7 @@
     },
     {
       "filename": "32044020507786_00000350_2011539.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004342234_00000218_7321144.webp",
@@ -423,7 +423,7 @@
     },
     {
       "filename": "32044004593257_00000048_7416796.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014667216_00000169_1079880.webp",
@@ -443,11 +443,11 @@
     },
     {
       "filename": "32044004575551_00000634_7419490.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617544_00000445_7285868.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004969523_00000159_7437303.webp",
@@ -507,7 +507,7 @@
     },
     {
       "filename": "32044004371894_00000299_7345911.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044020367595_00000274_1944497.webp",
@@ -547,7 +547,7 @@
     },
     {
       "filename": "32044002827095_00000325_7346829.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044012985438_00000423_811845.webp",
@@ -667,7 +667,7 @@
     },
     {
       "filename": "32044004589743_00000195_7417684.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044011781051_00000214_643140.webp",
@@ -715,7 +715,7 @@
     },
     {
       "filename": "32044004497749_00000213_7392671.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004828661_00000728_7312752.webp",
@@ -815,7 +815,7 @@
     },
     {
       "filename": "32044004593257_00000057_7416816.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004643748_00000023_7318496.webp",
@@ -851,7 +851,7 @@
     },
     {
       "filename": "32044010115145_00000093_7598415.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509212_00000633_7400052.webp",
@@ -959,7 +959,7 @@
     },
     {
       "filename": "32044004805701_00000020_7318981.webp",
-      "manual_label": "rotated_180"
+      "manual_label": "rotate_180"
     },
     {
       "filename": "32044004571675_00000703_7416216.webp",
@@ -1027,7 +1027,7 @@
     },
     {
       "filename": "32044017889221_00000062_1339523.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004610069_00000071_7303109.webp",
@@ -1079,7 +1079,7 @@
     },
     {
       "filename": "32044004367660_00000231_7332049.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014376933_00000709_997152.webp",
@@ -1115,7 +1115,7 @@
     },
     {
       "filename": "32044017928060_00000494_1414263.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044019525872_00000091_1716404.webp",
@@ -1123,7 +1123,7 @@
     },
     {
       "filename": "32044004364899_00000190_7336262.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044010555084_00000163_445935.webp",
@@ -1139,7 +1139,7 @@
     },
     {
       "filename": "32044011352903_00000190_559906.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044010166841_00000016_7627675.webp",
@@ -1247,7 +1247,7 @@
     },
     {
       "filename": "32044004521324_00000361_7403843.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004973780_00000245_7449777.webp",
@@ -1259,7 +1259,7 @@
     },
     {
       "filename": "32044011729969_00000330_639365.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004381810_00000201_7373439.webp",
@@ -1267,11 +1267,11 @@
     },
     {
       "filename": "32044004509949_00000155_7407483.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004570875_00000403_7400456.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004642146_00000156_7306035.webp",
@@ -1287,7 +1287,7 @@
     },
     {
       "filename": "32044011687787_00000006_632658.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004605846_00000559_7298652.webp",
@@ -1523,7 +1523,7 @@
     },
     {
       "filename": "32044019940147_00000031_1839996.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004346268_00000235_7321428.webp",
@@ -1615,7 +1615,7 @@
     },
     {
       "filename": "32044004815825_00000307_7289834.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460200_00000234_7379876.webp",
@@ -1659,7 +1659,7 @@
     },
     {
       "filename": "32044018869313_00000087_1528613.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019941657_00000525_1812539.webp",
@@ -1707,7 +1707,7 @@
     },
     {
       "filename": "32044004346151_00000041_7341712.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044019941657_00000472_1812515.webp",
@@ -1771,7 +1771,7 @@
     },
     {
       "filename": "32044000262238_00000424_7354947.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004779344_00000094_7314142.webp",
@@ -1815,7 +1815,7 @@
     },
     {
       "filename": "32044004487724_00000385_7361773.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014790737_00000232_1103139.webp",
@@ -1835,11 +1835,11 @@
     },
     {
       "filename": "32044018961482_00000095_1563169.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014286447_00000610_948709.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004608741_00000226_7313277.webp",
@@ -1907,7 +1907,7 @@
     },
     {
       "filename": "32044004790853_00000142_7297361.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004746103_00000256_7289296.webp",
@@ -1939,7 +1939,7 @@
     },
     {
       "filename": "32044020766903_00000188_2106138.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002443190_00000189_7336863.webp",
@@ -2007,7 +2007,7 @@
     },
     {
       "filename": "32044004593257_00000318_7416883.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000218859_00000019_7333313.webp",
@@ -2031,7 +2031,7 @@
     },
     {
       "filename": "32044020419594_00000038_2002461.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044018806844_00000106_1501326.webp",
@@ -2039,7 +2039,7 @@
     },
     {
       "filename": "32044004491213_00000091_7410278.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004608741_00000033_7313009.webp",
@@ -2163,7 +2163,7 @@
     },
     {
       "filename": "32044019347434_00000279_1681263.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004973780_00000257_7450454.webp",
@@ -2351,15 +2351,15 @@
     },
     {
       "filename": "32044004624870_00000037_7292670.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019941400_00000599_1837715.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014540728_00000450_1063508.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004795845_00000135_7304964.webp",
@@ -2411,7 +2411,7 @@
     },
     {
       "filename": "32044004570875_00000469_7400481.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004340758_00000433_7322374.webp",
@@ -2623,7 +2623,7 @@
     },
     {
       "filename": "32044019940147_00000251_1840163.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000261891_00000256_7349346.webp",
@@ -2771,7 +2771,7 @@
     },
     {
       "filename": "32044002827095_00000222_7346756.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044018181933_00000554_1466208.webp",
@@ -2827,11 +2827,11 @@
     },
     {
       "filename": "32044004565750_00000300_7420776.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616488_00000502_7284763.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044005354964_00000079_7474929.webp",
@@ -2839,7 +2839,7 @@
     },
     {
       "filename": "32044014289730_00000241_940275.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363917_00000137_7345718.webp",
@@ -2859,7 +2859,7 @@
     },
     {
       "filename": "32044019613017_00000476_1760589.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044018803726_00000023_1527035.webp",
@@ -2895,7 +2895,7 @@
     },
     {
       "filename": "32044004522017_00000123_7415090.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004376166_00000104_7383778.webp",
@@ -2911,7 +2911,7 @@
     },
     {
       "filename": "32044020492534_00000128_1988408.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002668291_00000260_7341141.webp",
@@ -2959,7 +2959,7 @@
     },
     {
       "filename": "32044004445078_00000038_7391393.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509261_00000247_7402258.webp",
@@ -2975,7 +2975,7 @@
     },
     {
       "filename": "32044004485355_00000657_7384906.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004359204_00000099_7333920.webp",
@@ -3131,7 +3131,7 @@
     },
     {
       "filename": "32044004363693_00000057_7350904.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044009899527_00000191_7586396.webp",
@@ -3311,7 +3311,7 @@
     },
     {
       "filename": "32044004393799_00000021_7385131.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004809166_00000359_7287525.webp",
@@ -3419,7 +3419,7 @@
     },
     {
       "filename": "32044004488490_00000223_7369089.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014790737_00000116_1103082.webp",
@@ -3463,7 +3463,7 @@
     },
     {
       "filename": "32044004966867_00000291_7435031.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004544409_00000470_7419084.webp",
@@ -3479,7 +3479,7 @@
     },
     {
       "filename": "32044011767217_00000492_665538.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044020765400_00000177_2078432.webp",
@@ -3535,7 +3535,7 @@
     },
     {
       "filename": "32044004339370_00000395_7320573.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044011286374_00000724_541071.webp",
@@ -3547,7 +3547,7 @@
     },
     {
       "filename": "32044004332300_00000489_7347431.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004979605_00000234_7423772.webp",
@@ -3575,7 +3575,7 @@
     },
     {
       "filename": "32044014540728_00000079_1063494.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004973780_00000247_7450502.webp",
@@ -3731,7 +3731,7 @@
     },
     {
       "filename": "32044004336855_00000331_7331597.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004973780_00000249_7450072.webp",
@@ -3771,7 +3771,7 @@
     },
     {
       "filename": "32044009757543_00000439_7542614.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014605497_00000344_1054926.webp",
@@ -3819,7 +3819,7 @@
     },
     {
       "filename": "32044000262238_00000186_7354776.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044011781051_00000267_643172.webp",
@@ -3887,7 +3887,7 @@
     },
     {
       "filename": "32044004359428_00000031_7345656.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044014837082_00000065_1128107.webp",
@@ -3995,7 +3995,7 @@
     },
     {
       "filename": "32044019659937_00000119_1742565.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363917_00000083_7345707.webp",
@@ -4043,7 +4043,7 @@
     },
     {
       "filename": "32044020087441_00000077_1892085.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014700165_00000208_1071975.webp",
@@ -4067,7 +4067,7 @@
     },
     {
       "filename": "32044004794707_00000109_7287267.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044010375137_00000241_9136955.webp",
@@ -4099,11 +4099,11 @@
     },
     {
       "filename": "32044004340998_00000201_7338824.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044022659122_00000163_2247844.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004618427_00000093_7313690.webp",
@@ -4111,7 +4111,7 @@
     },
     {
       "filename": "32044004617544_00000181_7285833.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014234447_00000116_949167.webp",
@@ -4119,7 +4119,7 @@
     },
     {
       "filename": "32044004358933_00000239_7356312.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044011733870_00000071_647763.webp",
@@ -4183,7 +4183,7 @@
     },
     {
       "filename": "32044004362810_00000273_7342056.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014374359_00000230_971462.webp",
@@ -4231,7 +4231,7 @@
     },
     {
       "filename": "32044004501219_00000289_7400871.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044020103925_00000125_1927052.webp",
@@ -4255,7 +4255,7 @@
     },
     {
       "filename": "32044017924689_00000559_1437330.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004456810_00000230_7363628.webp",
@@ -4287,7 +4287,7 @@
     },
     {
       "filename": "32044010455228_00000167_420406.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002388155_00000370_7357418.webp",
@@ -4303,7 +4303,7 @@
     },
     {
       "filename": "32044014605497_00000403_1054948.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004805818_00000128_7294986.webp",
@@ -4403,7 +4403,7 @@
     },
     {
       "filename": "32044004790853_00000096_7297330.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004353801_00000041_7337471.webp",
@@ -4443,7 +4443,7 @@
     },
     {
       "filename": "32044014839955_00000191_1103909.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019527548_00000071_1704959.webp",
@@ -4527,7 +4527,7 @@
     },
     {
       "filename": "32044004593257_00000125_7416823.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014664221_00000603_1085327.webp",
@@ -4551,7 +4551,7 @@
     },
     {
       "filename": "32044002065373_00000077_7329907.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004608741_00000040_7313036.webp",
@@ -4619,7 +4619,7 @@
     },
     {
       "filename": "32044019074384_00000275_1612025.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044014458780_00000727_1011351.webp",
@@ -4639,7 +4639,7 @@
     },
     {
       "filename": "32044013690391_00000309_891077.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004340170_00000088_7353863.webp",
@@ -4743,7 +4743,7 @@
     },
     {
       "filename": "32044004593398_00000347_7412936.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019704683_00000253_1770925.webp",
@@ -4819,7 +4819,7 @@
     },
     {
       "filename": "32044019031558_00000631_1607921.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044011438314_00000554_579211.webp",
@@ -4947,7 +4947,7 @@
     },
     {
       "filename": "32044002668291_00000538_7341394.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019804616_00000203_1800571.webp",
@@ -4983,7 +4983,7 @@
     },
     {
       "filename": "32044004572236_00000337_7411246.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044020366647_00000230_1960093.webp",
@@ -5003,7 +5003,7 @@
     },
     {
       "filename": "32044004433793_00000373_7388356.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004968244_00000047_7445315.webp",
@@ -5015,7 +5015,7 @@
     },
     {
       "filename": "32044004397519_00000199_7370616.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001646264_00000133_7323378.webp",
@@ -5099,11 +5099,11 @@
     },
     {
       "filename": "32044004790853_00000234_7297395.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509212_00000531_7400033.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044018723072_00000202_1480788.webp",
@@ -5139,7 +5139,7 @@
     },
     {
       "filename": "32044020069175_00000053_1884163.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000237_7400420.webp",
@@ -5159,7 +5159,7 @@
     },
     {
       "filename": "32044014553317_00000273_1049934.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044005539259_00000315_7486076.webp",
@@ -5327,7 +5327,7 @@
     },
     {
       "filename": "32044009905654_00000433_7578128.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004815023_00000029_7286384.webp",
@@ -5355,7 +5355,7 @@
     },
     {
       "filename": "32044004617593_00000041_7306914.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000278622_00000269_7344923.webp",
@@ -5375,7 +5375,7 @@
     },
     {
       "filename": "32044020605945_00000042_2041891.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004648697_00000032_7297072.webp",
@@ -5499,11 +5499,11 @@
     },
     {
       "filename": "32044004498028_00000467_7413084.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000259002_00000052_7346237.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004587515_00000029_7416504.webp",
@@ -5519,7 +5519,7 @@
     },
     {
       "filename": "32044004437893_00000405_7385640.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019376953_00000137_1700772.webp",
@@ -5535,7 +5535,7 @@
     },
     {
       "filename": "32044015461155_00000251_1127139.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044019941657_00000370_1812445.webp",
@@ -5607,7 +5607,7 @@
     },
     {
       "filename": "32044004363693_00000197_7350934.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004339131_00000049_7323675.webp",
@@ -5639,7 +5639,7 @@
     },
     {
       "filename": "32044004563235_00000038_7420490.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509261_00000327_7402270.webp",
@@ -5727,7 +5727,7 @@
     },
     {
       "filename": "32044004492567_00000291_7400817.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004550976_00000311_7404753.webp",
@@ -5759,7 +5759,7 @@
     },
     {
       "filename": "32044009561176_00000131_7519804.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004996799_00000392_7425976.webp",
@@ -5943,7 +5943,7 @@
     },
     {
       "filename": "32044000058636_00000027_7330713.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000060699_00000044_7333142.webp",
@@ -6339,7 +6339,7 @@
     },
     {
       "filename": "32044000161315_00000274_7324236.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000161315_00000290_7324255.webp",
@@ -6891,7 +6891,7 @@
     },
     {
       "filename": "32044000241034_00000085_7352022.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000241034_00000090_7352044.webp",
@@ -7091,11 +7091,11 @@
     },
     {
       "filename": "32044000259002_00000052_7346238.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000259002_00000062_7346220.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000259002_00000111_7346304.webp",
@@ -7103,11 +7103,11 @@
     },
     {
       "filename": "32044000259002_00000155_7346338.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000259002_00000172_7346320.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000259002_00000182_7346337.webp",
@@ -7403,7 +7403,7 @@
     },
     {
       "filename": "32044000262238_00000186_7354780.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262238_00000238_7354826.webp",
@@ -7459,7 +7459,7 @@
     },
     {
       "filename": "32044000262527_00000171_7342893.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000262527_00000197_7342946.webp",
@@ -7475,7 +7475,7 @@
     },
     {
       "filename": "32044000262527_00000301_7342981.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000262527_00000341_7343010.webp",
@@ -7483,7 +7483,7 @@
     },
     {
       "filename": "32044000262527_00000350_7343023.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000274423_00000096_7325869.webp",
@@ -7835,7 +7835,7 @@
     },
     {
       "filename": "32044001336965_00000063_7320362.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001336965_00000139_7320367.webp",
@@ -7947,11 +7947,11 @@
     },
     {
       "filename": "32044001967272_00000047_7357293.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001967272_00000375_7357312.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001993385_00000059_7329875.webp",
@@ -8047,19 +8047,19 @@
     },
     {
       "filename": "32044002025880_00000103_7321868.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002052553_00000073_7345034.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002052553_00000196_7345041.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002052553_00000422_7345046.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002052694_00000245_7328797.webp",
@@ -8107,7 +8107,7 @@
     },
     {
       "filename": "32044002065373_00000369_7329946.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002076412_00000067_7335191.webp",
@@ -8163,7 +8163,7 @@
     },
     {
       "filename": "32044002363638_00000008_7320455.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002388155_00000015_7357338.webp",
@@ -8415,7 +8415,7 @@
     },
     {
       "filename": "32044002827095_00000325_7346830.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002827095_00000338_7346860.webp",
@@ -8463,7 +8463,7 @@
     },
     {
       "filename": "32044002827095_00000442_7346930.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002827095_00000500_7346951.webp",
@@ -8475,7 +8475,7 @@
     },
     {
       "filename": "32044002827095_00000520_7346947.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002827095_00000552_7346975.webp",
@@ -8503,11 +8503,11 @@
     },
     {
       "filename": "32044002827095_00000658_7347034.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002827095_00000668_7347019.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002827095_00000764_7347071.webp",
@@ -8551,23 +8551,23 @@
     },
     {
       "filename": "32044002944924_00000183_7333486.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002944924_00000303_7333503.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002944924_00000361_7333506.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002944924_00000379_7333508.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002944924_00000497_7333526.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044003165883_00000006_7355300.webp",
@@ -8731,15 +8731,15 @@
     },
     {
       "filename": "32044003630209_00000151_7341522.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044003630209_00000215_7341531.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044003791340_00000041_7355386.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044003791340_00000083_7355400.webp",
@@ -8751,7 +8751,7 @@
     },
     {
       "filename": "32044003791340_00000369_7355485.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044003791340_00000375_7355480.webp",
@@ -9195,7 +9195,7 @@
     },
     {
       "filename": "32044004332300_00000253_7347397.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004332300_00000277_7347408.webp",
@@ -9231,7 +9231,7 @@
     },
     {
       "filename": "32044004332532_00000411_7355592.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004332573_00000415_7343849.webp",
@@ -9307,7 +9307,7 @@
     },
     {
       "filename": "32044004332649_00000055_7326363.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004332649_00000273_7326392.webp",
@@ -9315,11 +9315,11 @@
     },
     {
       "filename": "32044004332649_00000285_7326393.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004332649_00000363_7326399.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004332961_00000090_7345365.webp",
@@ -9399,7 +9399,7 @@
     },
     {
       "filename": "32044004336475_00000014_7335497.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004336475_00000031_7335501.webp",
@@ -9423,7 +9423,7 @@
     },
     {
       "filename": "32044004336475_00000050_7335543.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004336475_00000058_7335553.webp",
@@ -9451,15 +9451,15 @@
     },
     {
       "filename": "32044004336855_00000319_7331591.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004336855_00000327_7331599.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004336855_00000351_7331606.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004337564_00000010_7345458.webp",
@@ -9483,7 +9483,7 @@
     },
     {
       "filename": "32044004338117_00000010_7357778.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004338414_00000138_7331626.webp",
@@ -9511,7 +9511,7 @@
     },
     {
       "filename": "32044004338828_00000060_7329179.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004338828_00000126_7329186.webp",
@@ -9519,7 +9519,7 @@
     },
     {
       "filename": "32044004338828_00000172_7329207.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004339107_00000033_7353087.webp",
@@ -9651,11 +9651,11 @@
     },
     {
       "filename": "32044004340170_00000511_7354006.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004340170_00000521_7354012.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004340170_00000525_7354009.webp",
@@ -9671,7 +9671,7 @@
     },
     {
       "filename": "32044004340683_00000013_7333677.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004340683_00000058_7333719.webp",
@@ -10055,7 +10055,7 @@
     },
     {
       "filename": "32044004346151_00000034_7341729.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004346151_00000101_7341742.webp",
@@ -10075,11 +10075,11 @@
     },
     {
       "filename": "32044004346235_00000111_7323849.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004346235_00000147_7323864.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004346235_00000179_7323878.webp",
@@ -10087,7 +10087,7 @@
     },
     {
       "filename": "32044004346235_00000183_7323874.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004346268_00000055_7321355.webp",
@@ -10099,7 +10099,7 @@
     },
     {
       "filename": "32044004346268_00000141_7321387.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004346268_00000221_7321419.webp",
@@ -10107,11 +10107,11 @@
     },
     {
       "filename": "32044004346433_00000075_7330413.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004346433_00000231_7330428.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004346474_00000160_7347570.webp",
@@ -10355,7 +10355,7 @@
     },
     {
       "filename": "32044004348249_00000036_7335672.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004350260_00000169_7357890.webp",
@@ -10375,7 +10375,7 @@
     },
     {
       "filename": "32044004351383_00000343_7341802.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004351383_00000515_7341829.webp",
@@ -10451,11 +10451,11 @@
     },
     {
       "filename": "32044004356614_00000019_7350831.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004356614_00000026_7350819.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004356614_00000045_7350816.webp",
@@ -10611,11 +10611,11 @@
     },
     {
       "filename": "32044004358933_00000226_7356281.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004358933_00000228_7356308.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004358933_00000230_7356332.webp",
@@ -10627,7 +10627,7 @@
     },
     {
       "filename": "32044004358933_00000234_7356252.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004358933_00000236_7356273.webp",
@@ -10811,7 +10811,7 @@
     },
     {
       "filename": "32044004359402_00000018_7337535.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004359428_00000015_7345655.webp",
@@ -10839,11 +10839,11 @@
     },
     {
       "filename": "32044004362356_00000120_7337569.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004362356_00000211_7337589.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004362356_00000260_7337599.webp",
@@ -10959,11 +10959,11 @@
     },
     {
       "filename": "32044004363693_00000099_7350912.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363693_00000111_7350914.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363693_00000187_7350919.webp",
@@ -10979,7 +10979,7 @@
     },
     {
       "filename": "32044004363693_00000387_7350958.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363784_00000119_7334163.webp",
@@ -11003,7 +11003,7 @@
     },
     {
       "filename": "32044004363917_00000161_7345730.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004363917_00000309_7345755.webp",
@@ -11023,19 +11023,19 @@
     },
     {
       "filename": "32044004364196_00000012_7353271.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004364899_00000044_7336230.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004364899_00000054_7336240.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004364899_00000149_7336250.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004364899_00000187_7336257.webp",
@@ -11047,7 +11047,7 @@
     },
     {
       "filename": "32044004364899_00000268_7336286.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004364899_00000332_7336308.webp",
@@ -11063,7 +11063,7 @@
     },
     {
       "filename": "32044004364899_00000379_7336313.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004364899_00000410_7336323.webp",
@@ -11211,7 +11211,7 @@
     },
     {
       "filename": "32044004365102_00000167_7326763.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004365102_00000170_7326772.webp",
@@ -11343,7 +11343,7 @@
     },
     {
       "filename": "32044004369740_00000006_7350994.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004370342_00000048_7337690.webp",
@@ -11355,7 +11355,7 @@
     },
     {
       "filename": "32044004370615_00000205_7333070.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004370615_00000287_7333081.webp",
@@ -11451,11 +11451,11 @@
     },
     {
       "filename": "32044004371894_00000313_7345925.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004372108_00000147_7339534.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004372116_00000017_7321639.webp",
@@ -11483,7 +11483,7 @@
     },
     {
       "filename": "32044004372579_00000077_7348820.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004372579_00000157_7348846.webp",
@@ -11495,7 +11495,7 @@
     },
     {
       "filename": "32044004372579_00000397_7348888.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004372579_00000419_7348892.webp",
@@ -11559,7 +11559,7 @@
     },
     {
       "filename": "32044004376034_00000063_7375050.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004376034_00000283_7375063.webp",
@@ -11639,7 +11639,7 @@
     },
     {
       "filename": "32044004376166_00000390_7383924.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004376166_00000439_7383953.webp",
@@ -11667,7 +11667,7 @@
     },
     {
       "filename": "32044004376166_00000602_7384025.webp",
-      "manual_label": "rotated_180"
+      "manual_label": "rotate_180"
     },
     {
       "filename": "32044004376166_00000642_7384031.webp",
@@ -11759,7 +11759,7 @@
     },
     {
       "filename": "32044004379020_00000165_7381718.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004379020_00000172_7381715.webp",
@@ -11803,11 +11803,11 @@
     },
     {
       "filename": "32044004380317_00000099_7363217.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004380317_00000099_7363218.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004380879_00000075_7368015.webp",
@@ -11863,7 +11863,7 @@
     },
     {
       "filename": "32044004383923_00000081_7380449.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004383923_00000083_7380472.webp",
@@ -11887,7 +11887,7 @@
     },
     {
       "filename": "32044004383923_00000149_7380561.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004383923_00000152_7380583.webp",
@@ -11895,15 +11895,15 @@
     },
     {
       "filename": "32044004383923_00000167_7380563.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004383923_00000179_7380585.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004383923_00000191_7380550.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004383923_00000196_7380620.webp",
@@ -11967,7 +11967,7 @@
     },
     {
       "filename": "32044004384087_00000081_7361932.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004384087_00000089_7361938.webp",
@@ -11991,7 +11991,7 @@
     },
     {
       "filename": "32044004384087_00000137_7361957.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004384087_00000167_7362023.webp",
@@ -12019,7 +12019,7 @@
     },
     {
       "filename": "32044004384087_00000223_7362071.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004384087_00000226_7362062.webp",
@@ -12075,7 +12075,7 @@
     },
     {
       "filename": "32044004384277_00000365_7366373.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004385530_00000040_7386535.webp",
@@ -12175,7 +12175,7 @@
     },
     {
       "filename": "32044004385993_00000295_7384106.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004386033_00000057_7368057.webp",
@@ -12195,7 +12195,7 @@
     },
     {
       "filename": "32044004387536_00000225_7371257.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004387536_00000459_7371276.webp",
@@ -12215,11 +12215,11 @@
     },
     {
       "filename": "32044004389854_00000064_7380779.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004389854_00000152_7380787.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004390167_00000030_7388197.webp",
@@ -12239,7 +12239,7 @@
     },
     {
       "filename": "32044004390167_00000355_7388276.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004390589_00000213_7358985.webp",
@@ -12279,7 +12279,7 @@
     },
     {
       "filename": "32044004392163_00000271_7359002.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004392379_00000098_7363302.webp",
@@ -12331,7 +12331,7 @@
     },
     {
       "filename": "32044004393799_00000039_7385133.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004393799_00000249_7385188.webp",
@@ -12375,7 +12375,7 @@
     },
     {
       "filename": "32044004394961_00000120_7386976.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004394987_00000101_7380831.webp",
@@ -12831,7 +12831,7 @@
     },
     {
       "filename": "32044004396453_00000177_7365653.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004397261_00000158_7384196.webp",
@@ -12839,15 +12839,15 @@
     },
     {
       "filename": "32044004397261_00000324_7384206.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004397519_00000129_7370612.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004397519_00000231_7370618.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004397519_00000338_7370626.webp",
@@ -12855,15 +12855,15 @@
     },
     {
       "filename": "32044004397519_00000517_7370640.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004397519_00000621_7370647.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431276_00000035_7391159.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000043_7366460.webp",
@@ -12879,7 +12879,7 @@
     },
     {
       "filename": "32044004431664_00000095_7366503.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000129_7366615.webp",
@@ -12895,7 +12895,7 @@
     },
     {
       "filename": "32044004431664_00000143_7366601.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000147_7366686.webp",
@@ -12903,11 +12903,11 @@
     },
     {
       "filename": "32044004431664_00000149_7366670.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000149_7366671.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000157_7366654.webp",
@@ -12915,19 +12915,19 @@
     },
     {
       "filename": "32044004431664_00000159_7366733.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000201_7366758.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000225_7366762.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000257_7366845.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000281_7366830.webp",
@@ -12939,11 +12939,11 @@
     },
     {
       "filename": "32044004431664_00000289_7366929.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000289_7366932.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000311_7366919.webp",
@@ -12951,7 +12951,7 @@
     },
     {
       "filename": "32044004431664_00000317_7366946.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000329_7366925.webp",
@@ -12963,11 +12963,11 @@
     },
     {
       "filename": "32044004431664_00000371_7366998.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000387_7367072.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000409_7367044.webp",
@@ -12995,11 +12995,11 @@
     },
     {
       "filename": "32044004431664_00000513_7367177.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000527_7367233.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004431664_00000569_7367271.webp",
@@ -13203,7 +13203,7 @@
     },
     {
       "filename": "32044004437380_00000252_7384252.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437505_00000066_7388369.webp",
@@ -13219,7 +13219,7 @@
     },
     {
       "filename": "32044004437893_00000216_7385427.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000245_7385466.webp",
@@ -13227,7 +13227,7 @@
     },
     {
       "filename": "32044004437893_00000283_7385454.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000357_7385566.webp",
@@ -13247,11 +13247,11 @@
     },
     {
       "filename": "32044004437893_00000386_7385672.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000400_7385628.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000427_7385645.webp",
@@ -13267,11 +13267,11 @@
     },
     {
       "filename": "32044004437893_00000440_7385736.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000442_7385727.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000458_7385730.webp",
@@ -13279,11 +13279,11 @@
     },
     {
       "filename": "32044004437893_00000503_7385811.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000507_7385789.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004437893_00000511_7385762.webp",
@@ -13299,7 +13299,7 @@
     },
     {
       "filename": "32044004438040_00000175_7369440.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004438263_00000085_7364413.webp",
@@ -13399,7 +13399,7 @@
     },
     {
       "filename": "32044004441226_00000091_7368346.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004441226_00000208_7368359.webp",
@@ -13415,11 +13415,11 @@
     },
     {
       "filename": "32044004441226_00000734_7368414.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004441226_00000754_7368413.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004441648_00000068_7382964.webp",
@@ -13455,7 +13455,7 @@
     },
     {
       "filename": "32044004442943_00000837_7376446.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004444535_00000038_7368426.webp",
@@ -13463,7 +13463,7 @@
     },
     {
       "filename": "32044004445078_00000020_7391391.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004445078_00000044_7391408.webp",
@@ -13483,7 +13483,7 @@
     },
     {
       "filename": "32044004450250_00000068_7358418.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004450250_00000113_7358423.webp",
@@ -13563,7 +13563,7 @@
     },
     {
       "filename": "32044004453122_00000107_7387289.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004453122_00000117_7387288.webp",
@@ -13571,7 +13571,7 @@
     },
     {
       "filename": "32044004453122_00000173_7387297.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004453254_00000099_7370792.webp",
@@ -13587,7 +13587,7 @@
     },
     {
       "filename": "32044004454575_00000127_7387341.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004454575_00000235_7387362.webp",
@@ -13599,7 +13599,7 @@
     },
     {
       "filename": "32044004454575_00000373_7387387.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004454575_00000413_7387394.webp",
@@ -13611,11 +13611,11 @@
     },
     {
       "filename": "32044004454575_00000483_7387417.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004454575_00000497_7387424.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004454575_00000517_7387421.webp",
@@ -13631,15 +13631,15 @@
     },
     {
       "filename": "32044004456810_00000037_7363610.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004456810_00000239_7363636.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004456810_00000279_7363650.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004456844_00000057_7364943.webp",
@@ -13867,7 +13867,7 @@
     },
     {
       "filename": "32044004460036_00000055_7374387.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460200_00000225_7379877.webp",
@@ -13875,11 +13875,11 @@
     },
     {
       "filename": "32044004460465_00000010_7371534.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460465_00000120_7371539.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460515_00000033_7387553.webp",
@@ -13935,11 +13935,11 @@
     },
     {
       "filename": "32044004460929_00000151_7392035.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460929_00000151_7392036.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460929_00000245_7392043.webp",
@@ -13947,7 +13947,7 @@
     },
     {
       "filename": "32044004460929_00000271_7392042.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004460960_00000117_7378077.webp",
@@ -14199,7 +14199,7 @@
     },
     {
       "filename": "32044004461430_00000124_7377433.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004462081_00000029_7388601.webp",
@@ -14259,15 +14259,15 @@
     },
     {
       "filename": "32044004462719_00000223_7365855.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004462727_00000051_7365092.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004462727_00000138_7365095.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004462727_00000181_7365099.webp",
@@ -14303,7 +14303,7 @@
     },
     {
       "filename": "32044004462883_00000327_7376606.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004462883_00000411_7376649.webp",
@@ -14391,7 +14391,7 @@
     },
     {
       "filename": "32044004463238_00000055_7378790.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004463931_00000182_7365894.webp",
@@ -14407,11 +14407,11 @@
     },
     {
       "filename": "32044004465175_00000041_7363746.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004465175_00000567_7363774.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004466629_00000019_7388661.webp",
@@ -14575,7 +14575,7 @@
     },
     {
       "filename": "32044004471884_00000080_7371681.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004471884_00000159_7371686.webp",
@@ -14591,7 +14591,7 @@
     },
     {
       "filename": "32044004471884_00000295_7371715.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004471884_00000331_7371705.webp",
@@ -14607,7 +14607,7 @@
     },
     {
       "filename": "32044004472205_00000103_7383510.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004472205_00000113_7383511.webp",
@@ -14643,7 +14643,7 @@
     },
     {
       "filename": "32044004473294_00000097_7363882.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473294_00000109_7363887.webp",
@@ -14651,7 +14651,7 @@
     },
     {
       "filename": "32044004473294_00000147_7363905.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473294_00000173_7363900.webp",
@@ -14667,11 +14667,11 @@
     },
     {
       "filename": "32044004473302_00000037_7365953.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473302_00000039_7365961.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473302_00000075_7365969.webp",
@@ -14679,15 +14679,15 @@
     },
     {
       "filename": "32044004473302_00000085_7365970.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473302_00000103_7365973.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473302_00000143_7365976.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473690_00000187_7371819.webp",
@@ -14699,7 +14699,7 @@
     },
     {
       "filename": "32044004473690_00000416_7371858.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004473690_00000472_7371870.webp",
@@ -14767,7 +14767,7 @@
     },
     {
       "filename": "32044004473823_00000615_7362954.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004473823_00000713_7362985.webp",
@@ -14827,7 +14827,7 @@
     },
     {
       "filename": "32044004474326_00000362_7392366.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004474326_00000447_7392393.webp",
@@ -14847,7 +14847,7 @@
     },
     {
       "filename": "32044004475331_00000397_7387793.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004475331_00000463_7387795.webp",
@@ -14875,11 +14875,11 @@
     },
     {
       "filename": "32044004475471_00000523_7381434.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004475471_00000613_7381436.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004475539_00000223_7363064.webp",
@@ -14887,7 +14887,7 @@
     },
     {
       "filename": "32044004475539_00000224_7363061.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004475570_00000101_7384650.webp",
@@ -14923,7 +14923,7 @@
     },
     {
       "filename": "32044004476057_00000207_7392494.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004476495_00000085_7367690.webp",
@@ -15063,7 +15063,7 @@
     },
     {
       "filename": "32044004480919_00000218_7369838.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004480992_00000035_7380167.webp",
@@ -15107,7 +15107,7 @@
     },
     {
       "filename": "32044004483277_00000069_7369861.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004483327_00000139_7380268.webp",
@@ -15139,11 +15139,11 @@
     },
     {
       "filename": "32044004483905_00000337_7384800.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004483905_00000367_7384799.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004483905_00000439_7384817.webp",
@@ -15155,7 +15155,7 @@
     },
     {
       "filename": "32044004483905_00000535_7384842.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004483905_00000608_7384858.webp",
@@ -15191,7 +15191,7 @@
     },
     {
       "filename": "32044004484747_00000349_7364083.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004485355_00000406_7384898.webp",
@@ -15235,11 +15235,11 @@
     },
     {
       "filename": "32044004487724_00000380_7360671.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004487724_00000388_7361759.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004487724_00000393_7361778.webp",
@@ -15255,7 +15255,7 @@
     },
     {
       "filename": "32044004487849_00000503_7377615.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004488037_00000007_7365366.webp",
@@ -15279,7 +15279,7 @@
     },
     {
       "filename": "32044004488128_00000607_7372051.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004488490_00000127_7368924.webp",
@@ -15307,7 +15307,7 @@
     },
     {
       "filename": "32044004488490_00000189_7369056.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004488631_00000015_7371145.webp",
@@ -15331,15 +15331,15 @@
     },
     {
       "filename": "32044004489233_00000383_7408695.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004489233_00000383_7408697.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004489233_00000385_7408705.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004489233_00000387_7408699.webp",
@@ -15511,7 +15511,7 @@
     },
     {
       "filename": "32044004489977_00000025_7407378.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004489977_00000138_7407385.webp",
@@ -15611,7 +15611,7 @@
     },
     {
       "filename": "32044004494019_00000148_7393535.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004494043_00000014_7421859.webp",
@@ -15695,7 +15695,7 @@
     },
     {
       "filename": "32044004495370_00000167_7401639.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004497038_00000173_7417875.webp",
@@ -15799,7 +15799,7 @@
     },
     {
       "filename": "32044004497913_00000197_7422187.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004498028_00000032_7413022.webp",
@@ -15811,7 +15811,7 @@
     },
     {
       "filename": "32044004498028_00000332_7413059.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004498028_00000425_7413080.webp",
@@ -15843,7 +15843,7 @@
     },
     {
       "filename": "32044004502209_00000360_7407449.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004505004_00000030_7419791.webp",
@@ -15999,7 +15999,7 @@
     },
     {
       "filename": "32044004508735_00000085_7413119.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004508735_00000281_7413125.webp",
@@ -16007,23 +16007,23 @@
     },
     {
       "filename": "32044004509030_00000236_7396495.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509030_00000236_7396496.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509212_00000063_7399876.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004509212_00000071_7399879.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004509212_00000087_7399878.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004509212_00000193_7399935.webp",
@@ -16059,7 +16059,7 @@
     },
     {
       "filename": "32044004509246_00000215_7400905.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509261_00000069_7401853.webp",
@@ -16163,7 +16163,7 @@
     },
     {
       "filename": "32044004509261_00000369_7402340.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509261_00000437_7402416.webp",
@@ -16171,7 +16171,7 @@
     },
     {
       "filename": "32044004509261_00000447_7402429.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004509261_00000483_7402535.webp",
@@ -16263,7 +16263,7 @@
     },
     {
       "filename": "32044004513016_00000225_7402712.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004513016_00000235_7402709.webp",
@@ -16279,7 +16279,7 @@
     },
     {
       "filename": "32044004513016_00000442_7402743.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004514444_00000549_7403669.webp",
@@ -16447,7 +16447,7 @@
     },
     {
       "filename": "32044004516001_00000485_7410734.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004518486_00000519_7392846.webp",
@@ -16495,11 +16495,11 @@
     },
     {
       "filename": "32044004521324_00000423_7403855.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004521324_00000439_7403865.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004521357_00000088_7408102.webp",
@@ -16555,7 +16555,7 @@
     },
     {
       "filename": "32044004527891_00000091_7414240.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004528055_00000017_7394667.webp",
@@ -16623,7 +16623,7 @@
     },
     {
       "filename": "32044004530606_00000406_7420216.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004530606_00000669_7420242.webp",
@@ -16727,7 +16727,7 @@
     },
     {
       "filename": "32044004532669_00000134_7410422.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004532693_00000137_7417231.webp",
@@ -16735,7 +16735,7 @@
     },
     {
       "filename": "32044004532735_00000037_7397174.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004532743_00000317_7411605.webp",
@@ -16747,7 +16747,7 @@
     },
     {
       "filename": "32044004533642_00000229_7417268.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004534327_00000065_7395603.webp",
@@ -16855,7 +16855,7 @@
     },
     {
       "filename": "32044004535183_00000025_7398335.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004536140_00000046_7415166.webp",
@@ -16899,7 +16899,7 @@
     },
     {
       "filename": "32044004536496_00000452_7397353.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004536496_00000605_7397378.webp",
@@ -16931,11 +16931,11 @@
     },
     {
       "filename": "32044004536793_00000104_7401069.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004537973_00000239_7422506.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004538419_00000160_7415204.webp",
@@ -16947,7 +16947,7 @@
     },
     {
       "filename": "32044004538484_00000121_7410501.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004538484_00000179_7410530.webp",
@@ -17039,7 +17039,7 @@
     },
     {
       "filename": "32044004540969_00000076_7415227.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004541025_00000449_7409052.webp",
@@ -17195,7 +17195,7 @@
     },
     {
       "filename": "32044004545281_00000529_7409124.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004547022_00000379_7404248.webp",
@@ -17231,11 +17231,11 @@
     },
     {
       "filename": "32044004550612_00000213_7419254.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004550612_00000217_7419237.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004550612_00000235_7419252.webp",
@@ -17243,7 +17243,7 @@
     },
     {
       "filename": "32044004550612_00000239_7419244.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004550976_00000118_7404304.webp",
@@ -17387,7 +17387,7 @@
     },
     {
       "filename": "32044004557211_00000059_7394953.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004559613_00000042_7422647.webp",
@@ -17675,11 +17675,11 @@
     },
     {
       "filename": "32044004563235_00000057_7420511.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004563235_00000080_7420516.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004563235_00000094_7420526.webp",
@@ -17695,7 +17695,7 @@
     },
     {
       "filename": "32044004563235_00000156_7420586.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004563235_00000197_7420602.webp",
@@ -17735,7 +17735,7 @@
     },
     {
       "filename": "32044004563730_00000309_7403180.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004563730_00000474_7403220.webp",
@@ -17795,7 +17795,7 @@
     },
     {
       "filename": "32044004565750_00000012_7420666.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004565750_00000041_7420681.webp",
@@ -17855,11 +17855,11 @@
     },
     {
       "filename": "32044004567061_00000421_7396092.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004567079_00000150_7399351.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004567343_00000153_7395142.webp",
@@ -17891,7 +17891,7 @@
     },
     {
       "filename": "32044004567657_00000653_7415681.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570081_00000125_7420980.webp",
@@ -17939,7 +17939,7 @@
     },
     {
       "filename": "32044004570875_00000087_7400386.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000237_7400422.webp",
@@ -17959,23 +17959,23 @@
     },
     {
       "filename": "32044004570875_00000385_7400457.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000411_7400461.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000463_7400476.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000469_7400480.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000527_7400483.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004570875_00000625_7400529.webp",
@@ -18187,15 +18187,15 @@
     },
     {
       "filename": "32044004572236_00000321_7411239.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004572236_00000326_7411234.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004572236_00000342_7411242.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004572236_00000357_7411254.webp",
@@ -18207,11 +18207,11 @@
     },
     {
       "filename": "32044004572236_00000406_7411258.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004572236_00000427_7411266.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004572574_00000194_7417519.webp",
@@ -18219,7 +18219,7 @@
     },
     {
       "filename": "32044004572657_00000211_7397548.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004572731_00000375_7411946.webp",
@@ -18239,7 +18239,7 @@
     },
     {
       "filename": "32044004573457_00000217_7395194.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004573788_00000052_7412646.webp",
@@ -18443,11 +18443,11 @@
     },
     {
       "filename": "32044004575551_00000580_7419487.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004575551_00000646_7419493.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004575551_00000672_7419499.webp",
@@ -18567,7 +18567,7 @@
     },
     {
       "filename": "32044004583860_00000284_7423495.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004587325_00000047_7398744.webp",
@@ -18643,7 +18643,7 @@
     },
     {
       "filename": "32044004587515_00000265_7416598.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004587515_00000346_7416631.webp",
@@ -18675,15 +18675,15 @@
     },
     {
       "filename": "32044004588083_00000349_7398017.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004588109_00000361_7412138.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004588109_00000371_7412135.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004588109_00000699_7412168.webp",
@@ -18699,23 +18699,23 @@
     },
     {
       "filename": "32044004589743_00000099_7417677.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589743_00000295_7417697.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589743_00000361_7417705.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589743_00000497_7417729.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589826_00000095_7412178.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589826_00000138_7412182.webp",
@@ -18747,7 +18747,7 @@
     },
     {
       "filename": "32044004590881_00000137_7396348.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004591061_00000235_7399546.webp",
@@ -18795,7 +18795,7 @@
     },
     {
       "filename": "32044004592390_00000439_7410208.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004592390_00000521_7410220.webp",
@@ -18807,11 +18807,11 @@
     },
     {
       "filename": "32044004592549_00000149_7407351.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004592549_00000250_7407358.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004592739_00000019_7403490.webp",
@@ -18823,7 +18823,7 @@
     },
     {
       "filename": "32044004592937_00000265_7419649.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004592937_00000323_7419650.webp",
@@ -18839,7 +18839,7 @@
     },
     {
       "filename": "32044004593257_00000118_7416825.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004593257_00000171_7416844.webp",
@@ -18859,7 +18859,7 @@
     },
     {
       "filename": "32044004593257_00000453_7416928.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004593257_00000515_7416933.webp",
@@ -18867,11 +18867,11 @@
     },
     {
       "filename": "32044004593257_00000563_7416946.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004593257_00000563_7416947.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004593398_00000014_7412886.webp",
@@ -18879,7 +18879,7 @@
     },
     {
       "filename": "32044004593398_00000069_7412891.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004593398_00000243_7412917.webp",
@@ -18939,7 +18939,7 @@
     },
     {
       "filename": "32044004596847_00000008_7289944.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004596912_00000046_7305404.webp",
@@ -18991,7 +18991,7 @@
     },
     {
       "filename": "32044004597068_00000051_7287908.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004597068_00000073_7287888.webp",
@@ -19091,7 +19091,7 @@
     },
     {
       "filename": "32044004597068_00000279_7288305.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004597068_00000289_7288384.webp",
@@ -19215,23 +19215,23 @@
     },
     {
       "filename": "32044004599452_00000217_7305473.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004599452_00000223_7305474.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004599452_00000237_7305472.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004599452_00000329_7305487.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004599452_00000391_7305491.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004600292_00000285_7291369.webp",
@@ -19243,7 +19243,7 @@
     },
     {
       "filename": "32044004600417_00000233_7308362.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004600417_00000327_7308375.webp",
@@ -19275,7 +19275,7 @@
     },
     {
       "filename": "32044004600805_00001123_7311008.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004600805_00001161_7311037.webp",
@@ -19303,7 +19303,7 @@
     },
     {
       "filename": "32044004600813_00000361_7309605.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004600813_00000389_7309613.webp",
@@ -19311,7 +19311,7 @@
     },
     {
       "filename": "32044004600813_00000559_7309627.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004600813_00000619_7309632.webp",
@@ -19319,7 +19319,7 @@
     },
     {
       "filename": "32044004600813_00000645_7309641.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004600920_00000109_7302492.webp",
@@ -19363,7 +19363,7 @@
     },
     {
       "filename": "32044004603072_00000155_7306670.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004605440_00000045_7302543.webp",
@@ -19439,7 +19439,7 @@
     },
     {
       "filename": "32044004607214_00000160_7285714.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004607222_00000025_7306713.webp",
@@ -19455,7 +19455,7 @@
     },
     {
       "filename": "32044004607222_00000053_7306732.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004607222_00000065_7306740.webp",
@@ -19471,7 +19471,7 @@
     },
     {
       "filename": "32044004607222_00000173_7306810.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004607222_00000210_7306834.webp",
@@ -19731,11 +19731,11 @@
     },
     {
       "filename": "32044004608923_00000147_7311212.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004608923_00000149_7311192.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004608923_00000154_7311204.webp",
@@ -19747,7 +19747,7 @@
     },
     {
       "filename": "32044004608923_00000171_7311229.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004608923_00000177_7311194.webp",
@@ -19771,7 +19771,7 @@
     },
     {
       "filename": "32044004608923_00000241_7311299.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004608923_00000245_7311309.webp",
@@ -19783,11 +19783,11 @@
     },
     {
       "filename": "32044004608923_00000250_7311289.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004608923_00000265_7311307.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004608923_00000288_7311288.webp",
@@ -19823,7 +19823,7 @@
     },
     {
       "filename": "32044004608949_00000178_7309864.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004608949_00000260_7309891.webp",
@@ -20027,7 +20027,7 @@
     },
     {
       "filename": "32044004610069_00000120_7303120.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004610168_00000283_7306874.webp",
@@ -20099,11 +20099,11 @@
     },
     {
       "filename": "32044004616041_00000138_7299882.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616041_00000216_7299889.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616041_00000244_7299893.webp",
@@ -20115,7 +20115,7 @@
     },
     {
       "filename": "32044004616124_00000081_7309957.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004616272_00000059_7303163.webp",
@@ -20127,7 +20127,7 @@
     },
     {
       "filename": "32044004616488_00000264_7284708.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616488_00000321_7284716.webp",
@@ -20135,19 +20135,19 @@
     },
     {
       "filename": "32044004616488_00000322_7284717.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616488_00000365_7284733.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616488_00000507_7284762.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616553_00000011_7298746.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004616553_00000074_7298750.webp",
@@ -20167,7 +20167,7 @@
     },
     {
       "filename": "32044004617023_00000590_7313679.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617205_00000009_7293845.webp",
@@ -20175,7 +20175,7 @@
     },
     {
       "filename": "32044004617205_00000040_7293851.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617205_00000087_7293864.webp",
@@ -20183,15 +20183,15 @@
     },
     {
       "filename": "32044004617205_00000102_7293878.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617205_00000114_7293876.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617205_00000132_7293874.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617205_00000217_7293893.webp",
@@ -20207,15 +20207,15 @@
     },
     {
       "filename": "32044004617544_00000171_7285831.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617544_00000489_7285878.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617593_00000021_7306916.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004617593_00000060_7306925.webp",
@@ -20275,7 +20275,7 @@
     },
     {
       "filename": "32044004618427_00000312_7313705.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004618492_00000043_7293908.webp",
@@ -20319,7 +20319,7 @@
     },
     {
       "filename": "32044004618575_00000435_7310129.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004618583_00000008_7304696.webp",
@@ -20451,11 +20451,11 @@
     },
     {
       "filename": "32044004640744_00000381_7298866.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641205_00000053_7317396.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641254_00000345_7295430.webp",
@@ -20463,7 +20463,7 @@
     },
     {
       "filename": "32044004641288_00000433_7308686.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641320_00000002_7297802.webp",
@@ -20479,7 +20479,7 @@
     },
     {
       "filename": "32044004641338_00000441_7318467.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641346_00000217_7313801.webp",
@@ -20503,7 +20503,7 @@
     },
     {
       "filename": "32044004641353_00000403_7299987.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641379_00000012_7311430.webp",
@@ -20523,7 +20523,7 @@
     },
     {
       "filename": "32044004641411_00000265_7310250.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641411_00000369_7310256.webp",
@@ -20539,7 +20539,7 @@
     },
     {
       "filename": "32044004641569_00000155_7285953.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641569_00000370_7285967.webp",
@@ -20551,7 +20551,7 @@
     },
     {
       "filename": "32044004641585_00000010_7307061.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004641643_00000103_7284825.webp",
@@ -20951,11 +20951,11 @@
     },
     {
       "filename": "32044004713475_00000277_7297139.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004713475_00000346_7297145.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004713822_00000053_7299004.webp",
@@ -21043,11 +21043,11 @@
     },
     {
       "filename": "32044004714267_00000248_7291715.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004714267_00000248_7291716.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004714267_00000345_7291735.webp",
@@ -21063,11 +21063,11 @@
     },
     {
       "filename": "32044004714564_00000085_7300041.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004715116_00000043_7304842.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004715116_00000221_7304848.webp",
@@ -21075,7 +21075,7 @@
     },
     {
       "filename": "32044004715116_00000361_7304850.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004716411_00000184_7284930.webp",
@@ -21091,7 +21091,7 @@
     },
     {
       "filename": "32044004717179_00000085_7292836.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004717179_00000115_7292838.webp",
@@ -21155,11 +21155,11 @@
     },
     {
       "filename": "32044004748273_00000263_7290839.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004748273_00000304_7290840.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004748497_00000069_7300672.webp",
@@ -21211,7 +21211,7 @@
     },
     {
       "filename": "32044004775284_00000137_7285000.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004775284_00000143_7285006.webp",
@@ -21731,11 +21731,11 @@
     },
     {
       "filename": "32044001967272_00000291_7357309.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262527_00000291_7342989.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000182964_00000034_7325601.webp",
@@ -21883,7 +21883,7 @@
     },
     {
       "filename": "32044005008115_00000555_7442732.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000284836_00000529_7328637.webp",
@@ -21979,7 +21979,7 @@
     },
     {
       "filename": "32044004744157_00000066_7308753.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000241034_00000301_7352182.webp",
@@ -21987,7 +21987,7 @@
     },
     {
       "filename": "32044000198291_00000035_7329623.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004589644_00000102_7416739.webp",
@@ -22047,7 +22047,7 @@
     },
     {
       "filename": "32044000262527_00000340_7343011.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262527_00000235_7342933.webp",
@@ -22063,7 +22063,7 @@
     },
     {
       "filename": "32044004745600_00000105_7286084.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004395307_00000048_7370559.webp",
@@ -22135,7 +22135,7 @@
     },
     {
       "filename": "32044001993385_00000049_7329879.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004567657_00000313_7415590.webp",
@@ -22191,7 +22191,7 @@
     },
     {
       "filename": "32044000261891_00000461_7349579.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002668291_00000134_7341079.webp",
@@ -22271,7 +22271,7 @@
     },
     {
       "filename": "32044002388155_00000562_7357484.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000028563_00000504_7334751.webp",
@@ -22283,7 +22283,7 @@
     },
     {
       "filename": "32044002443190_00000360_7336931.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000261891_00000609_7349785.webp",
@@ -22295,7 +22295,7 @@
     },
     {
       "filename": "32044002443190_00000132_7336857.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004517785_00000441_7402765.webp",
@@ -22379,7 +22379,7 @@
     },
     {
       "filename": "32044004372579_00000029_7348811.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000089094_00000385_7338096.webp",
@@ -22431,7 +22431,7 @@
     },
     {
       "filename": "32044000260679_00000421_7335017.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000089094_00000203_7337983.webp",
@@ -22463,7 +22463,7 @@
     },
     {
       "filename": "32044000262527_00000229_7342950.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002076412_00000231_7335275.webp",
@@ -22815,7 +22815,7 @@
     },
     {
       "filename": "32044000259002_00000176_7346328.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000242677_00000159_7323088.webp",
@@ -22903,7 +22903,7 @@
     },
     {
       "filename": "32044001271097_00000051_7344988.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004598678_00000281_7302372.webp",
@@ -22935,7 +22935,7 @@
     },
     {
       "filename": "32044000259002_00000075_7346264.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002388155_00000477_7357441.webp",
@@ -22975,7 +22975,7 @@
     },
     {
       "filename": "32044001271097_00000140_7344993.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004452132_00000040_7379659.webp",
@@ -23151,7 +23151,7 @@
     },
     {
       "filename": "32044004975835_00000312_7455278.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000089094_00000146_7337907.webp",
@@ -23203,7 +23203,7 @@
     },
     {
       "filename": "32044004550612_00000279_7419264.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004563110_00000238_7393175.webp",
@@ -23379,7 +23379,7 @@
     },
     {
       "filename": "32044000065706_00000391_7344398.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002025526_00000117_7325986.webp",
@@ -23439,7 +23439,7 @@
     },
     {
       "filename": "32044000284836_00000258_7328480.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000065706_00000355_7344373.webp",
@@ -23567,7 +23567,7 @@
     },
     {
       "filename": "32044000241034_00000462_7352248.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004784708_00000203_7308991.webp",
@@ -23587,7 +23587,7 @@
     },
     {
       "filename": "32044000259002_00000069_7346239.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000244251_00000480_7327227.webp",
@@ -23679,7 +23679,7 @@
     },
     {
       "filename": "32044000262527_00000191_7342900.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000080861_00000296_7351381.webp",
@@ -23791,7 +23791,7 @@
     },
     {
       "filename": "32044004975835_00000181_7455172.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001325414_00000647_7338471.webp",
@@ -23827,7 +23827,7 @@
     },
     {
       "filename": "32044002065373_00000321_7329941.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000089094_00000178_7337903.webp",
@@ -23871,7 +23871,7 @@
     },
     {
       "filename": "32044004458105_00000037_7391508.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004600581_00000119_7318117.webp",
@@ -23903,7 +23903,7 @@
     },
     {
       "filename": "32044002065373_00000149_7329919.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000400051_00000150_7346504.webp",
@@ -24303,7 +24303,7 @@
     },
     {
       "filename": "32044000803270_00000161_7333366.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000186148_00000441_7344515.webp",
@@ -24427,7 +24427,7 @@
     },
     {
       "filename": "32044000560979_00000035_7353622.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000089094_00000062_7337793.webp",
@@ -24523,7 +24523,7 @@
     },
     {
       "filename": "32044002052553_00000359_7345045.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004508636_00000169_7393976.webp",
@@ -24783,7 +24783,7 @@
     },
     {
       "filename": "32044001967272_00000343_7357311.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262238_00000251_7354856.webp",
@@ -24943,7 +24943,7 @@
     },
     {
       "filename": "32044004965786_00000597_7425180.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000080861_00000577_7351898.webp",
@@ -25107,7 +25107,7 @@
     },
     {
       "filename": "32044002052553_00000035_7345033.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002443190_00000182_7336868.webp",
@@ -25135,7 +25135,7 @@
     },
     {
       "filename": "32044002438182_00000141_7326171.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000218917_00000318_7325807.webp",
@@ -25779,7 +25779,7 @@
     },
     {
       "filename": "32044004485355_00001107_7384924.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004563235_00000114_7420583.webp",
@@ -25927,7 +25927,7 @@
     },
     {
       "filename": "32044000262238_00000186_7354774.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002464899_00000193_7338626.webp",
@@ -26031,7 +26031,7 @@
     },
     {
       "filename": "32044000259002_00000148_7346341.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262527_00000271_7342960.webp",
@@ -26155,7 +26155,7 @@
     },
     {
       "filename": "32044000259002_00000135_7346293.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002256626_00000239_7328918.webp",
@@ -26371,7 +26371,7 @@
     },
     {
       "filename": "32044001271097_00000008_7344965.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004508636_00000055_7393893.webp",
@@ -26511,7 +26511,7 @@
     },
     {
       "filename": "32044002052553_00000312_7345044.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002076412_00000147_7335220.webp",
@@ -26575,7 +26575,7 @@
     },
     {
       "filename": "32044005003538_00000296_7431782.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004508636_00000229_7394061.webp",
@@ -26619,7 +26619,7 @@
     },
     {
       "filename": "32044002065373_00000143_7329915.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004452132_00000227_7379721.webp",
@@ -26699,7 +26699,7 @@
     },
     {
       "filename": "32044004744157_00000066_7308754.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002025526_00000117_7326016.webp",
@@ -26755,11 +26755,11 @@
     },
     {
       "filename": "32044002443190_00000081_7336839.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000262527_00000363_7343019.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000080861_00000287_7351303.webp",
@@ -26987,7 +26987,7 @@
     },
     {
       "filename": "32044004543807_00000040_7409715.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004975835_00000479_7455389.webp",
@@ -27035,7 +27035,7 @@
     },
     {
       "filename": "32044002052553_00000134_7345036.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004329033_00000019_7345197.webp",
@@ -27147,7 +27147,7 @@
     },
     {
       "filename": "32044000278622_00000274_7344936.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000260679_00000461_7335027.webp",
@@ -27179,7 +27179,7 @@
     },
     {
       "filename": "32044004975835_00000316_7455280.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004979787_00000120_7453507.webp",
@@ -27267,7 +27267,7 @@
     },
     {
       "filename": "32044000262238_00000085_7354743.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000160259_00000369_7353566.webp",
@@ -27339,7 +27339,7 @@
     },
     {
       "filename": "32044002443190_00000155_7336860.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000278622_00000257_7344915.webp",
@@ -27363,7 +27363,7 @@
     },
     {
       "filename": "32044002065373_00000243_7329936.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000243618_00000061_7319755.webp",
@@ -27383,7 +27383,7 @@
     },
     {
       "filename": "32044002065373_00000251_7329934.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002443190_00000072_7336842.webp",
@@ -27411,7 +27411,7 @@
     },
     {
       "filename": "32044001646264_00000059_7323362.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000199976_00000391_7324427.webp",
@@ -27419,7 +27419,7 @@
     },
     {
       "filename": "32044004563235_00000149_7420593.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000166546_00000088_7354369.webp",
@@ -27531,7 +27531,7 @@
     },
     {
       "filename": "32044004781639_00000113_7292154.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004385530_00000110_7386676.webp",
@@ -27603,7 +27603,7 @@
     },
     {
       "filename": "32044002065373_00000207_7329928.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004979787_00000409_7453755.webp",
@@ -27651,7 +27651,7 @@
     },
     {
       "filename": "32044001967272_00000201_7357303.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004452132_00000346_7379750.webp",
@@ -27659,7 +27659,7 @@
     },
     {
       "filename": "32044002076412_00000201_7335287.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044001325414_00000622_7338458.webp",
@@ -27671,7 +27671,7 @@
     },
     {
       "filename": "32044002065373_00000257_7329938.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000261891_00000590_7349810.webp",
@@ -27683,7 +27683,7 @@
     },
     {
       "filename": "32044004869285_00000091_7451949.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004356234_00000371_7357937.webp",
@@ -27739,11 +27739,11 @@
     },
     {
       "filename": "32044001372929_00000655_7357197.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004565438_00000086_7398618.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000309450_00000250_7320258.webp",
@@ -27787,7 +27787,7 @@
     },
     {
       "filename": "32044002597722_00000016_7355250.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000226290_00000071_7321725.webp",
@@ -27907,7 +27907,7 @@
     },
     {
       "filename": "32044000262527_00000187_7342919.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000309450_00000248_7320246.webp",
@@ -28095,7 +28095,7 @@
     },
     {
       "filename": "32044001646264_00000078_7323361.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000028563_00000107_7334580.webp",
@@ -28111,7 +28111,7 @@
     },
     {
       "filename": "32044001967272_00000389_7357313.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001940543_00000053_7327626.webp",
@@ -28375,7 +28375,7 @@
     },
     {
       "filename": "32044001646264_00000018_7323357.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002020428_00000011_7355106.webp",
@@ -28403,7 +28403,7 @@
     },
     {
       "filename": "32044002025880_00000103_7321867.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002256626_00000176_7328912.webp",
@@ -28559,7 +28559,7 @@
     },
     {
       "filename": "32044000262527_00000175_7342904.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000089094_00000028_7337745.webp",
@@ -28591,7 +28591,7 @@
     },
     {
       "filename": "32044004869285_00000057_7451951.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004600581_00000559_7318212.webp",
@@ -28671,7 +28671,7 @@
     },
     {
       "filename": "32044004454575_00000039_7387316.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002464899_00000207_7338608.webp",
@@ -28695,7 +28695,7 @@
     },
     {
       "filename": "32044000262238_00000424_7354950.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000777961_00000052_7349993.webp",
@@ -28795,7 +28795,7 @@
     },
     {
       "filename": "32044002443190_00000288_7336899.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044001271097_00000209_7345006.webp",
@@ -28963,7 +28963,7 @@
     },
     {
       "filename": "32044000262527_00000172_7342898.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004452132_00000062_7379679.webp",
@@ -28975,7 +28975,7 @@
     },
     {
       "filename": "32044000262527_00000321_7342986.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002388155_00000638_7357501.webp",
@@ -29139,7 +29139,7 @@
     },
     {
       "filename": "32044000262527_00000184_7342910.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004433090_00000178_7375383.webp",
@@ -29151,7 +29151,7 @@
     },
     {
       "filename": "32044001062884_00000008_7323335.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004598678_00000329_7302396.webp",
@@ -29167,7 +29167,7 @@
     },
     {
       "filename": "32044004969713_00000123_7442560.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004589644_00000092_7416680.webp",
@@ -29319,7 +29319,7 @@
     },
     {
       "filename": "32044000028530_00000043_7345977.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004979787_00000350_7453737.webp",
@@ -29403,7 +29403,7 @@
     },
     {
       "filename": "32044000261891_00000158_7349292.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002256626_00000030_7328826.webp",
@@ -29415,7 +29415,7 @@
     },
     {
       "filename": "32044002065373_00000339_7329950.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002668291_00000389_7341336.webp",
@@ -29423,7 +29423,7 @@
     },
     {
       "filename": "32044000262238_00000424_7354948.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000309559_00000106_7327361.webp",
@@ -29547,7 +29547,7 @@
     },
     {
       "filename": "32044001325414_00000243_7338356.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004385530_00000202_7386868.webp",
@@ -29659,7 +29659,7 @@
     },
     {
       "filename": "32044004588109_00000409_7412139.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002388155_00000992_7357583.webp",
@@ -29735,7 +29735,7 @@
     },
     {
       "filename": "32044002443190_00000169_7336866.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000089094_00000143_7337862.webp",
@@ -29807,7 +29807,7 @@
     },
     {
       "filename": "32044004479440_00000413_7366091.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002056356_00000027_7352389.webp",
@@ -29907,7 +29907,7 @@
     },
     {
       "filename": "32044000309450_00000280_7320215.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004379988_00000308_7372213.webp",
@@ -29975,7 +29975,7 @@
     },
     {
       "filename": "32044002052553_00000275_7345042.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044000196717_00000042_7326964.webp",
@@ -30235,15 +30235,15 @@
     },
     {
       "filename": "32044000260679_00000421_7335016.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002065373_00000173_7329924.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004588109_00000103_7412116.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002076412_00000225_7335297.webp",
@@ -30635,7 +30635,7 @@
     },
     {
       "filename": "32044000803270_00000125_7333363.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002076412_00000240_7335238.webp",
@@ -30675,7 +30675,7 @@
     },
     {
       "filename": "32044000286310_00000083_7340883.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004576500_00000306_7414898.webp",
@@ -30831,7 +30831,7 @@
     },
     {
       "filename": "32044004363917_00000200_7345744.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044004831228_00000375_7430657.webp",
@@ -31067,7 +31067,7 @@
     },
     {
       "filename": "32044001336965_00000181_7320368.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000179499_00000071_7342661.webp",
@@ -31123,7 +31123,7 @@
     },
     {
       "filename": "32044001646264_00000077_7323363.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000194456_00000086_7319226.webp",
@@ -31175,7 +31175,7 @@
     },
     {
       "filename": "32044000284836_00000472_7328597.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000261891_00000637_7349904.webp",
@@ -31207,7 +31207,7 @@
     },
     {
       "filename": "32044000262527_00000245_7342958.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044002668291_00000265_7341184.webp",
@@ -31235,7 +31235,7 @@
     },
     {
       "filename": "32044001993385_00000107_7329886.webp",
-      "manual_label": "rotated_90_counterclockwise"
+      "manual_label": "rotate_90_counterclockwise"
     },
     {
       "filename": "32044004823555_00000279_7302231.webp",
@@ -31523,7 +31523,7 @@
     },
     {
       "filename": "32044000259002_00000233_7346358.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044002064343_00000008_7327846.webp",
@@ -31579,7 +31579,7 @@
     },
     {
       "filename": "32044002827095_00000673_7347059.webp",
-      "manual_label": "rotated_90_clockwise"
+      "manual_label": "rotate_90_clockwise"
     },
     {
       "filename": "32044000199091_00000153_7334909.webp",

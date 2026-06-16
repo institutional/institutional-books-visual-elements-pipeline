@@ -40,9 +40,9 @@ ALLOWED_SPLITS = ["image_illustration", "chart_graph"]
 
 QUARTERS_TO_LABEL = {
     0: "upright",
-    1: "rotated_90_clockwise",
-    2: "rotated_180",
-    3: "rotated_90_counterclockwise",
+    1: "rotate_90_clockwise",
+    2: "rotate_180",
+    3: "rotate_90_counterclockwise",
 }
 
 

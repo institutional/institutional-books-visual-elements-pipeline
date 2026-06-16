@@ -45,16 +45,16 @@ IMAGE_SIZE_BY_MODEL = {
 NUM_CLASSES = 4
 CLASS_MAP = {
     0: "upright",
-    1: "rotated_90_clockwise",
-    2: "rotated_180",
-    3: "rotated_90_counterclockwise",
+    1: "rotate_90_clockwise",
+    2: "rotate_180",
+    3: "rotate_90_counterclockwise",
 }
 
 LABEL_TO_QUARTERS = {
     "upright": 0,
-    "rotated_90_clockwise": 1,
-    "rotated_180": 2,
-    "rotated_90_counterclockwise": 3,
+    "rotate_90_clockwise": 1,
+    "rotate_180": 2,
+    "rotate_90_counterclockwise": 3,
 }
 
 DOWNLOAD_TIMEOUT = 60
