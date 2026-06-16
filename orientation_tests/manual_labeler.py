@@ -244,6 +244,26 @@ def main():
         with open(output_path, "w") as f:
             json.dump(output, f, indent=2)
 
+    keyboard_js = """
+    () => {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            const key = e.key.toLowerCase();
+            const btns = document.querySelectorAll('button');
+            const clickBtn = (text) => {
+                for (const b of btns) {
+                    if (b.textContent.includes(text)) { b.click(); break; }
+                }
+            };
+            if (key === 'a' || key === 'arrowleft') { clickBtn('CCW'); e.preventDefault(); }
+            else if (key === 'd' || key === 'arrowright') { clickBtn('CW (D)'); e.preventDefault(); }
+            else if (key === 's' || key === 'arrowdown') { clickBtn('180'); e.preventDefault(); }
+            else if (key === 'u') { clickBtn('Reset'); e.preventDefault(); }
+            else if (key === 'enter' || key === ' ') { clickBtn('Save & Next'); e.preventDefault(); }
+        });
+    }
+    """
+
     with gr.Blocks(title="Orientation Labeler") as app:
         gr.Markdown("# Orientation Labeler\nRotate the image until it looks upright, then click **Save & Next**.")
 
@@ -268,6 +288,8 @@ def main():
         btn_reset.click(reset, outputs=[image, info])
         btn_skip.click(skip, outputs=[image, info])
         btn_save.click(save_and_next, outputs=[image, info])
+
+        app.load(None, js=keyboard_js)
 
     app.launch(server_name="0.0.0.0", server_port=7860)
 

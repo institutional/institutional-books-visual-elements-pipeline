@@ -39,6 +39,9 @@ HF_TOKEN = os.environ["HF_TOKEN"]
 BUCKET_REPO = "institutional/institutional-books-hl-visual-elements-images"
 
 IMAGE_SIZE = 384
+IMAGE_SIZE_BY_MODEL = {
+    "efficientnet_v2_m": 480,
+}
 NUM_CLASSES = 4
 CLASS_MAP = {
     0: "upright",
@@ -118,20 +121,39 @@ def apply_rotation(img: Image.Image, quarters_cw: int) -> Image.Image:
     return img.rotate(degrees_map[q], expand=True)
 
 
-def get_train_transform():
-    return transforms.Compose([
-        transforms.Resize((IMAGE_SIZE + 32, IMAGE_SIZE + 32)),
-        transforms.RandomCrop(IMAGE_SIZE),
+def get_train_transform(image_size: int, augmentations: set[str] | None = None):
+    augs = augmentations or set()
+    t = [
+        transforms.Resize((image_size + 32, image_size + 32)),
+        transforms.RandomCrop(image_size),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    ]
+    if "high-contrast" in augs:
+        t.append(transforms.RandomAutocontrast(p=0.3))
+    if "invert" in augs:
+        t.append(transforms.RandomInvert(p=0.15))
+    if "grayscale" in augs:
+        t.append(transforms.RandomGrayscale(p=0.2))
+    if "blur" in augs:
+        t.append(transforms.GaussianBlur(kernel_size=5, sigma=(0.1, 2.0)))
+    if "erasing" in augs:
+        t.extend([
+            transforms.ToTensor(),
+            transforms.RandomErasing(p=0.2, scale=(0.02, 0.15)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+    else:
+        t.extend([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+    return transforms.Compose(t)
 
 
-def get_val_transform():
+def get_val_transform(image_size: int):
     return transforms.Compose([
-        transforms.Resize((IMAGE_SIZE + 32, IMAGE_SIZE + 32)),
-        transforms.CenterCrop(IMAGE_SIZE),
+        transforms.Resize((image_size + 32, image_size + 32)),
+        transforms.CenterCrop(image_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
@@ -240,7 +262,8 @@ def image_to_bytesio(img: Image.Image, max_dim: int = 300) -> io.BytesIO:
     return buf
 
 
-def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_path: str):
+def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_path: str, image_size: int = IMAGE_SIZE):
+    from collections import Counter
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.units import inch
     from reportlab.platypus import (
@@ -249,8 +272,12 @@ def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_p
     )
     from reportlab.lib.styles import getSampleStyleSheet
 
-    transform = get_val_transform()
+    transform = get_val_transform(image_size)
     results = []
+    correct = 0
+    total = 0
+    per_class_correct = Counter()
+    per_class_total = Counter()
     model.eval()
 
     for entry in tqdm(test_labels, desc="Running eval on test set"):
@@ -259,23 +286,76 @@ def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_p
             continue
         try:
             img = load_image_safely(path)
-            tensor = transform(img).unsqueeze(0).to(device)
+            correction_quarters = entry["correction_quarters"]
+            if correction_quarters:
+                corrected_img = apply_rotation(img, correction_quarters)
+            else:
+                corrected_img = img
+            tensor = transform(corrected_img).unsqueeze(0).to(device)
             with torch.no_grad():
                 output = model(tensor)
             probs = torch.softmax(output, dim=1)[0]
             pred = probs.argmax().item()
             confidence = probs[pred].item()
+
+            total += 1
+            gt = 0  # after correction, image is upright
+            per_class_total[gt] += 1
+            if pred == gt:
+                correct += 1
+                per_class_correct[gt] += 1
+
             if pred != 0:
                 results.append({
                     "filename": entry["filename"],
                     "prediction": pred,
                     "confidence": confidence,
-                    "image": img,
+                    "image": corrected_img,
                 })
         except Exception as e:
             logger.warning(f"Eval failed on {entry['filename']}: {e}")
 
-    logger.info(f"Eval: {len(results)} corrections out of {len(test_labels)} test images")
+    # Also evaluate with synthetic rotations to get per-class accuracy
+    correct = 0
+    total = 0
+    per_class_correct = Counter()
+    per_class_total = Counter()
+
+    for entry in tqdm(test_labels, desc="Per-class eval (synthetic rotations)"):
+        path = os.path.join(image_dir, entry["filename"])
+        if not os.path.exists(path):
+            continue
+        try:
+            img = load_image_safely(path)
+            correction_quarters = entry["correction_quarters"]
+            if correction_quarters:
+                img = apply_rotation(img, correction_quarters)
+
+            for rot_class in range(4):
+                rotated = apply_rotation(img, rot_class) if rot_class else img
+                tensor = transform(rotated).unsqueeze(0).to(device)
+                with torch.no_grad():
+                    output = model(tensor)
+                pred = output.argmax(dim=1).item()
+                gt = (4 - rot_class) % 4
+
+                total += 1
+                per_class_total[gt] += 1
+                if pred == gt:
+                    correct += 1
+                    per_class_correct[gt] += 1
+        except Exception as e:
+            logger.warning(f"Per-class eval failed on {entry['filename']}: {e}")
+
+    accuracy = correct / total if total else 0
+    logger.info(f"Test accuracy: {accuracy:.4f} ({correct}/{total})")
+    for cls_idx in range(NUM_CLASSES):
+        cls_total = per_class_total[cls_idx]
+        cls_correct = per_class_correct[cls_idx]
+        cls_acc = cls_correct / cls_total if cls_total else 0
+        logger.info(f"  {CLASS_MAP[cls_idx]}: {cls_acc:.4f} ({cls_correct}/{cls_total})")
+
+    logger.info(f"Eval PDF: {len(results)} false corrections out of {len(test_labels)} test images")
 
     # Build PDF
     doc = SimpleDocTemplate(
@@ -288,7 +368,16 @@ def generate_eval_pdf(model, device, test_labels: list, image_dir: str, output_p
 
     elements.append(Paragraph("Model Orientation Predictions (Test Set)", styles["Title"]))
     elements.append(Paragraph(
-        f"{len(results)} corrected images from {len(test_labels)} test samples",
+        f"Test accuracy: {accuracy:.2%} ({correct}/{total})",
+        styles["Normal"],
+    ))
+    per_class_lines = " | ".join(
+        f"{CLASS_MAP[c]}: {per_class_correct[c]}/{per_class_total[c]}"
+        for c in range(NUM_CLASSES)
+    )
+    elements.append(Paragraph(per_class_lines, styles["Normal"]))
+    elements.append(Paragraph(
+        f"{len(results)} false corrections shown below from {len(test_labels)} test images",
         styles["Normal"],
     ))
     elements.append(Spacer(1, 0.3 * inch))
@@ -356,6 +445,8 @@ def main():
                              "efficientnet_b0, efficientnet_b1, ..., efficientnet_b7")
     parser.add_argument("--no-synthetic", action="store_true",
                         help="Train on raw images with their labels as-is, no correction + 4-rotation augmentation")
+    parser.add_argument("--augmentations", type=str, nargs="*", default=[],
+                        help="Extra augmentations: high-contrast, invert, grayscale, blur, erasing")
     parser.add_argument("--eval-pdf", type=str, default=None,
                         help="After training, generate an evaluation PDF at this path")
     args = parser.parse_args()
@@ -406,8 +497,11 @@ def main():
         logger.info("All images already downloaded")
 
     # Create datasets
-    train_dataset = OrientationDataset(image_dir, train_labels, transform=get_train_transform(), no_synthetic=args.no_synthetic)
-    val_dataset = OrientationDataset(image_dir, val_labels, transform=get_val_transform(), no_synthetic=args.no_synthetic)
+    image_size = IMAGE_SIZE_BY_MODEL.get(args.model, IMAGE_SIZE)
+    augmentations = set(args.augmentations)
+    logger.info(f"Image size: {image_size}, augmentations: {augmentations or 'none'}")
+    train_dataset = OrientationDataset(image_dir, train_labels, transform=get_train_transform(image_size, augmentations), no_synthetic=args.no_synthetic)
+    val_dataset = OrientationDataset(image_dir, val_labels, transform=get_val_transform(image_size), no_synthetic=args.no_synthetic)
     logger.info(f"Train samples: {len(train_dataset)}, Val samples: {len(val_dataset)}")
 
     train_loader = DataLoader(
@@ -452,7 +546,7 @@ def main():
     # Generate eval PDF if requested
     if args.eval_pdf and best_model_path:
         model.load_state_dict(torch.load(best_model_path, map_location=device, weights_only=True))
-        generate_eval_pdf(model, device, test_labels, image_dir, args.eval_pdf)
+        generate_eval_pdf(model, device, test_labels, image_dir, args.eval_pdf, image_size)
 
 
 if __name__ == "__main__":

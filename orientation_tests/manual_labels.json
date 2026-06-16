@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total_labeled": 7896,
+    "total_labeled": 7904,
     "orientation_distribution": {
-      "upright": 7346,
+      "upright": 7354,
       "rotated_90_clockwise": 444,
       "rotated_90_counterclockwise": 104,
       "rotated_180": 2
@@ -31591,6 +31591,38 @@
     },
     {
       "filename": "32044004605846_00000401_7298632.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000379_7334701.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000060699_00000058_7333204.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000046607_00000163_7348976.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000269_7338009.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000261_7337996.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000028563_00000447_7334744.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000080861_00000467_7351640.webp",
+      "manual_label": "upright"
+    },
+    {
+      "filename": "32044000089094_00000097_7337855.webp",
       "manual_label": "upright"
     }
   ]
