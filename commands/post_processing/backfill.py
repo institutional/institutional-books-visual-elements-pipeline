@@ -10,7 +10,7 @@ from lingua import LanguageDetectorBuilder
 
 from models import Caption
 from utils import get_db, process_db_write_batch
-from const import DEFAULT_DB_BATCH_SIZE, BACKFILL_DEFAULT_WORKERS, VACUUM_EVERY_N_CHUNKS, HF_THESAURUS_REPO 
+from const import DEFAULT_DB_BATCH_SIZE, BACKFILL_DEFAULT_WORKERS, BACKFILL_VACUUM_EVERY_N_CHUNKS, HF_THESAURUS_REPO 
 
 
 def load_thesaurus() -> tuple[dict[str, str], re.Pattern | None]:
