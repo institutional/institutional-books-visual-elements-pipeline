@@ -1,5 +1,5 @@
 {
-  "English": [
+  "eng": [
     "music",
     "musical",
     "sheet music",
@@ -15,7 +15,7 @@
     "orchestra",
     "choir"
   ],
-  "German": [
+  "deu": [
     "Musik",
     "musikalisch",
     "Noten",
@@ -31,7 +31,7 @@
     "Orchester",
     "Chor"
   ],
-  "French": [
+  "fra": [
     "musique",
     "musical",
     "musicale",
@@ -48,7 +48,7 @@
     "orchestre",
     "chorale"
   ],
-  "Italian": [
+  "ita": [
     "musica",
     "musicale",
     "partitura musicale",
@@ -64,7 +64,7 @@
     "orchestra",
     "coro"
   ],
-  "Latin": [
+  "lat": [
     "musica",
     "musicus",
     "charta musica",
@@ -80,7 +80,7 @@
     "orchestra",
     "chorus"
   ],
-  "Russian": [
+  "rus": [
     "музыка",
     "музыкальный",
     "ноты",
@@ -96,7 +96,7 @@
     "оркестр",
     "хор"
   ],
-  "Swedish": [
+  "swe": [
     "musik",
     "musikalisk",
     "noter",
@@ -112,7 +112,7 @@
     "orkester",
     "kör"
   ],
-  "Spanish": [
+  "spa": [
     "música",
     "musical",
     "partitura",
@@ -128,7 +128,7 @@
     "orquesta",
     "coro"
   ],
-  "Dutch": [
+  "nld": [
     "muziek",
     "muzikaal",
     "noten",
@@ -144,7 +144,7 @@
     "orkest",
     "koor"
   ],
-  "Polish": [
+  "pol": [
     "muzyka",
     "muzyczny",
     "nuty",
@@ -160,7 +160,7 @@
     "orkiestra",
     "chór"
   ],
-  "Czech": [
+  "ces": [
     "hudba",
     "hudební",
     "noty",
@@ -176,7 +176,7 @@
     "orchestr",
     "sbor"
   ],
-  "Welsh": [
+  "cym": [
     "cerddoriaeth",
     "cerddorol",
     "nodi cerdd",
@@ -192,7 +192,7 @@
     "cherddllys",
     "cor"
   ],
-  "Portuguese": [
+  "por": [
     "música",
     "musical",
     "partitura",
@@ -208,7 +208,7 @@
     "orquestra",
     "coral"
   ],
-  "Hebrew": [
+  "heb": [
     "מוזיקה",
     "מוזיקלי",
     "תווים",
@@ -224,7 +224,7 @@
     "תזמורת",
     "מקהלה"
   ],
-  "Hungarian": [
+  "hun": [
     "zene",
     "zenés",
     "kottalap",
@@ -240,7 +240,7 @@
     "zenekar",
     "kórus"
   ],
-  "Danish": [
+  "dan": [
     "musik",
     "musikalisk",
     "nodebog",
@@ -256,7 +256,7 @@
     "orkester",
     "kor"
   ],
-  "Armenian": [
+  "hye": [
     "երաժշտություն",
     "երաժշտական",
     "նոտադրություններ",
@@ -272,7 +272,7 @@
     "նվագախումբ",
     "երգչախումբ"
   ],
-  "Croatian": [
+  "hrv": [
     "glazba",
     "glazbeni",
     "notni zapis",
@@ -288,7 +288,7 @@
     "orkestar",
     "hor"
   ],
-  "Icelandic": [
+  "isl": [
     "tónlist",
     "tónlistarlegur",
     "tónblað",
@@ -304,7 +304,7 @@
     "hljómsveit",
     "kór"
   ],
-  "Norwegian": [
+  "nob": [
     "musikk",
     "musikalsk",
     "noter",
