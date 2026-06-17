@@ -32,6 +32,11 @@ class Detection(Model):
     bbox_xywh = ArrayField(field_class=FloatField, dimensions=4, null=True)
     bbox_conf = FloatField(null=True)
 
+    orientation_correction_gen = CharField(null=True)
+    orientation_correction_confidence_gen = FloatField(null=True)
+    orientation_correction_probs_gen = BinaryJSONField(null=True)
+    orientation_hf_corrected_gen = BooleanField(default=False)
+
     def crop(self, scan_image: np.ndarray):
         """
         Returns the crop defined by bbox_xyxy from the given scan image (an np.ndarray).

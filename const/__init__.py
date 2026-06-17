@@ -122,6 +122,28 @@ CLASSIFICATION_CLASS_DICT = {
 
 
 #
+# Orientation correction model params
+#
+ORIENTATION_MODEL_REPO = "institutional/institutional-books-visual-elements-orientation"
+""" HuggingFace repo containing orientation model weights. """
+
+ORIENTATION_MODEL_FILEPATH = "weights/weights.pth"
+""" Filepath of the orientation model within ORIENTATION_MODEL_REPO. """
+
+ORIENTATION_PROCESSES_PER_GPU = int(os.getenv("ORIENTATION_PROCESSES_PER_GPU", 8))
+""" Number of orientation inference processes per GPU (GH200 can fit many replicas). """
+
+ORIENTATION_INFERENCE_BATCH_SIZE = int(os.getenv("ORIENTATION_INFERENCE_BATCH_SIZE", 64))
+""" Batch size for orientation model inference. """
+
+ORIENTATION_CONFIDENCE_THRESHOLD = 0.99
+""" Confidence threshold for applying orientation correction. Below this, prediction defaults to 'upright'. """
+
+ORIENTATION_HF_BATCH_SIZE = int(os.getenv("ORIENTATION_HF_BATCH_SIZE", 100))
+""" Number of images per HF bucket upload/delete batch during orientation correction. """
+
+
+#
 # Deduplication Embeddings
 #
 DEDUPE_EMBEDDING_MODEL_URL = "https://dl.fbaipublicfiles.com/sscd-copy-detection/sscd_disc_mixup.classy.pt"
