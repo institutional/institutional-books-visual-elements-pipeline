@@ -40,10 +40,16 @@ LEFT JOIN image_hash ih
     ON ih.detection_id = d.id_detection
 LEFT JOIN image_embedding ie
     ON ie.detection_id = d.id_detection
-JOIN deduped_hash dh
-    ON dh.detection_id = d.id_detection
-JOIN deduped_embedding de
-    ON de.detection_id = d.id_detection
+JOIN (
+    SELECT DISTINCT ON (group_id) detection_id
+    FROM deduped_hash
+    ORDER BY group_id, detection_id
+) dh ON dh.detection_id = d.id_detection
+JOIN (
+    SELECT DISTINCT ON (group_id) detection_id
+    FROM deduped_embedding
+    ORDER BY group_id, detection_id
+) de ON de.detection_id = d.id_detection
 WHERE d.bbox_conf >= {DETECTION_CONFIDENCE_THRESHOLD}
 """
 
