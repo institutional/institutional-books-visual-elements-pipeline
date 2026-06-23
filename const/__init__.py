@@ -315,6 +315,9 @@ POST_PROCESS_WORKERS = int(os.getenv("POST_PROCESS_WORKERS", 4))
 CLASSIFICATION_CONFIDENCE_THRESHOLD = 0.70
 """ Classifications below this confidence are reclassified as "Other" at export time. """
 
+MUSIC_CONFIDENCE_THRESHOLD = 0.99
+""" Music classifications below this confidence are subject to keyword-based reclassification. """
+
 MODEL_CLASS_INDEX_ORDER = [
     "Artifact",
     "Chart/Graph",
@@ -359,6 +362,15 @@ HF_EXPORT_IMAGES_REPO = "institutional/institutional-books-hl-visual-elements-im
 
 HF_EXPORT_DATASET_REPO = "institutional/institutional-books-hl-visual-elements"
 """ Hugging Face repo for the parquet dataset (metadata + embeddings). """
+
+HF_EXPORT_EMBEDDINGS_REPO = "institutional/institutional-books-hl-visual-elements-embeddings"
+""" Hugging Face repo for the embeddings-only dataset (split from main). """
+
+HF_POST_PROCESS_EXPECTED_ROW_COUNT = 22_622_060
+""" Expected total row count for data integrity validation during HF post-processing. """
+
+HF_POST_PROCESS_IMAGE_BATCH_SIZE = int(os.getenv("HF_POST_PROCESS_IMAGE_BATCH_SIZE", 200))
+""" Number of images to download from HF bucket per batch during post-processing. """
 
 HF_EXPORT_SAMPLE_LIMIT = 500
 """ Maximum number of items to export when running in sample mode. """
