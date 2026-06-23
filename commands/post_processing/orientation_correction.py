@@ -8,7 +8,6 @@ import random
 import tarfile
 import time
 import traceback
-from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
@@ -20,12 +19,9 @@ from loguru import logger
 from const import (
     CUDA_GPUS,
     DEFAULT_DB_BATCH_SIZE,
-    HF_EXPORT_IMAGES_REPO,
     HF_EXPORT_NETWORK_BASE_DELAY,
     HF_EXPORT_NETWORK_MAX_RETRIES,
-    HF_EXPORT_NETWORK_TIMEOUT,
     ORIENTATION_CONFIDENCE_THRESHOLD,
-    ORIENTATION_HF_BATCH_SIZE,
     ORIENTATION_INFERENCE_BATCH_SIZE,
     ORIENTATION_MODEL_FILEPATH,
     ORIENTATION_MODEL_REPO,
@@ -351,164 +347,7 @@ def orientation_worker(
     return stats
 
 
-def _make_crop_filename(barcode: str, scan_filename: str, detection_id: int) -> str:
-    page = Path(scan_filename).stem if scan_filename else "unknown"
-    return f"{barcode}_{page}_{detection_id}.webp"
 
-
-def hf_reupload_corrections(corrections: list[dict], hf_batch_size: int):
-    """
-    For each corrected detection: download from R2, rotate, re-encode as WebP,
-    delete + re-upload to HF bucket. Tracks success per detection in the DB.
-    """
-    os.environ.setdefault("HF_XET_HIGH_PERFORMANCE", "1")
-    os.environ.setdefault("HF_XET_DATA_MAX_CONCURRENT_FILE_INGESTION", "64")
-
-    hf_token = os.environ["HF_TOKEN"]
-
-    # Group corrections by item for efficient downloads
-    by_item: dict[int, list[dict]] = defaultdict(list)
-    for c in corrections:
-        by_item[c["item_id"]].append(c)
-
-    upload_batch: list[tuple[bytes, str]] = []
-    delete_batch: list[str] = []
-    batch_det_ids: list[int] = []
-    total_uploaded = 0
-    total_failed = 0
-
-    for item_id, item_corrections in by_item.items():
-        barcode = item_corrections[0]["barcode"]
-        det_ids = {c["det_id"] for c in item_corrections}
-        crops = download_and_extract_crops(item_id, barcode, det_ids)
-
-        for c in item_corrections:
-            det_id = c["det_id"]
-            arr = crops.get(det_id)
-            if arr is None:
-                total_failed += 1
-                continue
-
-            # Rotate
-            rotated = cv2.rotate(arr, CV2_ROTATION_MAP[c["prediction"]])
-
-            # Re-encode as WebP quality 95
-            success, webp_bytes = cv2.imencode(".webp", rotated, [cv2.IMWRITE_WEBP_QUALITY, 95])
-            if not success:
-                total_failed += 1
-                continue
-
-            filename = _make_crop_filename(barcode, c["scan_filename"], det_id)
-            upload_batch.append((webp_bytes.tobytes(), filename))
-            delete_batch.append(filename)
-            batch_det_ids.append(det_id)
-
-            if len(upload_batch) >= hf_batch_size:
-                success_count, fail_count = _flush_hf_batch(upload_batch, delete_batch, hf_token)
-                if success_count > 0:
-                    _mark_hf_corrected(batch_det_ids)
-                total_uploaded += success_count
-                total_failed += fail_count
-                upload_batch = []
-                delete_batch = []
-                batch_det_ids = []
-
-        del crops
-        gc.collect()
-
-    # Final flush
-    if upload_batch:
-        success_count, fail_count = _flush_hf_batch(upload_batch, delete_batch, hf_token)
-        if success_count > 0:
-            _mark_hf_corrected(batch_det_ids)
-        total_uploaded += success_count
-        total_failed += fail_count
-
-    logger.info(f"  HF re-upload complete: {total_uploaded} uploaded, {total_failed} failed")
-
-
-def _mark_hf_corrected(det_ids: list[int]):
-    """Mark detections as successfully corrected in HF bucket."""
-    db = get_db()
-    db.execute_sql(
-        "UPDATE detection SET orientation_hf_corrected_gen = TRUE WHERE id_detection = ANY(%s)",
-        (det_ids,),
-    )
-
-
-def _flush_hf_batch(
-    upload_batch: list[tuple[bytes, str]],
-    delete_batch: list[str],
-    hf_token: str,
-    max_retries: int = HF_EXPORT_NETWORK_MAX_RETRIES,
-    base_timeout: int = HF_EXPORT_NETWORK_TIMEOUT,
-) -> tuple[int, int]:
-    """
-    Upload corrected images to HF in a subprocess with retry + exponential backoff.
-    Each retry doubles the subprocess timeout to handle slow network conditions.
-    """
-    for attempt in range(1, max_retries + 1):
-        timeout = base_timeout * attempt
-        result_queue = mp.Queue()
-
-        def _worker():
-            try:
-                from huggingface_hub import batch_bucket_files
-
-                batch_bucket_files(
-                    HF_EXPORT_IMAGES_REPO,
-                    delete=delete_batch,
-                    add=upload_batch,
-                    token=hf_token,
-                )
-                result_queue.put(("ok", len(upload_batch), 0))
-            except Exception as e:
-                result_queue.put(("error", str(e), 0))
-
-        proc = mp.Process(target=_worker)
-        proc.start()
-        proc.join(timeout=timeout)
-
-        if proc.is_alive():
-            proc.kill()
-            proc.join()
-            if attempt < max_retries:
-                delay = HF_EXPORT_NETWORK_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 2)
-                logger.warning(
-                    f"  HF batch timed out after {timeout}s, "
-                    f"retry {attempt}/{max_retries} in {delay:.1f}s..."
-                )
-                time.sleep(delay)
-                continue
-            logger.error(f"  HF batch timed out after {max_retries} attempts")
-            return (0, len(upload_batch))
-
-        if not result_queue.empty():
-            result = result_queue.get_nowait()
-            if result[0] == "ok":
-                return (result[1], result[2])
-            else:
-                error_msg = result[1]
-                if attempt < max_retries:
-                    delay = HF_EXPORT_NETWORK_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 2)
-                    logger.warning(
-                        f"  HF batch failed ({error_msg}), "
-                        f"retry {attempt}/{max_retries} in {delay:.1f}s..."
-                    )
-                    time.sleep(delay)
-                    continue
-                logger.error(f"  HF batch failed after {max_retries} attempts: {error_msg}")
-                return (0, len(upload_batch))
-
-        # Subprocess exited without putting anything in the queue
-        if attempt < max_retries:
-            delay = HF_EXPORT_NETWORK_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 2)
-            logger.warning(f"  HF batch subprocess exited unexpectedly, retry {attempt}/{max_retries} in {delay:.1f}s...")
-            time.sleep(delay)
-            continue
-        return (0, len(upload_batch))
-
-    return (0, len(upload_batch))
 
 
 def _run_vacuum():
@@ -557,11 +396,6 @@ def _run_vacuum():
     help="Limit total number of detections to process (for testing)",
 )
 @click.option(
-    "--to-hf",
-    is_flag=True,
-    help="Delete and re-upload corrected images to HF bucket",
-)
-@click.option(
     "--cuda-gpus",
     type=click.Choice(CUDA_GPUS),
     multiple=True,
@@ -574,7 +408,7 @@ def _run_vacuum():
     default=ORIENTATION_PROCESSES_PER_GPU,
     help="Number of model replicas per GPU",
 )
-def orientation_correction(batch_size, inference_batch_size, force, limit, to_hf, cuda_gpus, processes_per_gpu):
+def orientation_correction(batch_size, inference_batch_size, force, limit, cuda_gpus, processes_per_gpu):
     """
     Run orientation correction on filtered detections using the EfficientNet-V2-M model.
 
@@ -584,8 +418,8 @@ def orientation_correction(batch_size, inference_batch_size, force, limit, to_hf
     - orientation_correction_confidence_gen: max softmax probability
     - orientation_correction_probs_gen: full 4-class probability distribution (JSONB)
 
-    With --to-hf, corrected images are rotated, re-encoded as WebP (quality 95),
-    and re-uploaded to the HuggingFace bucket (replacing the original).
+    This should be run after the pipeline completes and before `export to-hf`, which
+    reads orientation results from the DB and applies the rotation during image upload.
     """
     from huggingface_hub import hf_hub_download
 
@@ -676,41 +510,3 @@ def orientation_correction(batch_size, inference_batch_size, force, limit, to_hf
         f"Errors: {total_stats['errors']}"
     )
 
-    # Phase 2: HF re-upload if requested
-    if to_hf and total_stats["corrected"] > 0:
-        logger.info("Starting HF re-upload of corrected images...")
-
-        db = get_db()
-        conn = db.connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT fd.id_detection, fd.pipeline_batch_item_id, fd.barcode, fd.scan_filename,
-                   d.orientation_correction_gen
-            FROM filtered_dataset fd
-            JOIN detection d ON d.id_detection = fd.id_detection
-            WHERE d.orientation_correction_gen != 'upright'
-              AND d.orientation_hf_corrected_gen = FALSE
-        """)
-        rows = cur.fetchall()
-        cur.close()
-        conn.rollback()
-
-        corrections = [
-            {
-                "det_id": row[0],
-                "item_id": row[1],
-                "barcode": row[2],
-                "scan_filename": row[3],
-                "prediction": row[4],
-            }
-            for row in rows
-        ]
-
-        if corrections:
-            logger.info(f"  {len(corrections)} images to correct and re-upload to HF")
-            hf_reupload_corrections(corrections, hf_batch_size=ORIENTATION_HF_BATCH_SIZE)
-        else:
-            logger.info("  All corrections already uploaded to HF.")
-
-    elif to_hf:
-        logger.info("No corrections to upload to HF (all images are upright or below threshold).")
