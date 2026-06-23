@@ -17,6 +17,9 @@ SELECT
     d.bbox_xyxy,
     d.bbox_xywh,
     d.bbox_conf,
+    d.orientation_correction_gen,
+    d.orientation_correction_confidence_gen,
+    d.orientation_correction_probs_gen,
     c.pred_class,
     c.pred_conf AS classification_conf,
     c.probs AS classification_probs,
@@ -41,15 +44,12 @@ LEFT JOIN image_hash ih
 LEFT JOIN image_embedding ie
     ON ie.detection_id = d.id_detection
 JOIN (
-    SELECT DISTINCT ON (group_id) detection_id
-    FROM deduped_hash
-    ORDER BY group_id, detection_id
-) dh ON dh.detection_id = d.id_detection
-JOIN (
-    SELECT DISTINCT ON (group_id) detection_id
-    FROM deduped_embedding
-    ORDER BY group_id, detection_id
-) de ON de.detection_id = d.id_detection
+    SELECT DISTINCT ON (dh.group_id, de.group_id) dh.detection_id
+    FROM deduped_hash dh
+    JOIN deduped_embedding de ON de.detection_id = dh.detection_id
+    JOIN detection d2 ON d2.id_detection = dh.detection_id
+    ORDER BY dh.group_id, de.group_id, d2.bbox_conf DESC, dh.detection_id ASC
+) deduped ON deduped.detection_id = d.id_detection
 WHERE d.bbox_conf >= {DETECTION_CONFIDENCE_THRESHOLD}
 """
 
