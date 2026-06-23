@@ -169,9 +169,9 @@ uv run pipeline.py post-processing create-view
 uv run pipeline.py post-processing create-view --drop-existing  # Recreate if already exists
 ```
 
-### 5. Export
+### 5. Post-processing
 
-Once the pipeline run is complete and the `filtered_dataset` view has been created, use export commands to publish results.
+After the pipeline run completes and the `filtered_dataset` view is created, run post-processing steps before export.
 
 **Backfill computed columns** (run before exports that need `lang_detected`, `linear_prob`, or `thesaurus_matches`):
 
@@ -181,13 +181,31 @@ uv run pipeline.py post-processing backfill --cpus-limit 8
 uv run pipeline.py post-processing backfill --skip-thesaurus  # Skip ChronAm thesaurus (no HF_TOKEN needed)
 ```
 
-> **Note:** The ChronAm thesaurus matching step is optional. Use `--skip-thesaurus` to skip it if you don't need `thesaurus_matches` or don't have a `HF_TOKEN` configured for the HuggingFce Repo. The `lang_detected` and `linear_prob` columns will still be computed.
+> **Note:** The ChronAm thesaurus matching step is optional. Use `--skip-thesaurus` to skip it if you don't need `thesaurus_matches` or don't have a `HF_TOKEN` configured for the HuggingFace Repo. The `lang_detected` and `linear_prob` columns will still be computed.
+
+**Orientation correction** (must be run before `export to-hf`):
+
+Runs GPU inference to predict orientation corrections for Image/Illustration and Chart/Graph crops. Results are written to the `detection` table and read by `export to-hf` during image upload.
+
+```bash
+uv run pipeline.py post-processing orientation-correction
+
+# Parallel across GPUs
+uv run pipeline.py post-processing orientation-correction --cuda-gpus cuda:0 --cuda-gpus cuda:1
+
+# Re-process existing predictions
+uv run pipeline.py post-processing orientation-correction --force
+```
 
 **Count tokens** in captions:
 
 ```bash
 uv run pipeline.py post-processing count-tokens
 ```
+
+### 6. Export
+
+Once post-processing is complete, use export commands to publish results.
 
 **Peek** at samples to confirm the pipeline is working as expected:
 
@@ -204,9 +222,15 @@ uv run pipeline.py export to-s3
 
 # Parallel using GNU parallel (recommended for large datasets)
 seq 0 31 | parallel -j8 'uv run pipeline.py export to-s3 --chunk-index {} --total-chunks 32'
+
+# With options
+uv run pipeline.py export to-s3 --shard-size 5000 --io-workers 16 --prefix my-export
+uv run pipeline.py export to-s3 --sample 100  # Test with 100 items
 ```
 
 **Export to HuggingFace** (images + parquet datasets):
+
+Exports the full dataset to HuggingFace: downloads crops from S3, applies orientation correction (rotation) from the DB, reclassifies low-confidence Music detections, uploads images to the HF bucket, and writes parquet shards (split by classification) with orientation and reclassification columns. Embeddings are optionally separated into a dedicated dataset.
 
 ```bash
 # Single process
@@ -214,7 +238,18 @@ uv run pipeline.py export to-hf
 
 # Parallel using GNU parallel (recommended for large datasets)
 seq 0 31 | parallel -j8 'uv run pipeline.py export to-hf --chunk-index {} --total-chunks 32'
+
+# With options
+uv run pipeline.py export to-hf --shard-size 5000 --image-batch-size 200
+uv run pipeline.py export to-hf --skip-existing              # Skip uploading images already in HF bucket
+uv run pipeline.py export to-hf --skip-parquet-upload        # Images only, combine shards later
+uv run pipeline.py export to-hf --skip-image-upload          # Parquets only, skip image upload
+uv run pipeline.py export to-hf --skip-music-reclassification
+uv run pipeline.py export to-hf --skip-embedding-separation
+uv run pipeline.py export to-hf --dry-run --limit 10         # Test without uploading
 ```
+
+Each chunk writes its own parquet shards and uploads its own images. The script supports checkpoint-based resumability — interrupted runs pick up where they left off.
 
 **Statistics and visualization:**
 
@@ -570,7 +605,9 @@ Each chunk writes shards with a unique prefix (e.g., `{prefix}-c05-0001.parquet`
 
 Export filtered dataset to HuggingFace: crop images to a HF bucket, metadata to a dataset repo as parquet shards split by classification label.
 
-Reads from the `filtered_dataset` view, downloads crops from the OUTPUT S3 bucket, re-encodes as WebP (quality 95), uploads images via `batch_bucket_files`, and writes parquet shards.
+Reads from the `filtered_dataset` view, downloads crops from the OUTPUT S3 bucket, re-encodes as WebP (quality 95), applies orientation correction (rotation based on DB predictions), reclassifies low-confidence Music detections, uploads images via `batch_bucket_files`, writes parquet shards (22 columns including orientation and reclassification), and optionally separates embeddings into a dedicated dataset.
+
+**Prerequisites:** Run `post-processing orientation-correction` before this command to populate orientation predictions in the DB.
 
 **Designed for GNU parallel** using `--chunk-index` and `--total-chunks`:
 
@@ -583,13 +620,17 @@ seq 0 31 | parallel -j8 'uv run pipeline.py export to-hf --chunk-index {} --tota
 
 # With options
 uv run pipeline.py export to-hf --shard-size 5000 --image-batch-size 200
-uv run pipeline.py export to-hf --skip-existing         # Skip items already in HF bucket
-uv run pipeline.py export to-hf --skip-parquet-upload   # Images only, combine shards later
-uv run pipeline.py export to-hf --io-workers 8          # Threads for S3 download + crop
-uv run pipeline.py export to-hf --sample                # Upload a sample only
+uv run pipeline.py export to-hf --skip-existing              # Skip uploading images already in HF bucket
+uv run pipeline.py export to-hf --skip-parquet-upload        # Images only, combine shards later
+uv run pipeline.py export to-hf --skip-image-upload          # Parquets only, skip image upload
+uv run pipeline.py export to-hf --skip-music-reclassification
+uv run pipeline.py export to-hf --skip-embedding-separation
+uv run pipeline.py export to-hf --io-workers 8               # Threads for S3 download + crop
+uv run pipeline.py export to-hf --dry-run --limit 10         # Test without uploading
+uv run pipeline.py export to-hf --sample                     # Upload a sample only
 ```
 
-Each chunk writes its own parquet shards and uploads its own images. Combine shards afterward with a final upload step.
+Each chunk writes its own parquet shards and uploads its own images. The script supports checkpoint-based resumability — interrupted runs pick up where they left off.
 
 </details>
 
@@ -708,6 +749,36 @@ uv run pipeline.py post-processing backfill --force              # Re-compute al
 uv run pipeline.py post-processing backfill --limit 1000         # Process only 1000 captions (testing)
 uv run pipeline.py post-processing backfill --cpus-limit 8       # Use 8 worker processes
 uv run pipeline.py post-processing backfill --skip-thesaurus     # Skip ChronAm thesaurus
+```
+
+</details>
+
+<details>
+<summary><h3>post-processing orientation-correction</h3></summary>
+
+Run orientation correction on filtered detections using the EfficientNet-V2-M model.
+
+Downloads crops from R2, runs batched GPU inference, and stores predictions in three columns on the `detection` table:
+- `orientation_correction_gen`: predicted correction (or "upright" if below threshold)
+- `orientation_correction_confidence_gen`: max softmax probability
+- `orientation_correction_probs_gen`: full 4-class probability distribution (JSONB)
+
+This must be run after the pipeline completes and before `export to-hf`, which reads orientation results from the DB and applies the rotation during image upload.
+
+```bash
+uv run pipeline.py post-processing orientation-correction
+
+# Parallel across GPUs
+uv run pipeline.py post-processing orientation-correction --cuda-gpus cuda:0 --cuda-gpus cuda:1
+
+# Re-process existing predictions
+uv run pipeline.py post-processing orientation-correction --force
+
+# Custom batch sizes
+uv run pipeline.py post-processing orientation-correction --inference-batch-size 128 --batch-size 2000
+
+# Test with a subset
+uv run pipeline.py post-processing orientation-correction --limit 1000
 ```
 
 </details>
