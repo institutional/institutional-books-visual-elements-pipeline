@@ -5,6 +5,7 @@ import gzip
 import io
 import json
 import tarfile
+from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 from iso639 import Lang
@@ -21,6 +22,7 @@ from const import (
     OUTPUT_STORAGE_BUCKET_NAME,
     FILTER_STORAGE_BUCKET_NAME,
     CLASSIFICATION_CONFIDENCE_THRESHOLD,
+    MUSIC_CONFIDENCE_THRESHOLD,
     MODEL_CLASS_INDEX_ORDER,
     S3_EXPORT_ROW_GROUP_SIZE,
     S3_EXPORT_MULTIPART_THRESHOLD,
@@ -54,28 +56,43 @@ def _fetch_item_ids_paginated() -> list[int]:
         with open(HF_EXPORT_ITEM_IDS_CACHE_PATH, "r") as f:
             return json.load(f)
 
-    conn = _get_raw_connection()
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT DISTINCT pipeline_batch_item_id
-            FROM filtered_dataset
-            ORDER BY pipeline_batch_item_id
-        """)
-        ids = [row[0] for row in cur.fetchall()]
-        cur.close()
-    finally:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
+    import fcntl
 
     HF_EXPORT_ITEM_IDS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".tmp"
-    with open(tmp_path, "w") as f:
-        json.dump(ids, f)
-    os.replace(tmp_path, str(HF_EXPORT_ITEM_IDS_CACHE_PATH))
-    return ids
+    lock_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".lock"
+    with open(lock_path, "w") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            # Another process may have written the cache while we waited
+            if HF_EXPORT_ITEM_IDS_CACHE_PATH.exists():
+                with open(HF_EXPORT_ITEM_IDS_CACHE_PATH, "r") as f:
+                    return json.load(f)
+
+            logger.info("  Fetching item IDs from DB (first process to acquire lock)...")
+            conn = _get_raw_connection()
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT DISTINCT d.pipeline_batch_item_id
+                    FROM hf_dataset_ids hf
+                    JOIN detection d ON d.id_detection = hf.detection_id
+                    ORDER BY d.pipeline_batch_item_id
+                """)
+                ids = [row[0] for row in cur.fetchall()]
+                cur.close()
+            finally:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+
+            tmp_path = str(HF_EXPORT_ITEM_IDS_CACHE_PATH) + ".tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(ids, f)
+            os.replace(tmp_path, str(HF_EXPORT_ITEM_IDS_CACHE_PATH))
+            return ids
+        finally:
+            fcntl.flock(lock_file, fcntl.LOCK_UN)
 
 
 def _fetch_rows_for_items(item_ids: list[int]) -> list[dict]:
@@ -133,6 +150,32 @@ def format_classification_probs(probs) -> list[dict] | None:
     return prob_dicts
 
 
+def _load_music_keywords() -> dict[str, list[str]]:
+    keywords_path = Path(__file__).parent.parent.parent / "const" / "music_keywords.json"
+    with open(keywords_path, "r") as f:
+        raw = json.load(f)
+    return {lang: [kw.lower() for kw in kws] for lang, kws in raw.items()}
+
+
+def _reclassify_music_row(
+    classification_confidence: float | None,
+    caption_lang: str | None,
+    caption_text: str | None,
+    music_keywords: dict[str, list[str]],
+) -> str:
+    if classification_confidence is not None and classification_confidence > MUSIC_CONFIDENCE_THRESHOLD:
+        return "Music"
+    if not caption_lang or caption_lang not in music_keywords:
+        return "Other"
+    if not caption_text:
+        return "Other"
+    caption_lower = caption_text.lower()
+    for keyword in music_keywords[caption_lang]:
+        if keyword in caption_lower:
+            return "Music"
+    return "Other"
+
+
 PARQUET_SCHEMA = pa.schema([
     ("id", pa.int64()),
     ("crop_gen", pa.large_binary()),
@@ -153,6 +196,9 @@ PARQUET_SCHEMA = pa.schema([
     ("caption_lang_passed_exp", pa.string()),
     ("caption_lang_detected_exp", pa.string()),
     ("caption_chronam_thesauri_matches_exp", pa.map_(pa.string(), pa.map_(pa.string(), pa.int64()))),
+    ("orientation_correction_gen", pa.string()),
+    ("orientation_correction_confidence_gen", pa.float64()),
+    ("orientation_correction_probs_gen", pa.string()),
 ])
 
 
@@ -232,6 +278,17 @@ def _extract_row_fields(row: dict, classification_threshold: float) -> dict:
         else:
             embedding_list = [float(x) for x in embedding]
 
+    orientation_correction = row.get("orientation_correction_gen")
+    orientation_confidence = row.get("orientation_correction_confidence_gen")
+    orientation_probs_raw = row.get("orientation_correction_probs_gen")
+    if orientation_probs_raw is not None:
+        if isinstance(orientation_probs_raw, str):
+            orientation_probs_str = orientation_probs_raw
+        else:
+            orientation_probs_str = json.dumps(orientation_probs_raw)
+    else:
+        orientation_probs_str = None
+
     return {
         "det_id": det_id,
         "item_id": item_id,
@@ -252,6 +309,9 @@ def _extract_row_fields(row: dict, classification_threshold: float) -> dict:
         "caption_lang_passed": caption_lang_passed,
         "caption_lang_detected": caption_lang_detected,
         "thesaurus_matches": thesaurus_matches,
+        "orientation_correction": orientation_correction,
+        "orientation_confidence": float(orientation_confidence) if orientation_confidence is not None else None,
+        "orientation_probs_str": orientation_probs_str,
     }
 
 
@@ -405,6 +465,9 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
     logger.info(f"  S3 prefix: {prefix}")
     logger.info(f"  I/O workers: {io_workers}")
 
+    music_keywords = _load_music_keywords()
+    logger.info(f"  Music keywords loaded for {len(music_keywords)} languages")
+
     logger.info(f"{chunk_label}Fetching item IDs...")
     all_item_ids = _fetch_item_ids_paginated()
     total_items = len(all_item_ids)
@@ -458,9 +521,13 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
 
     total_records = 0
     skipped_records = 0
+    skipped_crops = 0
     items_processed = 0
     upload_executor = ThreadPoolExecutor(max_workers=4)
     upload_futures = []
+
+    skipped_log_path = f"skipped_crops_{shard_prefix}.jsonl"
+    skipped_log_file = open(skipped_log_path, "a")
 
     def _open_shard():
         nonlocal shard_idx, shard_record_count, current_writer, current_tmp_path, current_s3_key
@@ -588,6 +655,12 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
                         det_id = r["det_id"]
                         crop_bytes = crops.get(det_id)
                         if crop_bytes is None:
+                            skipped_crops += 1
+                            skipped_log_file.write(json.dumps({
+                                "det_id": det_id,
+                                "item_id": r["item_id"],
+                                "barcode": r["volume_barcode"],
+                            }) + "\n")
                             continue
 
                         # Skip remaining records from the partial-skip boundary
@@ -596,6 +669,17 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
                             continue
 
                         embedding = r["embedding"]
+
+                        classification_label = r["classification_label"]
+                        if classification_label == "Music":
+                            new_label = _reclassify_music_row(
+                                classification_confidence=r["classification_confidence"],
+                                caption_lang=r["caption_lang_passed"],
+                                caption_text=r["caption_text"],
+                                music_keywords=music_keywords,
+                            )
+                            if new_label != "Music":
+                                classification_label = "Other"
 
                         record = {
                             "id": det_id,
@@ -607,7 +691,7 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
                             "height_gen": r["height"],
                             "pixel_count_mpx_gen": r["pixel_count_mpx"],
                             "detection_confidence_gen": r["bbox_conf"],
-                            "classification_gen": r["classification_label"],
+                            "classification_gen": classification_label,
                             "classification_confidence_gen": r["classification_confidence"],
                             "classification_probs_gen": r["classification_probs"],
                             "phash_gen": r["phash"],
@@ -617,6 +701,9 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
                             "caption_lang_passed_exp": r["caption_lang_passed"],
                             "caption_lang_detected_exp": r["caption_lang_detected"],
                             "caption_chronam_thesauri_matches_exp": r["thesaurus_matches"],
+                            "orientation_correction_gen": r["orientation_correction"],
+                            "orientation_correction_confidence_gen": r["orientation_confidence"],
+                            "orientation_correction_probs_gen": r["orientation_probs_str"],
                         }
 
                         if current_writer is None:
@@ -656,6 +743,10 @@ def to_s3(shard_size, classification_threshold, chunk_index, total_chunks, io_wo
     upload_futures.clear()
     upload_executor.shutdown(wait=False)
 
+    skipped_log_file.close()
+
     total_shards = shard_idx - shard_start_idx
     elapsed = time.time() - t_start
     logger.success(f"{chunk_label}Done: {total_records:,} records across {total_shards} shards in {elapsed:.0f}s")
+    if skipped_crops:
+        logger.warning(f"{chunk_label}Skipped {skipped_crops:,} detections due to missing crops. See {skipped_log_path} for retry.")
