@@ -2,8 +2,8 @@
 The Institutional Data Initiative's pipeline for producing the Institutional Books - Visual Elements datasets.
 
 - 🤗 [Institutional Books on HuggingFace](https://huggingface.co/collections/institutional/institutional-books)
-- 📄 [Technical report](TODO)
-- 🌐 [Website](TODO)
+- 📄 [Technical report](https://arxiv.org/abs/2608.18957)
+- 🌐 [Website](https://institutional.org)
 
 ---
 
@@ -820,9 +820,16 @@ The Institutional Data Initiative at Harvard Law School Library works with knowl
 
 ## Cite
 
-> TODO
-
 ```bibtex
+@misc{mendez2026institutionalbooksvisual,
+      title={Institutional Books - Visual Elements: An open-source pipeline for extracting, classifying, deduplicating, and captioning visual elements from digital book collections}, 
+      author={Jimmy Mendez and Matteo Cargnelutti and David Lowry-Duda and Catherine Brobston and Salwa Ismail and Greg Leppert and Amanda Watson and Jonathan Zittrain},
+      year={2026},
+      eprint={2608.18957},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2608.18957}, 
+}
 ```
 
 [👆 Back to the summary](#summary)
